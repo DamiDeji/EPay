@@ -1,0 +1,60 @@
+{
+  "name": "epay",
+  "version": "1.0.0",
+  "private": true,
+  "description": "EPay - Decentralized Payment Gateway on TON",
+  "author": "EPay Contributors",
+  "license": "Apache-2.0",
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "typecheck": "turbo typecheck",
+    "test": "turbo test",
+    "test:coverage": "turbo test:coverage",
+    "clean": "turbo clean",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml}\"",
+    "contracts:build": "pnpm --filter @epay/contracts build",
+    "contracts:test": "pnpm --filter @epay/contracts test",
+    "db:migrate": "pnpm --filter @epay/database migrate",
+    "db:generate": "pnpm --filter @epay/database generate",
+    "db:seed": "pnpm --filter @epay/database seed",
+    "api:dev": "pnpm --filter @epay/api dev",
+    "web:dev": "pnpm --filter @epay/web dev",
+    "merchant:dev": "pnpm --filter @epay/merchant-dashboard dev",
+    "admin:dev": "pnpm --filter @epay/admin-dashboard dev",
+    "indexer:dev": "pnpm --filter @epay/indexer dev",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.3.0",
+    "@commitlint/config-conventional": "^19.3.0",
+    "husky": "^9.0.0",
+    "lint-staged": "^15.2.0",
+    "prettier": "^3.3.0",
+    "turbo": "^2.0.0",
+    "typescript": "^5.5.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@10.32.1",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@nestjs/core",
+      "@prisma/client",
+      "@prisma/engines",
+      "esbuild",
+      "msgpackr-extract",
+      "prisma",
+      "protobufjs",
+      "sharp"
+    ]
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": ["eslint --fix", "prettier --write"],
+    "*.{json,md,yml,yaml}": ["prettier --write"]
+  }
+}
