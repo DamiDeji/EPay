@@ -1,0 +1,212 @@
+version: "3.8"
+
+# =============================================================================
+# EPay — Docker Compose
+# =============================================================================
+# Start:  docker compose up -d
+# Stop:   docker compose down
+# Logs:   docker compose logs -f [service]
+# =============================================================================
+
+services:
+  # ── PostgreSQL ────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: epay-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-epay}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-epay}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - epay-network
+
+  # ── Redis ─────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: epay-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - epay-network
+
+  # ── Database Migration ────────────────────────────────────────────────────
+  db-migrate:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.api
+      target: builder
+    container_name: epay-db-migrate
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-epay}
+    command: >
+      sh -c "
+        pnpm --filter @epay/database prisma:generate &&
+        pnpm --filter @epay/database prisma:migrate &&
+        pnpm --filter @epay/database prisma:seed
+      "
+    networks:
+      - epay-network
+    profiles:
+      - setup
+
+  # ── API Server (NestJS + Fastify) ─────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.api
+    container_name: epay-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: "4000"
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-epay}
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-7d}
+      TON_ENDPOINT: ${TON_ENDPOINT:-https://testnet.toncenter.com/api/v2/jsonRPC}
+      TON_NETWORK: ${TON_NETWORK:-testnet}
+      TON_API_KEY: ${TON_API_KEY:-}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "${API_PORT:-4000}:4000"
+    networks:
+      - epay-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Customer Web App (Next.js) ────────────────────────────────────────────
+  web:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.web
+      args:
+        APP_NAME: web
+        PORT: "3000"
+    container_name: epay-web
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://api:4000}
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    networks:
+      - epay-network
+
+  # ── Merchant Dashboard (Next.js) ──────────────────────────────────────────
+  merchant-dashboard:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.web
+      args:
+        APP_NAME: merchant-dashboard
+        PORT: "3001"
+    container_name: epay-merchant
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: "3001"
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://api:4000}
+    ports:
+      - "${MERCHANT_PORT:-3001}:3001"
+    networks:
+      - epay-network
+
+  # ── Admin Dashboard (Next.js) ─────────────────────────────────────────────
+  admin-dashboard:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.web
+      args:
+        APP_NAME: admin-dashboard
+        PORT: "3002"
+    container_name: epay-admin
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: "3002"
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://api:4000}
+    ports:
+      - "${ADMIN_PORT:-3002}:3002"
+    networks:
+      - epay-network
+
+  # ── Blockchain Indexer ────────────────────────────────────────────────────
+  indexer:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile.indexer
+    container_name: epay-indexer
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-epay}
+      REDIS_URL: redis://redis:6379
+      TON_ENDPOINT: ${TON_ENDPOINT:-https://testnet.toncenter.com/api/v2/jsonRPC}
+      TON_NETWORK: ${TON_NETWORK:-testnet}
+      TON_API_KEY: ${TON_API_KEY:-}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      INDEXER_POLL_INTERVAL_MS: "10000"
+      INDEXER_BATCH_SIZE: "100"
+      INDEXER_CONFIRMATION_BLOCKS: "20"
+      INDEXER_REALTIME_ENABLED: "true"
+      INDEXER_HISTORICAL_ENABLED: "true"
+    networks:
+      - epay-network
+
+# ── Volumes ──────────────────────────────────────────────────────────────────
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+# ── Network ──────────────────────────────────────────────────────────────────
+networks:
+  epay-network:
+    driver: bridge

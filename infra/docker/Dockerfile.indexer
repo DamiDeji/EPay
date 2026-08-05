@@ -1,0 +1,70 @@
+# =============================================================================
+# EPay Blockchain Indexer — Multi-Stage Dockerfile
+# =============================================================================
+# Build:  docker build -f infra/docker/Dockerfile.indexer -t epay-indexer .
+# Run:    docker run --env-file .env epay-indexer
+# =============================================================================
+
+# ── Stage 1: Base ───────────────────────────────────────────────────────────
+FROM node:22-alpine AS base
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable && corepack prepare pnpm@latest --activate
+WORKDIR /app
+
+# Copy root workspace config
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json tsconfig.base.json ./
+
+# Copy package.json files for dependency resolution
+COPY packages/types/package.json        packages/types/
+COPY packages/database/package.json     packages/database/
+COPY packages/config/package.json       packages/config/
+COPY apps/indexer/package.json          apps/indexer/
+
+# Install dependencies (cached layer)
+RUN pnpm install --frozen-lockfile --prod false
+
+# ── Stage 2: Builder ────────────────────────────────────────────────────────
+FROM base AS builder
+
+# Copy source files
+COPY packages/types/       packages/types/
+COPY packages/database/    packages/database/
+COPY packages/config/      packages/config/
+COPY apps/indexer/         apps/indexer/
+
+# Generate Prisma client
+RUN pnpm --filter @epay/database prisma:generate
+
+# Build the indexer
+RUN pnpm --filter @epay/indexer build
+
+# ── Stage 3: Production ─────────────────────────────────────────────────────
+FROM node:22-alpine AS production
+
+ENV NODE_ENV=production
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable && corepack prepare pnpm@latest --activate
+WORKDIR /app
+
+# Copy built artifacts
+COPY --from=builder /app/node_modules              ./node_modules
+COPY --from=builder /app/packages/types/dist       ./packages/types/dist
+COPY --from=builder /app/packages/database/dist    ./packages/database/dist
+COPY --from=builder /app/packages/database/node_modules/.prisma ./packages/database/node_modules/.prisma
+COPY --from=builder /app/packages/config/dist      ./packages/config/dist
+COPY --from=builder /app/apps/indexer/dist         ./apps/indexer/dist
+COPY --from=builder /app/apps/indexer/node_modules ./apps/indexer/node_modules
+
+# Copy Prisma schema for runtime migrations/checks
+COPY --from=builder /app/packages/database/prisma  ./packages/database/prisma
+
+# Copy workspace config
+COPY --from=builder /app/package.json              ./
+COPY --from=builder /app/pnpm-workspace.yaml       ./
+
+# The indexer is a long-running process — no health check HTTP endpoint.
+# Monitor via logs: docker compose logs -f indexer
+
+CMD ["node", "apps/indexer/dist/index.js"]

@@ -1,0 +1,50 @@
+# ── Dependencies ─────────────────────────────────────────────────────────────
+node_modules
+.pnpm-store
+
+# ── Build output (we rebuild inside Docker) ─────────────────────────────────
+dist
+.next
+.turbo
+build
+
+# ── Environment & Secrets ───────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ── Git ──────────────────────────────────────────────────────────────────────
+.git
+.gitignore
+.gitattributes
+
+# ── IDE & Editor ─────────────────────────────────────────────────────────────
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# ── Test & Coverage ──────────────────────────────────────────────────────────
+coverage
+.nyc_output
+*.test.ts
+*.spec.ts
+tests/
+__tests__/
+
+# ── OS Files ─────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── Documentation (not needed in images) ─────────────────────────────────────
+docs/
+*.md
+!README.md
+
+# ── CI/CD (not needed in images) ─────────────────────────────────────────────
+.github/
