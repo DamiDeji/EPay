@@ -1,0 +1,37 @@
+# EPay Code Ownership
+# Automatically assigns reviewers based on file paths.
+# Last match wins — order matters.
+
+# Smart Contracts — require contract team review
+packages/contracts/**       @DamiDeji
+
+# Security-critical paths — require lead review
+apps/api/src/auth/**        @DamiDeji
+SECURITY.md                 @DamiDeji
+packages/contracts/**       @DamiDeji
+
+# API Server
+apps/api/**                 @DamiDeji
+
+# Frontend Apps
+apps/web/**                 @DamiDeji
+apps/merchant-dashboard/**  @DamiDeji
+apps/admin-dashboard/**     @DamiDeji
+
+# SDK
+packages/sdk/**             @DamiDeji
+
+# Indexer
+apps/indexer/**             @DamiDeji
+
+# Database & Types
+packages/database/**        @DamiDeji
+packages/types/**           @DamiDeji
+
+# CI/CD & Tooling
+.github/**                  @DamiDeji
+turbo.json                  @DamiDeji
+pnpm-workspace.yaml         @DamiDeji
+
+# Documentation
+*.md                        @DamiDeji

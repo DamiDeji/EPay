@@ -206,7 +206,7 @@ pnpm build
 | Metric | Value |
 |--------|-------|
 | Source files | **207** |
-| Git commits | **16** (conventional commits) |
+| Git commits | **17** (conventional commits) |
 | Smart contracts | **12** Tact contracts |
 | API modules | **15** NestJS modules |
 | Frontend pages | **25** across 3 dashboards |
@@ -214,6 +214,88 @@ pnpm build
 | SDK methods | **50+** typed API methods |
 | Tests | **192** (101 API + 91 SDK) |
 | Type errors | **0** across all packages |
+
+---
+
+## 📋 Project Structure Review
+
+### Outstanding Structure (Recommended)
+
+```
+EPay/
+├── .github/
+│   ├── workflows/
+│   │   ├── ci.yml              ✅ Lint, typecheck, test, build
+│   │   ├── contracts.yml       ✅ Smart contract testing
+│   │   ├── codeql.yml          ✅ Security analysis
+│   │   └── dependabot-auto-merge.yml ✅ Auto-merge patch updates
+│   ├── ISSUE_TEMPLATE/
+│   │   ├── bug_report.md       ✅
+│   │   └── feature_request.md  ✅
+│   ├── pull_request_template.md ✅
+│   └── CODEOWNERS              ✅ Automated review assignment
+├── apps/
+│   ├── api/                    ✅ NestJS — 15 modules, 101 tests
+│   ├── web/                    ✅ Next.js — landing + customer dashboard
+│   ├── merchant-dashboard/     ✅ Next.js — 10-page merchant dashboard
+│   ├── admin-dashboard/        ✅ Next.js — 6-page admin panel
+│   ├── indexer/                ✅ TON indexer with BullMQ
+│   ├── explorer/               🚧 Scaffolded (coming soon)
+│   └── docs/                   🚧 Scaffolded (coming soon)
+├── packages/
+│   ├── contracts/              ✅ 12 Tact contracts
+│   │   └── tests/              🚧 Contract tests pending
+│   ├── sdk/                    ✅ 50+ methods, 91 tests, examples
+│   ├── database/               ✅ Prisma — 21 models + seed
+│   ├── types/                  ✅ Comprehensive type definitions
+│   ├── ui/                     ✅ 6 shared components
+│   ├── hooks/                  ✅ 5 React hooks
+│   ├── shared/                 ✅ Utilities
+│   └── config/                 ✅ Environment loader
+├── infra/
+│   ├── docker/                 🚧 Dockerfiles pending
+│   └── terraform/              🚧 IaC pending
+├── docker-compose.yml          🚧 Pending
+├── .env.example                ✅
+├── LICENSE                     ✅ MIT
+├── SECURITY.md                 ✅
+├── CONTRIBUTING.md             ✅
+├── CHANGELOG.md                ✅
+├── README.md                   ✅
+├── turbo.json                  ✅
+└── pnpm-workspace.yaml         ✅
+```
+
+### Compliance Scorecard
+
+| Standard | Status | Score |
+|----------|--------|-------|
+| Monorepo structure | ✅ Turborepo + pnpm workspaces | 10/10 |
+| Type safety | ✅ 0 type errors, strict mode | 10/10 |
+| CI/CD | ✅ Lint, typecheck, test, build + CodeQL | 8/10 |
+| Smart contract tests | 🚧 0 tests (12 contracts) | 2/10 |
+| Frontend tests | 🚧 0 tests (3 dashboards) | 2/10 |
+| Backend tests | ✅ 101 tests (16 suites) | 8/10 |
+| SDK tests | ✅ 91 tests (4 suites) | 9/10 |
+| Indexer tests | 🚧 0 tests | 2/10 |
+| Documentation | ✅ README + SDK docs + examples | 8/10 |
+| Open-source hygiene | ✅ LICENSE, SECURITY, CONTRIBUTING, CHANGELOG, CODEOWNERS, templates | 10/10 |
+| Docker / Infrastructure | 🚧 Empty scaffold | 2/10 |
+| Code quality enforcement | ✅ ESLint strict + Prettier | 7/10 |
+| **OVERALL** | | **6.5/10** |
+
+### Priority Roadmap
+
+| Priority | Task | Impact |
+|----------|------|--------|
+| 🔴 P0 | Write smart contract tests (Tact test framework) | Critical for audit readiness |
+| 🔴 P0 | Add Docker Compose + Dockerfiles | Required for local development & CI |
+| 🟡 P1 | Add frontend component tests (3 dashboards) | Coverage & reliability |
+| 🟡 P1 | Add indexer unit tests | Critical for data integrity |
+| 🟢 P2 | Build Explorer app | Complete the product suite |
+| 🟢 P2 | Add test coverage thresholds in CI | Enforce quality gates |
+| 🟢 P3 | Add pre-commit hooks (husky + lint-staged) | Developer experience |
+| 🟢 P3 | Infrastructure as Code (Terraform/K8s) | Production deployment |
 
 ---
 
