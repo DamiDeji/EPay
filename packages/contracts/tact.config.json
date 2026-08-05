@@ -1,0 +1,10 @@
+{
+  "projects": [
+    {
+      "name": "epay-contracts",
+      "path": "./contracts",
+      "output": "./build",
+      "mode": "full"
+    }
+  ]
+}
