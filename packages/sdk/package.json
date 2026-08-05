@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@epay/types": "workspace:*",
-    "@ton/core": "^0.56.0",
+    "@ton/core": "^0.63.1",
     "@ton/crypto": "^3.3.0"
   },
   "devDependencies": {
