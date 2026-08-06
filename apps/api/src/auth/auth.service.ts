@@ -38,7 +38,7 @@ export class AuthService {
         email: dto.email,
         displayName: dto.displayName,
         role: dto.role ?? 'CUSTOMER',
-        walletAddress: dto.walletAddress,
+        stellarPublicKey: dto.stellarPublicKey,
         passwordHash,
       },
     });
@@ -60,8 +60,8 @@ export class AuthService {
     if (dto.email && dto.password) {
       return this.loginWithEmail(dto.email, dto.password);
     }
-    if (dto.walletAddress && dto.signature) {
-      return this.loginWithWallet(dto.walletAddress, dto.signature, dto.message);
+    if (dto.stellarPublicKey && dto.signature) {
+      return this.loginWithWallet(dto.stellarPublicKey, dto.signature, dto.message);
     }
     throw new UnauthorizedException('Invalid credentials');
   }
@@ -93,35 +93,29 @@ export class AuthService {
   }
 
   private async loginWithWallet(
-    walletAddress: string,
+    stellarPublicKey: string,
     _signature: string,
     _message?: string,
   ): Promise<{ user: User; tokens: AuthTokens }> {
-    const user = await this.prisma.user.findUnique({
-      where: { walletAddress },
+    // Validate Stellar public key format
+    if (!/^G[A-Z2-7]{55}$/.test(stellarPublicKey)) {
+      throw new UnauthorizedException('Invalid Stellar public key');
+    }
+
+    let user = await this.prisma.user.findUnique({
+      where: { stellarPublicKey },
     });
 
     if (!user) {
       // Auto-register wallet user
-      const newUser = await this.prisma.user.create({
+      user = await this.prisma.user.create({
         data: {
-          email: `wallet_${walletAddress.slice(0, 8)}@epay.internal`,
-          displayName: `Wallet ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`,
+          email: `stellar_${stellarPublicKey.slice(0, 8)}@epay.internal`,
+          displayName: `Stellar ${stellarPublicKey.slice(0, 6)}...${stellarPublicKey.slice(-4)}`,
           role: 'CUSTOMER',
-          walletAddress,
+          stellarPublicKey,
         },
       });
-
-      const tokens = await this.generateTokens(newUser.id);
-      await this.prisma.user.update({
-        where: { id: newUser.id },
-        data: { refreshToken: tokens.refreshToken },
-      });
-
-      return {
-        user: this.sanitizeUser(newUser),
-        tokens,
-      };
     }
 
     const tokens = await this.generateTokens(user.id);
@@ -136,9 +130,7 @@ export class AuthService {
     };
   }
 
-  async refreshToken(
-    refreshToken: string,
-  ): Promise<AuthTokens> {
+  async refreshToken(refreshToken: string): Promise<AuthTokens> {
     const user = await this.prisma.user.findFirst({
       where: { refreshToken },
     });

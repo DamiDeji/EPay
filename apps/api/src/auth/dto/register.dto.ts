@@ -23,8 +23,8 @@ export class RegisterDto {
   @IsEnum(UserRole)
   role?: UserRole;
 
-  @ApiPropertyOptional({ example: 'EQD...wallet_address' })
+  @ApiPropertyOptional({ example: 'GABCDEF...stellar_public_key' })
   @IsOptional()
   @IsString()
-  walletAddress?: string;
+  stellarPublicKey?: string;
 }
