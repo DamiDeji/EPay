@@ -1,6 +1,7 @@
 import type {
   Settlement, SettlementStatus, PaginatedResponse, PaginationQuery,
 } from '@epay/types';
+
 import { BaseResource } from './base';
 
 /**
@@ -36,10 +37,10 @@ export class SettlementsResource extends BaseResource {
   /**
    * Process a pending settlement with transaction hash.
    */
-  async process(id: string, txHash: string, settlementAddress: string): Promise<Settlement> {
+  async process(id: string, txHash: string, settlementPublicKey: string): Promise<Settlement> {
     return this.client.patch<Settlement>(`/settlements/${id}/process`, {
       txHash,
-      settlementAddress,
+      settlementPublicKey,
     });
   }
 }

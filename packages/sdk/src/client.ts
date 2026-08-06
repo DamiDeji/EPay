@@ -1,14 +1,13 @@
-import type { ApiResponse, PaginatedResponse, PaginationQuery } from '@epay/types';
-import { EPayError } from './utils';
-import { PaymentsResource } from './resources/payments';
-import { InvoicesResource } from './resources/invoices';
-import { EscrowsResource } from './resources/escrows';
-import { RefundsResource } from './resources/refunds';
-import { SubscriptionsResource } from './resources/subscriptions';
-import { MerchantsResource } from './resources/merchants';
-import { SettlementsResource } from './resources/settlements';
-import { PaymentLinksResource } from './resources/payment-links';
 import { AnalyticsResource } from './resources/analytics';
+import { EscrowsResource } from './resources/escrows';
+import { InvoicesResource } from './resources/invoices';
+import { MerchantsResource } from './resources/merchants';
+import { PaymentLinksResource } from './resources/payment-links';
+import { PaymentsResource } from './resources/payments';
+import { RefundsResource } from './resources/refunds';
+import { SettlementsResource } from './resources/settlements';
+import { SubscriptionsResource } from './resources/subscriptions';
+import { EPayError } from './utils';
 
 export interface EPayClientConfig {
   apiUrl?: string;
@@ -99,14 +98,16 @@ export class EPayClient {
 
     if (this.token) {
       if (this.config.accessToken) {
+        // eslint-disable-next-line @typescript-eslint/dot-notation
         headers['Authorization'] = `Bearer ${this.token}`;
       } else {
+        // eslint-disable-next-line @typescript-eslint/dot-notation
         headers['x-api-key'] = this.token;
       }
     }
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), this.config.timeoutMs);
+    const timeout = setTimeout(() => { controller.abort(); }, this.config.timeoutMs);
 
     try {
       const response = await fetch(url, {
@@ -124,8 +125,9 @@ export class EPayClient {
       }
 
       if (!response.ok) {
-        const errorBody = await response.json().catch(() => ({}));
-        throw EPayError.fromResponse(response.status, errorBody as Record<string, unknown>);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const errorBody = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+        throw EPayError.fromResponse(response.status, errorBody);
       }
 
       if (response.status === 204) {

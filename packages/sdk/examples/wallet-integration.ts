@@ -1,28 +1,28 @@
 /**
- * EPay SDK — Wallet Integration Example
+ * EPay SDK — Stellar Wallet Integration Example
  *
- * Demonstrates: wallet auth message generation, address validation, balance lookup,
- * TON conversion utilities, explorer URLs, fee calculation.
+ * Demonstrates: wallet auth message generation, public key validation, balance lookup,
+ * stroops/XLM conversion utilities, explorer URLs, fee calculation.
  *
  * Run: npx tsx examples/wallet-integration.ts
  */
 
 import {
   WalletClient,
-  TONNetwork,
-  nanoToTon,
-  tonToNano,
-  isValidTonAddress,
-  formatAddress,
+  StellarNetwork,
+  stroopsToXlm,
+  xlmToStroops,
+  isValidStellarPublicKey,
+  formatStellarAddress,
   getExplorerUrl,
   calculateFee,
   calculateNetAmount,
 } from '../src';
 
-const VALID_ADDRESS = 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMAU';
+const VALID_PUBLIC_KEY = 'GABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234';
 
 async function main() {
-  console.log('👛 EPay SDK — Wallet Integration Example\n');
+  console.log('👛 EPay SDK — Stellar Wallet Integration Example\n');
 
   // ══════════════════════════════════════════════════════════════════
   // WALLET CLIENT
@@ -31,72 +31,80 @@ async function main() {
   console.log('── Wallet Client ──\n');
 
   const wallet = new WalletClient({
-    network: TONNetwork.TESTNET,
-    rpcEndpoint: 'https://testnet.toncenter.com/api/v2/jsonRPC',
+    network: StellarNetwork.TESTNET,
+    horizonUrl: 'https://horizon-testnet.stellar.org',
+    sorobanRpcUrl: 'https://soroban-testnet.stellar.org',
   });
 
-  // 1. Validate addresses
-  console.log('1. Address validation:');
-  console.log(`   ${VALID_ADDRESS}: ${wallet.validateAddress(VALID_ADDRESS)}`);
-  console.log(`   "invalid_address": ${wallet.validateAddress('invalid_address')}\n`);
+  // 1. Validate public keys
+  console.log('1. Public key validation:');
+  console.log(`   ${VALID_PUBLIC_KEY}: ${wallet.validatePublicKey(VALID_PUBLIC_KEY)}`);
+  console.log(`   "invalid_key": ${wallet.validatePublicKey('invalid_key')}\n`);
 
   // 2. Generate an auth message
   console.log('2. Auth message generation:');
-  const authMessage = wallet.generateAuthMessage(VALID_ADDRESS);
+  const authMessage = wallet.generateAuthMessage(VALID_PUBLIC_KEY);
   console.log(`   ${authMessage.replace(/\n/g, '\n   ')}\n`);
 
   // 3. Build a WalletAuth payload
   console.log('3. Building WalletAuth payload:');
   const auth = wallet.buildWalletAuth({
-    address: VALID_ADDRESS,
-    publicKey: '0xabcdef1234567890...',
+    publicKey: VALID_PUBLIC_KEY,
     signature: '0xsignature...',
     message: authMessage,
+    provider: 'freighter',
   });
-  console.log(`   Address:   ${auth.address}`);
-  console.log(`   Network:   ${auth.network}`);
-  console.log(`   PublicKey: ${auth.publicKey}\n`);
+  console.log(`   PublicKey:     ${auth.publicKey}`);
+  console.log(`   Network:       ${auth.network}`);
+  console.log(`   WalletProvider: ${auth.walletProvider}\n`);
+
+  // 4. Supported wallets
+  console.log('4. Supported wallets:');
+  for (const w of WalletClient.getSupportedWallets()) {
+    console.log(`   - ${w}`);
+  }
+  console.log();
 
   // ══════════════════════════════════════════════════════════════════
-  // TON UTILITIES
+  // STELLAR UTILITIES
   // ══════════════════════════════════════════════════════════════════
 
-  console.log('── TON Utilities ──\n');
+  console.log('── Stellar Utilities ──\n');
 
-  // 4. nanoTON ↔ TON conversion
-  console.log('4. Unit conversion:');
-  console.log(`   nanoToTon('1000000000')  = "${nanoToTon('1000000000')}"`);
-  console.log(`   nanoToTon('1500000000')  = "${nanoToTon('1500000000')}"`);
-  console.log(`   nanoToTon('100')         = "${nanoToTon('100')}"`);
-  console.log(`   tonToNano('1')           = "${tonToNano('1')}"`);
-  console.log(`   tonToNano('1.5')         = "${tonToNano('1.5')}"`);
-  console.log(`   tonToNano('0.0000001')   = "${tonToNano('0.0000001')}"`);
-  console.log(`   Roundtrip: nanoToTon(tonToNano('1')) = "${nanoToTon(tonToNano('1'))}"\n`);
+  // 5. stroops ↔ XLM conversion
+  console.log('5. Unit conversion:');
+  console.log(`   stroopsToXlm('10000000')  = "${stroopsToXlm('10000000')}"`);
+  console.log(`   stroopsToXlm('15000000')  = "${stroopsToXlm('15000000')}"`);
+  console.log(`   stroopsToXlm('100')       = "${stroopsToXlm('100')}"`);
+  console.log(`   xlmToStroops('1')         = "${xlmToStroops('1')}"`);
+  console.log(`   xlmToStroops('1.5')       = "${xlmToStroops('1.5')}"`);
+  console.log(`   xlmToStroops('0.0000001') = "${xlmToStroops('0.0000001')}"`);
+  console.log(`   Roundtrip: stroopsToXlm(xlmToStroops('1')) = "${stroopsToXlm(xlmToStroops('1'))}"\n`);
 
-  // 5. Address formatting
-  console.log('5. Address formatting:');
-  console.log(`   formatAddress("${VALID_ADDRESS}")     = "${formatAddress(VALID_ADDRESS)}"`);
-  console.log(`   formatAddress("${VALID_ADDRESS}", 4, 6) = "${formatAddress(VALID_ADDRESS, 4, 6)}"\n`);
+  // 6. Address formatting
+  console.log('6. Address formatting:');
+  console.log(`   formatStellarAddress("${VALID_PUBLIC_KEY}")     = "${formatStellarAddress(VALID_PUBLIC_KEY)}"`);
+  console.log(`   formatStellarAddress("${VALID_PUBLIC_KEY}", 4, 6) = "${formatStellarAddress(VALID_PUBLIC_KEY, 4, 6)}"\n`);
 
-  // 6. Explorer URLs
-  console.log('6. Explorer URLs:');
-  console.log(`   Mainnet tx:     ${getExplorerUrl('tx', '0xhash...', TONNetwork.MAINNET)}`);
-  console.log(`   Testnet tx:     ${getExplorerUrl('tx', '0xhash...', TONNetwork.TESTNET)}`);
-  console.log(`   Mainnet addr:   ${getExplorerUrl('address', 'EQD...', TONNetwork.MAINNET)}\n`);
+  // 7. Explorer URLs
+  console.log('7. Explorer URLs:');
+  console.log(`   Public tx:      ${getExplorerUrl('tx', '0xhash...', StellarNetwork.PUBLIC)}`);
+  console.log(`   Testnet tx:     ${getExplorerUrl('tx', '0xhash...', StellarNetwork.TESTNET)}`);
+  console.log(`   Public account: ${getExplorerUrl('account', 'GABCDEF...', StellarNetwork.PUBLIC)}\n`);
 
-  // 7. Fee calculation
-  console.log('7. Fee calculation (0.5% = 50 bps):');
-  const amount = '1000000000'; // 1 TON
-  console.log(`   Amount:         ${nanoToTon(amount)} TON`);
-  console.log(`   Fee (0.5%):     ${nanoToTon(calculateFee(amount, 50))} TON`);
-  console.log(`   Net amount:     ${nanoToTon(calculateNetAmount(amount, 50))} TON`);
+  // 8. Fee calculation
+  console.log('8. Fee calculation (0.5% = 50 bps):');
+  const amount = '10000000'; // 1 XLM in stroops
+  console.log(`   Amount:         ${stroopsToXlm(amount)} XLM`);
+  console.log(`   Fee (0.5%):     ${stroopsToXlm(calculateFee(amount, 50))} XLM`);
+  console.log(`   Net amount:     ${stroopsToXlm(calculateNetAmount(amount, 50))} XLM`);
 
   console.log('\n   Fee calculation (2% = 200 bps):');
-  console.log(`   Amount:         ${nanoToTon(amount)} TON`);
-  console.log(`   Fee (2%):       ${nanoToTon(calculateFee(amount, 200))} TON`);
-  console.log(`   Net amount:     ${nanoToTon(calculateNetAmount(amount, 200))} TON\n`);
+  console.log(`   Amount:         ${stroopsToXlm(amount)} XLM`);
+  console.log(`   Fee (2%):       ${stroopsToXlm(calculateFee(amount, 200))} XLM`);
+  console.log(`   Net amount:     ${stroopsToXlm(calculateNetAmount(amount, 200))} XLM\n`);
 
-  console.log('✨ Wallet integration examples completed!');
+  console.log('✨ Stellar wallet integration examples completed!');
 }
 
 main().catch(console.error);

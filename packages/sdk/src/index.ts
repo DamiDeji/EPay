@@ -1,4 +1,4 @@
-// EPay TypeScript SDK — Main Exports
+// EPay TypeScript SDK — Stellar Network
 // =============================================================================
 
 // Client
@@ -11,14 +11,20 @@ export type { WalletConfig, WalletSignature } from './wallet';
 
 // Utilities
 export {
-  nanoToTon,
-  tonToNano,
-  isValidTonAddress,
-  formatAddress,
+  stroopsToXlm,
+  xlmToStroops,
+  isValidStellarPublicKey,
+  isValidStellarSecretKey,
+  formatStellarAddress,
   getExplorerUrl,
   calculateFee,
   calculateNetAmount,
   EPayError,
+  // Backward compatibility aliases
+  nanoToTon,
+  tonToNano,
+  isValidTonAddress,
+  formatAddress,
 } from './utils';
 
 // Resources
@@ -56,7 +62,11 @@ export type {
   WalletAuth,
   AuthTokens,
   User,
-  TONNetwork,
+  StellarNetwork,
+  StellarAsset,
+  AssetBalance,
+  Trustline,
+  WalletProvider,
   PaymentStatus,
   InvoiceStatus,
   EscrowStatus,
