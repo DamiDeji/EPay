@@ -11,18 +11,18 @@ datasource db {
 // ── User & Authentication ───────────────────────────────────────────────────
 
 model User {
-  id              String    @id @default(cuid())
-  email           String    @unique
-  displayName     String
-  role            UserRole  @default(CUSTOMER)
-  walletAddress   String?   @unique
-  avatarUrl       String?
-  twoFactorEnabled Boolean  @default(false)
-  twoFactorSecret String?
-  passwordHash    String?
-  refreshToken    String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id                String    @id @default(cuid())
+  email             String    @unique
+  displayName       String
+  role              UserRole  @default(CUSTOMER)
+  stellarPublicKey  String?   @unique
+  avatarUrl         String?
+  twoFactorEnabled  Boolean   @default(false)
+  twoFactorSecret   String?
+  passwordHash      String?
+  refreshToken      String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   merchants        Merchant[]
   notifications    Notification[]
@@ -30,7 +30,7 @@ model User {
   apiKeys          ApiKey[]
 
   @@index([email])
-  @@index([walletAddress])
+  @@index([stellarPublicKey])
   @@map("users")
 }
 
@@ -44,34 +44,35 @@ enum UserRole {
 // ── Merchant ────────────────────────────────────────────────────────────────
 
 model Merchant {
-  id                 String                   @id @default(cuid())
-  userId             String
-  businessName       String
-  businessEmail      String
-  businessUrl        String?
-  description        String?
-  status             MerchantStatus           @default(PENDING)
-  verificationLevel  MerchantVerificationLevel @default(NONE)
-  supportedCurrencies String[]                @default(["TON"])
-  feeRate            Int                      @default(50)
-  settlementAddress  String?
-  webhookUrl         String?
-  webhookSecret      String?
-  metadata           Json                     @default("{}")
-  createdAt          DateTime                 @default(now())
-  updatedAt          DateTime                 @updatedAt
+  id                  String                    @id @default(cuid())
+  userId              String
+  businessName        String
+  businessEmail       String
+  businessUrl         String?
+  description         String?
+  status              MerchantStatus            @default(PENDING)
+  verificationLevel   MerchantVerificationLevel @default(NONE)
+  supportedAssets     Json                      @default("[{\"code\":\"XLM\",\"issuer\":\"native\",\"type\":\"native\"}]")
+  feeRate             Int                       @default(50)
+  settlementPublicKey String?
+  webhookUrl          String?
+  webhookSecret       String?
+  metadata            Json                      @default("{}")
+  createdAt           DateTime                  @default(now())
+  updatedAt           DateTime                  @updatedAt
 
-  user           User               @relation(fields: [userId], references: [id])
-  payments       Payment[]
-  invoices       Invoice[]
-  escrows        Escrow[]
-  refunds        Refund[]
-  subscriptions  Subscription[]
-  settlements    Settlement[]
-  paymentLinks   PaymentLink[]
-  webhookDeliveries WebhookDelivery[]
-  apiKeys        ApiKey[]
+  user               User               @relation(fields: [userId], references: [id])
+  payments           Payment[]
+  invoices           Invoice[]
+  escrows            Escrow[]
+  refunds            Refund[]
+  subscriptions      Subscription[]
+  settlements        Settlement[]
+  paymentLinks       PaymentLink[]
+  webhookDeliveries  WebhookDelivery[]
+  apiKeys            ApiKey[]
   analyticsSnapshots AnalyticsSnapshot[]
+  trustlines         Trustline[]
 
   @@unique([userId])
   @@index([status])
@@ -94,60 +95,83 @@ enum MerchantVerificationLevel {
   ENTERPRISE
 }
 
-// ── Wallet ──────────────────────────────────────────────────────────────────
+// ── Wallet (Stellar) ────────────────────────────────────────────────────────
 
 model Wallet {
-  id          String   @id @default(cuid())
-  address     String   @unique
-  publicKey   String
-  userId      String?
-  label       String?
-  isActive    Boolean  @default(true)
-  network     String   @default("testnet")
-  balance     BigInt   @default(0)
-  lastSynced  DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String   @id @default(cuid())
+  publicKey    String   @unique
+  userId       String?
+  label        String?
+  provider     String   @default("freighter")
+  isActive     Boolean  @default(true)
+  network      String   @default("testnet")
+  balance      BigInt   @default(0)
+  lastSynced   DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  @@index([address])
+  @@index([publicKey])
   @@index([userId])
   @@map("wallets")
+}
+
+// ── Trustline ───────────────────────────────────────────────────────────────
+
+model Trustline {
+  id           String   @id @default(cuid())
+  merchantId   String
+  assetCode    String
+  assetIssuer  String
+  accountPublicKey String
+  limit        BigInt
+  balance      BigInt   @default(0)
+  isAuthorized Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  merchant Merchant @relation(fields: [merchantId], references: [id])
+
+  @@unique([accountPublicKey, assetCode, assetIssuer])
+  @@index([merchantId])
+  @@index([accountPublicKey])
+  @@map("trustlines")
 }
 
 // ── Payment ─────────────────────────────────────────────────────────────────
 
 model Payment {
-  id               String        @id @default(cuid())
-  paymentId        String        @unique
-  merchantId       String
-  customerId       String?
-  amount           BigInt
-  currency         String        @default("TON")
-  status           PaymentStatus @default(PENDING)
-  description      String?
-  payerAddress     String?
-  recipientAddress String
-  memo             String?
-  txHash           String?       @unique
-  blockHeight      Int?
-  confirmedAt      DateTime?
-  completedAt      DateTime?
-  expiresAt        DateTime
-  isExpired        Boolean       @default(false)
-  metadata         Json          @default("{}")
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+  id                  String        @id @default(cuid())
+  paymentId           String        @unique
+  merchantId          String
+  customerId          String?
+  amount              BigInt
+  assetCode           String        @default("XLM")
+  assetIssuer         String        @default("native")
+  status              PaymentStatus @default(PENDING)
+  description         String?
+  payerPublicKey      String?
+  recipientPublicKey  String
+  memo                String?
+  txHash              String?       @unique
+  ledgerSequence      Int?
+  confirmedAt         DateTime?
+  completedAt         DateTime?
+  expiresAt           DateTime
+  isExpired           Boolean       @default(false)
+  metadata            Json          @default("{}")
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
 
-  merchant       Merchant       @relation(fields: [merchantId], references: [id])
-  refunds        Refund[]
-  invoices       Invoice[]
+  merchant            Merchant       @relation(fields: [merchantId], references: [id])
+  refunds             Refund[]
+  invoices            Invoice[]
   subscriptionPayments SubscriptionPayment[]
 
   @@index([paymentId])
   @@index([merchantId])
   @@index([status])
   @@index([txHash])
-  @@index([payerAddress])
+  @@index([payerPublicKey])
   @@index([createdAt])
   @@map("payments")
 }
@@ -167,20 +191,21 @@ enum PaymentStatus {
 // ── Payment Link ────────────────────────────────────────────────────────────
 
 model PaymentLink {
-  id              String   @id @default(cuid())
-  merchantId      String
-  url             String   @unique
-  code            String   @unique
-  amount          BigInt
-  currency        String   @default("TON")
-  description     String?
-  maxPayments     Int?
-  currentPayments Int      @default(0)
-  expiresAt       DateTime?
-  isActive        Boolean  @default(true)
-  metadata        Json     @default("{}")
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id               String   @id @default(cuid())
+  merchantId       String
+  url              String   @unique
+  code             String   @unique
+  amount           BigInt
+  assetCode        String   @default("XLM")
+  assetIssuer      String   @default("native")
+  description      String?
+  maxPayments      Int?
+  currentPayments  Int      @default(0)
+  expiresAt        DateTime?
+  isActive         Boolean  @default(true)
+  metadata         Json     @default("{}")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   merchant Merchant @relation(fields: [merchantId], references: [id])
 
@@ -197,7 +222,8 @@ model Invoice {
   merchantId    String
   customerId    String?
   amount        BigInt
-  currency      String        @default("TON")
+  assetCode     String        @default("XLM")
+  assetIssuer   String        @default("native")
   status        InvoiceStatus @default(DRAFT)
   dueDate       DateTime
   paidAmount    BigInt?
@@ -253,7 +279,8 @@ model Escrow {
   merchantId       String
   customerId       String
   amount           BigInt
-  currency         String       @default("TON")
+  assetCode        String       @default("XLM")
+  assetIssuer      String       @default("native")
   status           EscrowStatus @default(CREATED)
   contractAddress  String
   txHash           String?
@@ -276,14 +303,14 @@ model Escrow {
 }
 
 model Milestone {
-  id           String          @id @default(cuid())
-  escrowId     String
-  index        Int
-  description  String
-  amount       BigInt
-  status       MilestoneStatus @default(PENDING)
-  completedAt  DateTime?
-  releasedAt   DateTime?
+  id            String          @id @default(cuid())
+  escrowId      String
+  index         Int
+  description   String
+  amount        BigInt
+  status        MilestoneStatus @default(PENDING)
+  completedAt   DateTime?
+  releasedAt    DateTime?
   releaseTxHash String?
 
   escrow Escrow @relation(fields: [escrowId], references: [id], onDelete: Cascade)
@@ -320,7 +347,8 @@ model Refund {
   merchantId     String
   amount         BigInt
   originalAmount BigInt
-  currency       String       @default("TON")
+  assetCode      String       @default("XLM")
+  assetIssuer    String       @default("native")
   status         RefundStatus @default(REQUESTED)
   reason         String
   isPartial      Boolean      @default(false)
@@ -352,26 +380,27 @@ enum RefundStatus {
 // ── Subscription ────────────────────────────────────────────────────────────
 
 model Subscription {
-  id               String             @id @default(cuid())
-  subscriptionId   String             @unique
-  merchantId       String
-  customerId       String
-  planName         String
-  amount           BigInt
-  currency         String             @default("TON")
-  interval         BillingInterval    @default(MONTHLY)
-  status           SubscriptionStatus @default(ACTIVE)
-  trialEndDate     DateTime?
+  id                 String             @id @default(cuid())
+  subscriptionId     String             @unique
+  merchantId         String
+  customerId         String
+  planName           String
+  amount             BigInt
+  assetCode          String             @default("XLM")
+  assetIssuer        String             @default("native")
+  interval           BillingInterval    @default(MONTHLY)
+  status             SubscriptionStatus @default(ACTIVE)
+  trialEndDate       DateTime?
   currentPeriodStart DateTime
   currentPeriodEnd   DateTime
-  nextBillingDate  DateTime
-  maxPayments      Int?
-  paymentsMade     Int                @default(0)
-  lastPaymentId    String?
-  cancelledAt      DateTime?
-  metadata         Json               @default("{}")
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
+  nextBillingDate    DateTime
+  maxPayments        Int?
+  paymentsMade       Int                @default(0)
+  lastPaymentId      String?
+  cancelledAt        DateTime?
+  metadata           Json               @default("{}")
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
 
   merchant  Merchant             @relation(fields: [merchantId], references: [id])
   payments  SubscriptionPayment[]
@@ -422,23 +451,24 @@ enum SubscriptionStatus {
 // ── Settlement ──────────────────────────────────────────────────────────────
 
 model Settlement {
-  id                String           @id @default(cuid())
-  settlementId      String           @unique
-  merchantId        String
-  amount            BigInt
-  currency          String           @default("TON")
-  feeAmount         BigInt
-  netAmount         BigInt
-  status            SettlementStatus @default(PENDING)
-  paymentIds        String[]
-  txHash            String?          @unique
-  settlementAddress String
-  periodStart       DateTime
-  periodEnd         DateTime
-  processedAt       DateTime?
-  metadata          Json             @default("{}")
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
+  id                  String           @id @default(cuid())
+  settlementId        String           @unique
+  merchantId          String
+  amount              BigInt
+  assetCode           String           @default("XLM")
+  assetIssuer         String           @default("native")
+  feeAmount           BigInt
+  netAmount           BigInt
+  status              SettlementStatus @default(PENDING)
+  paymentIds          String[]
+  txHash              String?          @unique
+  settlementPublicKey String
+  periodStart         DateTime
+  periodEnd           DateTime
+  processedAt         DateTime?
+  metadata            Json             @default("{}")
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
 
   merchant Merchant @relation(fields: [merchantId], references: [id])
 
@@ -459,19 +489,20 @@ enum SettlementStatus {
 // ── Treasury ────────────────────────────────────────────────────────────────
 
 model TreasuryTransaction {
-  id            String         @id @default(cuid())
-  txType        TreasuryTxType
-  amount        BigInt
-  currency      String         @default("TON")
-  fromAddress   String?
-  toAddress     String?
-  txHash        String?        @unique
-  status        TreasuryTxStatus @default(PENDING)
-  referenceId   String?
-  referenceType String?
-  metadata      Json           @default("{}")
-  createdAt     DateTime       @default(now())
-  completedAt   DateTime?
+  id             String          @id @default(cuid())
+  txType         TreasuryTxType
+  amount         BigInt
+  assetCode      String          @default("XLM")
+  assetIssuer    String          @default("native")
+  fromPublicKey  String?
+  toPublicKey    String?
+  txHash         String?         @unique
+  status         TreasuryTxStatus @default(PENDING)
+  referenceId    String?
+  referenceType  String?
+  metadata       Json            @default("{}")
+  createdAt      DateTime        @default(now())
+  completedAt    DateTime?
 
   @@index([txType])
   @@index([status])
@@ -618,17 +649,17 @@ model AuditLog {
 // ── Analytics ───────────────────────────────────────────────────────────────
 
 model AnalyticsSnapshot {
-  id              String   @id @default(cuid())
-  merchantId      String
-  totalPayments   Int      @default(0)
-  totalVolume     BigInt   @default(0)
-  successCount    Int      @default(0)
-  failedCount     Int      @default(0)
-  refundCount     Int      @default(0)
-  refundVolume    BigInt   @default(0)
-  dailySnapshot   DateTime
-  currencyBreakdown Json   @default("{}")
-  createdAt       DateTime @default(now())
+  id               String   @id @default(cuid())
+  merchantId       String
+  totalPayments    Int      @default(0)
+  totalVolume      BigInt   @default(0)
+  successCount     Int      @default(0)
+  failedCount      Int      @default(0)
+  refundCount      Int      @default(0)
+  refundVolume     BigInt   @default(0)
+  dailySnapshot    DateTime
+  assetBreakdown   Json     @default("{}")
+  createdAt        DateTime @default(now())
 
   merchant Merchant @relation(fields: [merchantId], references: [id])
 
