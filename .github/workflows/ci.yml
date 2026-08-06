@@ -44,6 +44,23 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
 
+  contracts:
+    name: Contracts (Soroban)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.77
+          target: wasm32-unknown-unknown
+      - name: Clippy
+        run: cargo clippy --manifest-path packages/contracts/Cargo.toml -- -D warnings
+      - name: Test
+        run: cargo test --manifest-path packages/contracts/Cargo.toml
+      - name: Build
+        run: cargo build --manifest-path packages/contracts/Cargo.toml --target wasm32-unknown-unknown --release
+
   test:
     name: Test
     runs-on: ubuntu-latest

@@ -1,5 +1,5 @@
 # =============================================================================
-# EPay Blockchain Indexer — Multi-Stage Dockerfile
+# EPay Stellar Blockchain Indexer — Multi-Stage Dockerfile
 # =============================================================================
 # Build:  docker build -f infra/docker/Dockerfile.indexer -t epay-indexer .
 # Run:    docker run --env-file .env epay-indexer

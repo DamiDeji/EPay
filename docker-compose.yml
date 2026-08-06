@@ -1,7 +1,7 @@
 version: "3.8"
 
 # =============================================================================
-# EPay — Docker Compose
+# EPay — Docker Compose (Stellar Network)
 # =============================================================================
 # Start:  docker compose up -d
 # Stop:   docker compose down
@@ -91,9 +91,9 @@ services:
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
       JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-7d}
-      TON_ENDPOINT: ${TON_ENDPOINT:-https://testnet.toncenter.com/api/v2/jsonRPC}
-      TON_NETWORK: ${TON_NETWORK:-testnet}
-      TON_API_KEY: ${TON_API_KEY:-}
+      STELLAR_NETWORK: ${STELLAR_NETWORK:-testnet}
+      STELLAR_HORIZON_URL: ${STELLAR_HORIZON_URL:-https://horizon-testnet.stellar.org}
+      STELLAR_SOROBAN_RPC_URL: ${STELLAR_SOROBAN_RPC_URL:-https://soroban-testnet.stellar.org}
       LOG_LEVEL: ${LOG_LEVEL:-info}
     ports:
       - "${API_PORT:-4000}:4000"
@@ -122,6 +122,7 @@ services:
       NODE_ENV: production
       PORT: "3000"
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://api:4000}
+      NEXT_PUBLIC_STELLAR_NETWORK: ${STELLAR_NETWORK:-testnet}
     ports:
       - "${WEB_PORT:-3000}:3000"
     networks:
@@ -144,6 +145,7 @@ services:
       NODE_ENV: production
       PORT: "3001"
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://api:4000}
+      NEXT_PUBLIC_STELLAR_NETWORK: ${STELLAR_NETWORK:-testnet}
     ports:
       - "${MERCHANT_PORT:-3001}:3001"
     networks:
@@ -166,12 +168,13 @@ services:
       NODE_ENV: production
       PORT: "3002"
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://api:4000}
+      NEXT_PUBLIC_STELLAR_NETWORK: ${STELLAR_NETWORK:-testnet}
     ports:
       - "${ADMIN_PORT:-3002}:3002"
     networks:
       - epay-network
 
-  # ── Blockchain Indexer ────────────────────────────────────────────────────
+  # ── Stellar Blockchain Indexer ────────────────────────────────────────────
   indexer:
     build:
       context: .
@@ -187,13 +190,13 @@ services:
       NODE_ENV: production
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-epay}
       REDIS_URL: redis://redis:6379
-      TON_ENDPOINT: ${TON_ENDPOINT:-https://testnet.toncenter.com/api/v2/jsonRPC}
-      TON_NETWORK: ${TON_NETWORK:-testnet}
-      TON_API_KEY: ${TON_API_KEY:-}
+      STELLAR_NETWORK: ${STELLAR_NETWORK:-testnet}
+      STELLAR_HORIZON_URL: ${STELLAR_HORIZON_URL:-https://horizon-testnet.stellar.org}
+      STELLAR_SOROBAN_RPC_URL: ${STELLAR_SOROBAN_RPC_URL:-https://soroban-testnet.stellar.org}
       LOG_LEVEL: ${LOG_LEVEL:-info}
       INDEXER_POLL_INTERVAL_MS: "10000"
       INDEXER_BATCH_SIZE: "100"
-      INDEXER_CONFIRMATION_BLOCKS: "20"
+      INDEXER_CONFIRMATION_LEDGERS: "12"
       INDEXER_REALTIME_ENABLED: "true"
       INDEXER_HISTORICAL_ENABLED: "true"
     networks:

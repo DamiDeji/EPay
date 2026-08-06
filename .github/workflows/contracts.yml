@@ -1,4 +1,4 @@
-name: Smart Contract CI
+name: Contracts
 
 on:
   push:
@@ -9,26 +9,81 @@ on:
     branches: [main]
     paths:
       - 'packages/contracts/**'
+  workflow_dispatch:
 
 jobs:
-  contracts:
-    name: Contract Tests
+  soroban-contracts:
+    name: Soroban Smart Contracts
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
+    strategy:
+      matrix:
+        contract:
+          - payment-router
+          - merchant-registry
+          - escrow-manager
+          - treasury-vault
+          - refund-manager
+          - subscription-manager
+          - invoice-manager
+          - fee-manager
+          - settlement-manager
+          - role-manager
+          - configuration-manager
+          - emergency-pause
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          version: 10
-      - uses: actions/setup-node@v4
+          toolchain: 1.77
+          target: wasm32-unknown-unknown
+          components: clippy, rustfmt
+
+      - name: Format check
+        working-directory: packages/contracts
+        run: cargo fmt --check
+
+      - name: Clippy
+        working-directory: packages/contracts
+        run: cargo clippy -p ${{ matrix.contract }} -- -D warnings
+
+      - name: Test
+        working-directory: packages/contracts
+        run: cargo test -p ${{ matrix.contract }}
+
+      - name: Build (wasm)
+        working-directory: packages/contracts
+        run: cargo build -p ${{ matrix.contract }} --target wasm32-unknown-unknown --release
+
+  optimize:
+    name: Optimize WASM
+    needs: soroban-contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
         with:
-          node-version: 22
-          cache: 'pnpm'
-      - run: pnpm install --frozen-lockfile
-      - name: Build contracts
-        run: pnpm --filter @epay/contracts build
-      - name: Run contract tests
-        run: pnpm --filter @epay/contracts test:coverage
-      - name: Run slither analysis
-        uses: crytic/slither-action@v0.4.0
-        continue-on-error: true
+          toolchain: 1.77
+          target: wasm32-unknown-unknown
+
+      - name: Install soroban-cli
+        run: cargo install soroban-cli
+
+      - name: Build all contracts
+        working-directory: packages/contracts
+        run: cargo build --target wasm32-unknown-unknown --release
+
+      - name: Optimize WASM blobs
+        working-directory: packages/contracts
+        run: |
+          mkdir -p optimized
+          for wasm in target/wasm32-unknown-unknown/release/*.wasm; do
+            name=$(basename "$wasm" .wasm)
+            soroban contract optimize --wasm "$wasm" --output "optimized/${name}.optimized.wasm"
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: soroban-wasm
+          path: packages/contracts/optimized/
