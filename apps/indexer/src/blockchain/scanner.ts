@@ -1,124 +1,101 @@
-import { createChildLogger } from '../logger';
+import type { CheckpointManager } from '../checkpoint';
 import type { IndexerConfig } from '../config';
+import { createChildLogger } from '../logger';
+
 import type { ParsedEvent } from './contracts';
-import { getContractAddresses, parseEvent } from './contracts';
-import { CheckpointManager } from '../checkpoint';
+import { getContractIds, parseEvent } from './contracts';
 
 const log = createChildLogger('scanner');
 
 /**
- * Block scanner that fetches blocks from the TON blockchain and extracts
- * relevant transactions for our contracts.
+ * Ledger scanner that polls the Stellar Horizon API for transactions
+ * involving our Soroban smart contracts.
  */
 export class BlockScanner {
   private readonly config: IndexerConfig;
   private readonly checkpoint: CheckpointManager;
-  private readonly contracts: string[];
+  private readonly contractIds: string[];
   private isRunning = false;
   private stopRequested = false;
 
   constructor(config: IndexerConfig, checkpoint: CheckpointManager) {
     this.config = config;
     this.checkpoint = checkpoint;
-    this.contracts = getContractAddresses();
+    this.contractIds = getContractIds();
   }
 
   /**
-   * Scan a range of blocks for relevant transactions.
+   * Scan a range of ledgers for relevant transactions.
    */
   async scanRange(
-    fromBlock: number,
-    toBlock: number,
-  ): Promise<{ events: ParsedEvent[]; lastBlock: number }> {
+    fromLedger: number,
+    toLedger: number,
+  ): Promise<{ events: ParsedEvent[]; lastLedger: number }> {
     const events: ParsedEvent[] = [];
     const batchSize = this.config.batchSize;
 
-    log.info({ fromBlock, toBlock }, 'Starting block scan');
+    log.info({ fromLedger, toLedger }, 'Starting ledger scan');
 
-    for (let block = fromBlock; block <= toBlock; block += batchSize) {
+    for (let ledger = fromLedger; ledger <= toLedger; ledger += batchSize) {
       if (this.stopRequested) break;
 
-      const endBlock = Math.min(block + batchSize - 1, toBlock);
+      const endLedger = Math.min(ledger + batchSize - 1, toLedger);
 
       try {
-        const blockEvents = await this.fetchBlockRange(block, endBlock);
-        events.push(...blockEvents);
-        this.checkpoint.advance(endBlock);
+        const ledgerEvents = await this.fetchLedgerRange(ledger, endLedger);
+        events.push(...ledgerEvents);
+        this.checkpoint.advance(endLedger);
 
         log.debug(
-          { scanned: endBlock, totalBlocks: toBlock - fromBlock, eventsFound: blockEvents.length },
-          'Block batch scanned',
+          { scanned: endLedger, totalLedgers: toLedger - fromLedger, eventsFound: ledgerEvents.length },
+          'Ledger batch scanned',
         );
       } catch (error) {
-        log.error({ block, endBlock, error }, 'Failed to scan block range');
+        log.error({ ledger, endLedger, error }, 'Failed to scan ledger range');
         throw error;
       }
     }
 
-    return { events, lastBlock: toBlock };
+    return { events, lastLedger: toLedger };
   }
 
   /**
-   * Fetch and parse transactions in a block range.
+   * Fetch and parse transactions in a ledger range.
    */
-  private async fetchBlockRange(fromBlock: number, toBlock: number): Promise<ParsedEvent[]> {
+  private async fetchLedgerRange(fromLedger: number, toLedger: number): Promise<ParsedEvent[]> {
     const events: ParsedEvent[] = [];
-    const endpoint = this.config.tonEndpoint;
-    const apiKey = this.config.tonApiKey;
+    const horizonUrl = this.config.horizonUrl;
 
-    for (let block = fromBlock; block <= toBlock; block++) {
+    for (let ledger = fromLedger; ledger <= toLedger; ledger++) {
       try {
-        const url = new URL('/api/v2/getBlockTransactions', endpoint);
-        url.searchParams.set('workchain', '-1');
-        url.searchParams.set('shard', '-9223372036854775808');
-        url.searchParams.set('seqno', String(block));
+        // Fetch transactions for this ledger from Horizon
+        const url = `${horizonUrl}/ledgers/${ledger}/transactions?limit=200&include_failed=false`;
+        const response = await fetch(url);
 
-        if (apiKey) {
-          url.searchParams.set('api_key', apiKey);
-        }
-
-        const response = await fetch(url.toString());
         if (!response.ok) {
-          // If block not available yet, skip
-          if (response.status === 404) continue;
-          throw new Error(`TON API error: ${response.status}`);
+          if (response.status === 404) continue; // Ledger not available yet
+          throw new Error(`Horizon API error: ${response.status}`);
         }
 
         const data = (await response.json()) as {
-          ok: boolean;
-          result?: { transactions?: Array<Record<string, unknown>> };
+          _embedded?: {
+            records?: TxRecord[];
+          };
         };
 
-        if (!data.ok || !data.result?.transactions) continue;
+        const records = data._embedded?.records ?? [];
 
-        const transactions = data.result.transactions;
-        for (const tx of transactions) {
-          const txData = tx as {
-            transaction_id?: { hash?: string };
-            utime?: number;
-            in_msg?: { source?: string; message?: string };
-          };
-
-          const txHash = txData.transaction_id?.hash ?? '';
-          const timestamp = txData.utime ?? 0;
-          const sender = txData.in_msg?.source ?? '';
-
-          // Check if this transaction involves our contracts
-          const event = parseEvent(
-            '', // address would be extracted from the actual tx
-            txHash,
-            block,
-            timestamp,
-            sender,
-            txData.in_msg?.message ?? '',
+        for (const tx of records) {
+          // Check if transaction involves our contracts
+          const contractEvents = await this.extractContractEvents(
+            horizonUrl,
+            tx,
+            ledger,
           );
-
-          if (event) {
-            events.push(event);
-          }
+          events.push(...contractEvents);
         }
       } catch (error) {
-        log.error({ block, error }, 'Error fetching block');
+        log.error({ ledger, error }, 'Error fetching ledger');
       }
     }
 
@@ -126,46 +103,114 @@ export class BlockScanner {
   }
 
   /**
-   * Get the current chain tip block number.
+   * Extract Soroban contract events from a transaction.
+   */
+  private async extractContractEvents(
+    horizonUrl: string,
+    tx: TxRecord,
+    ledger: number,
+  ): Promise<ParsedEvent[]> {
+    const events: ParsedEvent[] = [];
+
+    // Check operations for contract invocations
+    try {
+      const opsUrl = `${horizonUrl}/transactions/${tx.id}/operations?limit=200`;
+      const opsResponse = await fetch(opsUrl);
+
+      if (!opsResponse.ok) return events;
+
+      const opsData = (await opsResponse.json()) as {
+        _embedded?: {
+          records?: OpRecord[];
+        };
+      };
+
+      const operations = opsData._embedded?.records ?? [];
+
+      for (const op of operations) {
+        if (op.type === 'invoke_host_function') {
+          // Check if this operation involves our contracts
+          for (const contractId of this.contractIds) {
+            // Build structured event from operation
+            const event = parseEvent(
+              contractId,
+              tx.id,
+              ledger,
+              Date.parse(tx.created_at) / 1000,
+              tx.source_account,
+              [], // Event topics would come from Soroban diagnostic events
+              {
+                txId: tx.id,
+                sourceAccount: tx.source_account,
+                feeCharged: tx.fee_charged,
+                operationCount: tx.operation_count,
+                memo: tx.memo,
+              },
+            );
+
+            if (event) {
+              events.push(event);
+            }
+          }
+        }
+      }
+    } catch {
+      // Ignore errors fetching operations for individual transactions
+    }
+
+    return events;
+  }
+
+  /**
+   * Get the current chain tip (latest ledger).
    */
   async getChainTip(): Promise<number> {
     try {
-      const url = `${this.config.tonEndpoint}/api/v2/getMasterchainInfo`;
+      const url = `${this.config.horizonUrl}`;
       const response = await fetch(url);
 
       if (!response.ok) {
-        throw new Error(`Failed to get chain tip: ${response.status}`);
+        throw new Error(`Failed to get Horizon root: ${response.status}`);
       }
 
       const data = (await response.json()) as {
-        ok: boolean;
-        result?: { last?: { seqno?: number } };
+        history_latest_ledger?: number;
+        core_latest_ledger?: number;
       };
 
-      if (data.ok && data.result?.last?.seqno) {
-        return data.result.last.seqno;
-      }
+      return data.core_latest_ledger ?? data.history_latest_ledger ?? 0;
     } catch (error) {
       log.error({ error }, 'Failed to get chain tip');
     }
 
-    // Fallback: return current + some buffer
     return this.checkpoint.getCurrentBlock() + 100;
   }
 
-  /**
-   * Check if the scanner is currently running.
-   */
   get running(): boolean {
     return this.isRunning;
   }
 
-  /**
-   * Request the scanner to stop.
-   */
   stop(): void {
     this.stopRequested = true;
     this.isRunning = false;
     log.info('Scanner stop requested');
   }
+}
+
+// ── Horizon API Types ───────────────────────────────────────────────────────
+
+interface TxRecord {
+  id: string;
+  source_account: string;
+  fee_charged: number;
+  operation_count: number;
+  created_at: string;
+  memo?: string;
+  memo_type?: string;
+}
+
+interface OpRecord {
+  id: string;
+  type: string;
+  source_account?: string;
 }

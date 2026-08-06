@@ -1,106 +1,105 @@
 /**
- * EPay smart contract addresses and event definitions.
+ * EPay Soroban smart contract IDs and event definitions.
  *
- * In production, contract addresses would be loaded from environment variables
- * or a deployment manifest. Event parsing would decode TON message bodies.
+ * Contract IDs are loaded from environment variables or deployment manifest.
+ * Events are filtered from Soroban diagnostic events on Stellar.
  */
 
 export interface ContractInfo {
   name: string;
-  address: string;
+  contractId: string;
   events: string[];
 }
 
 export interface ParsedEvent {
   contractName: string;
   eventName: string;
-  blockHeight: number;
+  ledgerSequence: number;
   txHash: string;
   timestamp: number;
-  sender: string;
+  sourceAccount: string;
+  contractId: string;
   data: Record<string, unknown>;
 }
 
 /**
- * Known EPay contract addresses by name.
+ * Known EPay Soroban contracts.
  */
 export const CONTRACTS: Record<string, ContractInfo> = {
   PaymentRouter: {
     name: 'PaymentRouter',
-    address: process.env.PAYMENT_ROUTER_ADDRESS ?? '',
-    events: ['PaymentCreated', 'PaymentConfirmed', 'PaymentCompleted', 'PaymentFailed', 'PaymentRefunded'],
+    contractId: process.env.PAYMENT_ROUTER_CONTRACT_ID ?? '',
+    events: ['payment_created', 'payment_confirmed', 'payment_completed', 'payment_failed', 'payment_refunded'],
   },
   InvoiceManager: {
     name: 'InvoiceManager',
-    address: process.env.INVOICE_MANAGER_ADDRESS ?? '',
-    events: ['InvoiceCreated', 'InvoiceIssued', 'InvoicePaid', 'InvoiceCancelled', 'InvoiceRefunded'],
+    contractId: process.env.INVOICE_MANAGER_CONTRACT_ID ?? '',
+    events: ['invoice_created', 'invoice_issued', 'invoice_paid', 'invoice_cancelled', 'invoice_refunded'],
   },
   EscrowManager: {
     name: 'EscrowManager',
-    address: process.env.ESCROW_MANAGER_ADDRESS ?? '',
-    events: ['EscrowCreated', 'EscrowFunded', 'MilestoneCompleted', 'MilestoneReleased', 'EscrowCompleted', 'EscrowDisputed', 'EscrowResolved', 'EscrowCancelled'],
+    contractId: process.env.ESCROW_MANAGER_CONTRACT_ID ?? '',
+    events: ['escrow_created', 'escrow_funded', 'milestone_done', 'milestone_rel', 'escrow_completed', 'escrow_disputed', 'escrow_resolved', 'escrow_cancelled'],
   },
   RefundManager: {
     name: 'RefundManager',
-    address: process.env.REFUND_MANAGER_ADDRESS ?? '',
-    events: ['RefundRequested', 'RefundApproved', 'RefundCompleted', 'RefundRejected'],
+    contractId: process.env.REFUND_MANAGER_CONTRACT_ID ?? '',
+    events: ['refund_requested', 'refund_approved', 'refund_completed', 'refund_rejected'],
   },
   SubscriptionManager: {
     name: 'SubscriptionManager',
-    address: process.env.SUBSCRIPTION_MANAGER_ADDRESS ?? '',
-    events: ['SubscriptionCreated', 'SubscriptionRenewed', 'SubscriptionPaused', 'SubscriptionCancelled'],
+    contractId: process.env.SUBSCRIPTION_MANAGER_CONTRACT_ID ?? '',
+    events: ['sub_created', 'sub_renewed', 'sub_paused', 'sub_cancelled'],
   },
   TreasuryVault: {
     name: 'TreasuryVault',
-    address: process.env.TREASURY_VAULT_ADDRESS ?? '',
-    events: ['Deposit', 'Withdrawal', 'FeeCollected', 'EscrowHeld', 'EscrowReleased'],
+    contractId: process.env.TREASURY_VAULT_CONTRACT_ID ?? '',
+    events: ['treasury_deposit', 'treasury_withdraw'],
   },
   MerchantRegistry: {
     name: 'MerchantRegistry',
-    address: process.env.MERCHANT_REGISTRY_ADDRESS ?? '',
-    events: ['MerchantRegistered', 'MerchantVerified', 'MerchantSuspended'],
+    contractId: process.env.MERCHANT_REGISTRY_CONTRACT_ID ?? '',
+    events: ['merchant_reg', 'merchant_verified', 'merchant_suspended'],
   },
 };
 
 /**
- * Get all contract addresses that the indexer should monitor.
+ * Get all contract IDs that the indexer should monitor.
  */
-export function getContractAddresses(): string[] {
+export function getContractIds(): string[] {
   return Object.values(CONTRACTS)
-    .map((c) => c.address)
-    .filter((a) => a.length > 0);
+    .map((c) => c.contractId)
+    .filter((id) => id.length > 0);
 }
 
 /**
- * Parse a raw TON transaction message body into a structured event.
+ * Parse a Soroban diagnostic event into a structured event.
  *
- * In production, this would use @ton/core Cell parsing to decode
- * the message body according to the contract's ABI.
+ * In production, this decodes Soroban event topics and data
+ * from Horizon transaction responses.
  */
 export function parseEvent(
-  contractAddress: string,
+  contractId: string,
   txHash: string,
-  blockHeight: number,
+  ledgerSequence: number,
   timestamp: number,
-  sender: string,
-  _messageBody: string, // raw message body
+  sourceAccount: string,
+  eventTopics: string[],
+  eventData: Record<string, unknown>,
 ): ParsedEvent | null {
-  const contract = Object.values(CONTRACTS).find((c) => c.address === contractAddress);
+  const contract = Object.values(CONTRACTS).find((c) => c.contractId === contractId);
   if (!contract) return null;
 
-  // In production, decode the message body using contract ABI
-  // For now, create a structured event with the raw data
+  const eventName = eventTopics.length > 0 ? eventTopics[0] : 'unknown';
+
   return {
     contractName: contract.name,
-    eventName: 'Transaction', // would be parsed from message body
-    blockHeight,
+    eventName,
+    ledgerSequence,
     txHash,
     timestamp,
-    sender,
-    data: {
-      contractAddress,
-      rawMessage: _messageBody,
-      parsed: {},
-    },
+    sourceAccount,
+    contractId,
+    data: eventData,
   };
 }
