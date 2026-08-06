@@ -59,7 +59,7 @@ describe('xlmToStroops', () => {
 
 describe('isValidStellarPublicKey', () => {
   it('should accept valid G... address', () => {
-    expect(isValidStellarPublicKey('GABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234')).toBe(true);
+    expect(isValidStellarPublicKey('GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')).toBe(true);
   });
 
   it('should reject short addresses', () => {
@@ -77,13 +77,13 @@ describe('isValidStellarPublicKey', () => {
 
 describe('formatStellarAddress', () => {
   it('should truncate Stellar address', () => {
-    const addr = 'GABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234';
-    expect(formatStellarAddress(addr)).toBe('GABCDEF1...1234');
+    const addr = 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+    expect(formatStellarAddress(addr)).toBe('GAAAAAAA...AAAA');
   });
 
   it('should use custom prefix/suffix', () => {
-    const addr = 'GABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234';
-    expect(formatStellarAddress(addr, 12, 6)).toBe('GABCDEF12345...EF1234');
+    const addr = 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+    expect(formatStellarAddress(addr, 12, 6)).toBe('GAAAAAAAAAAA...AAAAAA');
   });
 
   it('should return short address as-is', () => {
@@ -100,10 +100,10 @@ describe('getExplorerUrl', () => {
   });
 
   it('should return public account URL', () => {
-    const url = getExplorerUrl('account', 'GABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234', StellarNetwork.PUBLIC);
+    const url = getExplorerUrl('account', 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', StellarNetwork.PUBLIC);
     expect(url).toContain('stellar.expert');
     expect(url).toContain('public');
-    expect(url).toContain('GABCDEF');
+    expect(url).toContain('GAAAAAA');
   });
 
   it('should default to testnet', () => {

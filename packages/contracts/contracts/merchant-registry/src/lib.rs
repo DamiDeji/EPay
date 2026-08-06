@@ -3,10 +3,12 @@
 
 #![no_std]
 
-use soroban_sdk::{contract, contractimpl, contracttype, Address, Env, String, Symbol, Map};
+use soroban_sdk::{
+    contract, contractimpl, contracttype, symbol_short, Address, Env, String, Symbol,
+};
 
-const OWNER_KEY: Symbol = Symbol::short("owner");
-const NEXT_ID_KEY: Symbol = Symbol::short("next_id");
+const OWNER_KEY: Symbol = symbol_short!("owner");
+const NEXT_ID_KEY: Symbol = symbol_short!("next_id");
 
 #[contracttype]
 #[derive(Clone, Debug, PartialEq)]
@@ -45,15 +47,6 @@ pub struct MerchantData {
     pub is_active: bool,
 }
 
-#[contracttype]
-pub enum MerchantEvent {
-    Registered { merchant_id: u64, owner: Address, business_name: String },
-    Verified { merchant_id: u64, level: VerificationLevel },
-    Suspended { merchant_id: u64, reason: String },
-    Reactivated { merchant_id: u64 },
-    Updated { merchant_id: u64 },
-}
-
 #[contract]
 pub struct MerchantRegistry;
 
@@ -65,8 +58,9 @@ impl MerchantRegistry {
         }
         env.storage().instance().set(&OWNER_KEY, &owner);
         env.storage().instance().set(&NEXT_ID_KEY, &1u64);
-        // Owner is also a verifier
-        env.storage().instance().set(&Symbol::short("verifier"), &true);
+        env.storage()
+            .instance()
+            .set(&symbol_short!("verifier"), &true);
     }
 
     pub fn register_merchant(
@@ -78,17 +72,16 @@ impl MerchantRegistry {
         business_url: Option<String>,
         webhook_url: Option<String>,
     ) -> u64 {
-        // Check if address already registered
-        let addr_key = Symbol::short("addr");
+        let addr_key = symbol_short!("addr");
+        let addr_key2 = symbol_short!("addr");
         if env.storage().persistent().has(&(addr_key, owner.clone())) {
-            panic!("Address already registered as merchant");
+            panic!("Address already registered");
         }
-
         let merchant_id: u64 = env.storage().instance().get(&NEXT_ID_KEY).unwrap_or(1);
-        env.storage().instance().set(&NEXT_ID_KEY, &(merchant_id + 1));
-
+        env.storage()
+            .instance()
+            .set(&NEXT_ID_KEY, &(merchant_id + 1));
         let now = env.ledger().timestamp();
-
         let merchant = MerchantData {
             merchant_id,
             owner: owner.clone(),
@@ -104,142 +97,84 @@ impl MerchantRegistry {
             updated_at: now,
             is_active: false,
         };
-
         env.storage().persistent().set(&merchant_id, &merchant);
-        env.storage().persistent().set(&(addr_key, owner.clone()), &merchant_id);
-
-        env.events().publish(
-            (Symbol::short("merchant_reg"),),
-            MerchantEvent::Registered {
-                merchant_id,
-                owner,
-                business_name,
-            },
-        );
-
+        env.storage()
+            .persistent()
+            .set(&(addr_key2, owner.clone()), &merchant_id);
+        env.events()
+            .publish((Symbol::new(&env, "merchant_reg"),), (merchant_id,));
         merchant_id
     }
 
     pub fn verify_merchant(env: Env, verifier: Address, merchant_id: u64) {
         Self::require_verifier(&env, &verifier);
-
         let mut merchant: MerchantData = env
             .storage()
             .persistent()
             .get(&merchant_id)
             .unwrap_or_else(|| panic!("Merchant not found"));
-
         if merchant.status != MerchantStatus::Pending {
-            panic!("Merchant not in pending state");
+            panic!("Merchant not pending");
         }
-
         merchant.status = MerchantStatus::Active;
         merchant.verification_level = VerificationLevel::Verified;
         merchant.is_active = true;
         merchant.updated_at = env.ledger().timestamp();
-
         env.storage().persistent().set(&merchant_id, &merchant);
-
-        env.events().publish(
-            (Symbol::short("merchant_verified"),),
-            MerchantEvent::Verified {
-                merchant_id,
-                level: VerificationLevel::Verified,
-            },
-        );
+        env.events()
+            .publish((Symbol::new(&env, "merchant_verified"),), (merchant_id,));
     }
 
-    pub fn suspend_merchant(env: Env, admin: Address, merchant_id: u64, reason: String) {
+    pub fn suspend_merchant(env: Env, admin: Address, merchant_id: u64) {
         Self::require_verifier(&env, &admin);
-
         let mut merchant: MerchantData = env
             .storage()
             .persistent()
             .get(&merchant_id)
             .unwrap_or_else(|| panic!("Merchant not found"));
-
         if merchant.status != MerchantStatus::Active {
-            panic!("Can only suspend active merchants");
+            panic!("Can only suspend active");
         }
-
         merchant.status = MerchantStatus::Suspended;
         merchant.is_active = false;
         merchant.updated_at = env.ledger().timestamp();
-
         env.storage().persistent().set(&merchant_id, &merchant);
-
-        env.events().publish(
-            (Symbol::short("merchant_suspended"),),
-            MerchantEvent::Suspended {
-                merchant_id,
-                reason,
-            },
-        );
+        env.events()
+            .publish((Symbol::new(&env, "merchant_suspended"),), (merchant_id,));
     }
 
     pub fn reactivate_merchant(env: Env, admin: Address, merchant_id: u64) {
         Self::require_verifier(&env, &admin);
-
         let mut merchant: MerchantData = env
             .storage()
             .persistent()
             .get(&merchant_id)
             .unwrap_or_else(|| panic!("Merchant not found"));
-
         if merchant.status != MerchantStatus::Suspended {
-            panic!("Merchant not suspended");
+            panic!("Not suspended");
         }
-
         merchant.status = MerchantStatus::Active;
         merchant.is_active = true;
         merchant.updated_at = env.ledger().timestamp();
-
         env.storage().persistent().set(&merchant_id, &merchant);
-
-        env.events().publish(
-            (Symbol::short("merchant_reactivated"),),
-            MerchantEvent::Reactivated { merchant_id },
-        );
+        env.events()
+            .publish((Symbol::new(&env, "merchant_react"),), (merchant_id,));
     }
-
-    pub fn update_fee_bps(env: Env, merchant_addr: Address, fee_bps: u32) {
-        let addr_key = Symbol::short("addr");
-        let merchant_id: u64 = env
-            .storage()
-            .persistent()
-            .get(&(addr_key, merchant_addr.clone()))
-            .unwrap_or_else(|| panic!("Merchant not found"));
-
-        let mut merchant: MerchantData = env
-            .storage()
-            .persistent()
-            .get(&merchant_id)
-            .unwrap();
-
-        if fee_bps > 500 {
-            panic!("Fee too high (max 5%)");
-        }
-
-        merchant.fee_bps = fee_bps;
-        merchant.updated_at = env.ledger().timestamp();
-        env.storage().persistent().set(&merchant_id, &merchant);
-    }
-
-    // ── View Functions ──────────────────────────────────────────────────────
 
     pub fn get_merchant(env: Env, merchant_id: u64) -> Option<MerchantData> {
         env.storage().persistent().get(&merchant_id)
     }
 
     pub fn get_merchant_by_address(env: Env, address: Address) -> Option<MerchantData> {
-        let addr_key = Symbol::short("addr");
-        let merchant_id: Option<u64> = env.storage().persistent().get(&(addr_key, address));
-        merchant_id.and_then(|id| env.storage().persistent().get(&id))
+        let addr_key = symbol_short!("addr");
+        let id: Option<u64> = env.storage().persistent().get(&(addr_key, address));
+        id.and_then(|i| env.storage().persistent().get(&i))
     }
 
     pub fn is_merchant(env: Env, address: Address) -> bool {
-        let addr_key = Symbol::short("addr");
-        env.storage().persistent().has(&(addr_key, address))
+        env.storage()
+            .persistent()
+            .has(&(symbol_short!("addr"), address))
     }
 
     pub fn is_merchant_active(env: Env, address: Address) -> bool {
@@ -248,21 +183,16 @@ impl MerchantRegistry {
             .unwrap_or(false)
     }
 
-    pub fn get_merchant_count(env: Env) -> u64 {
-        let next: u64 = env.storage().instance().get(&NEXT_ID_KEY).unwrap_or(1);
-        next.saturating_sub(1)
-    }
-
-    // ── Helpers ─────────────────────────────────────────────────────────────
-
     fn require_verifier(env: &Env, addr: &Address) {
         let owner: Address = env.storage().instance().get(&OWNER_KEY).unwrap();
         if *addr != owner {
-            // Check if address is in verifier set
-            let verifier_key = Symbol::short("verifiers");
-            let has: bool = env.storage().persistent().get(&(verifier_key, addr.clone())).unwrap_or(false);
+            let has: bool = env
+                .storage()
+                .persistent()
+                .get(&(symbol_short!("verifiers"), addr.clone()))
+                .unwrap_or(false);
             if !has {
-                panic!("Not authorized to verify merchants");
+                panic!("Not authorized");
             }
         }
     }

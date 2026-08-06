@@ -12,9 +12,9 @@ describe('WalletClient', () => {
 
   describe('generateAuthMessage', () => {
     it('should generate a message with publicKey and nonce', () => {
-      const msg = wallet.generateAuthMessage('GABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234');
+      const msg = wallet.generateAuthMessage('GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA');
       expect(msg).toContain('EPay Authentication');
-      expect(msg).toContain('GABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234');
+      expect(msg).toContain('GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA');
       expect(msg).toContain('Nonce:');
       expect(msg).toContain('Network: testnet');
     });
@@ -23,13 +23,13 @@ describe('WalletClient', () => {
   describe('buildWalletAuth', () => {
     it('should build a valid WalletAuth payload', () => {
       const result = wallet.buildWalletAuth({
-        publicKey: 'GABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234',
+        publicKey: 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
         signature: '0xsignature',
         message: 'test message',
         provider: 'freighter',
       });
 
-      expect(result.publicKey).toBe('GABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234');
+      expect(result.publicKey).toBe('GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA');
       expect(result.signature).toBe('0xsignature');
       expect(result.network).toBe('testnet');
       expect(result.walletProvider).toBe('freighter');
@@ -49,7 +49,7 @@ describe('WalletClient', () => {
 
   describe('validatePublicKey', () => {
     it('should return true for valid Stellar public key', () => {
-      expect(wallet.validatePublicKey('GABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234')).toBe(true);
+      expect(wallet.validatePublicKey('GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')).toBe(true);
     });
 
     it('should return false for invalid public key', () => {
@@ -67,7 +67,7 @@ describe('WalletClient', () => {
       });
       globalThis.fetch = mockFetch as any;
 
-      const balances = await wallet.getBalance('GABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234');
+      const balances = await wallet.getBalance('GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA');
       expect(balances).toHaveLength(1);
       expect(balances[0].assetCode).toBe('XLM');
       expect(balances[0].balance).toBe('500.0000000');
@@ -81,7 +81,7 @@ describe('WalletClient', () => {
       });
       globalThis.fetch = mockFetch as any;
 
-      await expect(wallet.getBalance('GABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234')).rejects.toThrow('Horizon API error');
+      await expect(wallet.getBalance('GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')).rejects.toThrow('Horizon API error');
     });
   });
 
@@ -90,7 +90,7 @@ describe('WalletClient', () => {
       const mockFetch = vi.fn().mockResolvedValue({ ok: true });
       globalThis.fetch = mockFetch as any;
 
-      const exists = await wallet.accountExists('GABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234');
+      const exists = await wallet.accountExists('GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA');
       expect(exists).toBe(true);
     });
 
@@ -98,7 +98,7 @@ describe('WalletClient', () => {
       const mockFetch = vi.fn().mockResolvedValue({ ok: false });
       globalThis.fetch = mockFetch as any;
 
-      const exists = await wallet.accountExists('GXXXXX1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234');
+      const exists = await wallet.accountExists('GBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB');
       expect(exists).toBe(false);
     });
   });

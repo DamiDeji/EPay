@@ -12,6 +12,7 @@ build/
 # Smart contract builds
 packages/contracts/build/
 packages/contracts/artifacts/
+packages/contracts/target/
 
 # Environment
 .env

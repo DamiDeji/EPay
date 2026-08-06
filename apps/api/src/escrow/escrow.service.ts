@@ -1,12 +1,14 @@
+import { generateId } from '@epay/shared';
+import type { Escrow, PaginatedResponse } from '@epay/types';
 import {
   Injectable,
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+
 import { PrismaService } from '../database/prisma.service';
+
 import type { CreateEscrowDto } from './dto/create-escrow.dto';
-import type { Escrow, PaginatedResponse } from '@epay/types';
-import { generateId } from '@epay/shared';
 
 @Injectable()
 export class EscrowService {
@@ -26,7 +28,8 @@ export class EscrowService {
         merchantId: dto.merchantId,
         customerId: dto.customerId,
         amount: dto.amount ? BigInt(dto.amount) : totalAmount,
-        currency: dto.currency,
+        assetCode: dto.assetCode,
+        assetIssuer: dto.assetIssuer,
         status: 'CREATED',
         contractAddress: 'pending_deployment',
         metadata: (dto.metadata ?? {}) as any,

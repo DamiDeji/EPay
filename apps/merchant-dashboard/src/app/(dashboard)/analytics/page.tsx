@@ -3,7 +3,6 @@
 import { Card, CardHeader, CardTitle, CardContent } from '@epay/ui';
 import { motion } from 'framer-motion';
 import { DollarSign, TrendingUp, Wallet, Percent } from 'lucide-react';
-import { useTheme } from 'next-themes';
 import { useState, useEffect } from 'react';
 import {
   LineChart, Line, PieChart, Pie, Cell, ResponsiveContainer,
@@ -33,10 +32,8 @@ const TREND_DATA = [
 ];
 
 export default function AnalyticsPage() {
-  const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
-  const isDark = theme === 'dark';
 
   return (
     <div className="space-y-8">

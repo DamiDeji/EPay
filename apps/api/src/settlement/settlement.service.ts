@@ -1,11 +1,12 @@
+import { generateId, calculateFee } from '@epay/shared';
+import type { Settlement, PaginatedResponse } from '@epay/types';
 import {
   Injectable,
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+
 import { PrismaService } from '../database/prisma.service';
-import type { Settlement, PaginatedResponse } from '@epay/types';
-import { generateId, calculateFee, calculateNetAmount } from '@epay/shared';
 
 @Injectable()
 export class SettlementService {
@@ -37,12 +38,13 @@ export class SettlementService {
         settlementId,
         merchantId,
         amount: totalAmount,
-        currency: 'TON',
+        assetCode: 'XLM',
+        assetIssuer: 'native',
         feeAmount,
         netAmount,
         status: 'PENDING',
         paymentIds,
-        settlementAddress: 'pending',
+        settlementPublicKey: 'pending',
         periodStart: completedPayments[completedPayments.length - 1]?.createdAt ?? new Date(),
         periodEnd: new Date(),
       },
@@ -93,7 +95,7 @@ export class SettlementService {
     };
   }
 
-  async process(id: string, txHash: string, settlementAddress: string): Promise<Settlement> {
+  async process(id: string, txHash: string, settlementPublicKey: string): Promise<Settlement> {
     const settlement = await this.prisma.settlement.findUnique({ where: { id } });
     if (!settlement) throw new NotFoundException('Settlement not found');
     if (settlement.status !== 'PENDING') {
@@ -105,7 +107,7 @@ export class SettlementService {
       data: {
         status: 'COMPLETED',
         txHash,
-        settlementAddress,
+        settlementPublicKey,
         processedAt: new Date(),
       },
     });

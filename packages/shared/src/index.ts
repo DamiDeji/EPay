@@ -236,3 +236,11 @@ export class EPayError extends Error {
     return new EPayError(message, status, errors);
   }
 }
+
+/**
+ * Check if a given date is in the past (expired).
+ */
+export function isExpired(date: Date | string | number): boolean {
+  const expiry = typeof date === 'string' || typeof date === 'number' ? new Date(date) : date;
+  return expiry.getTime() < Date.now();
+}

@@ -1,12 +1,14 @@
+import { generateId } from '@epay/shared';
+import type { Refund, PaginatedResponse } from '@epay/types';
 import {
   Injectable,
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+
 import { PrismaService } from '../database/prisma.service';
+
 import type { CreateRefundDto } from './dto/create-refund.dto';
-import type { Refund, PaginatedResponse } from '@epay/types';
-import { generateId } from '@epay/shared';
 
 @Injectable()
 export class RefundService {
@@ -40,7 +42,8 @@ export class RefundService {
         merchantId: payment.merchantId,
         amount: refundAmount,
         originalAmount: payment.amount,
-        currency: payment.currency,
+        assetCode: payment.assetCode,
+        assetIssuer: payment.assetIssuer,
         status: 'REQUESTED',
         reason: dto.reason,
         isPartial,

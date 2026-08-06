@@ -1,4 +1,5 @@
 import type { StellarNetwork, WalletAuth, WalletProvider } from '@epay/types';
+
 import { isValidStellarPublicKey } from './utils';
 
 /**
@@ -86,11 +87,11 @@ export class WalletClient {
    */
   async getBalance(publicKey: string): Promise<{ assetCode: string; assetIssuer: string; balance: string }[]> {
     const response = await fetch(
-      `${this.config.horizonUrl}/accounts/${publicKey}`,
+      `${this.config.horizonUrl ?? 'https://horizon-testnet.stellar.org'}/accounts/${publicKey}`,
     );
 
     if (!response.ok) {
-      throw new Error(`Horizon API error: ${response.status}`);
+      throw new Error(`Horizon API error: ${String(response.status)}`);
     }
 
     const data = (await response.json()) as {
@@ -109,11 +110,11 @@ export class WalletClient {
    */
   async getAccount(publicKey: string): Promise<Record<string, unknown>> {
     const response = await fetch(
-      `${this.config.horizonUrl}/accounts/${publicKey}`,
+      `${this.config.horizonUrl ?? 'https://horizon-testnet.stellar.org'}/accounts/${publicKey}`,
     );
 
     if (!response.ok) {
-      throw new Error(`Horizon API error: ${response.status}`);
+      throw new Error(`Horizon API error: ${String(response.status)}`);
     }
 
     return (await response.json()) as Record<string, unknown>;
@@ -125,7 +126,7 @@ export class WalletClient {
   async accountExists(publicKey: string): Promise<boolean> {
     try {
       const response = await fetch(
-        `${this.config.horizonUrl}/accounts/${publicKey}`,
+        `${this.config.horizonUrl ?? 'https://horizon-testnet.stellar.org'}/accounts/${publicKey}`,
       );
       return response.ok;
     } catch {

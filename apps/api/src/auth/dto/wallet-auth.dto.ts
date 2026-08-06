@@ -1,5 +1,5 @@
-import { IsString, IsOptional } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsString, IsOptional } from 'class-validator';
 
 export class WalletAuthDto {
   @ApiProperty({ example: 'GABCDEF...stellar_public_key' })

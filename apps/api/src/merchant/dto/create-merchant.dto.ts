@@ -1,5 +1,5 @@
-import { IsString, IsEmail, IsOptional, IsArray } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsString, IsEmail, IsOptional, IsArray } from 'class-validator';
 
 export class CreateMerchantDto {
   @ApiProperty({ example: 'Acme Store' })
@@ -24,12 +24,12 @@ export class CreateMerchantDto {
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  supportedCurrencies?: string[];
+  supportedAssets?: string[];
 
   @ApiPropertyOptional({ example: 'EQD...merchant_wallet' })
   @IsOptional()
   @IsString()
-  settlementAddress?: string;
+  settlementPublicKey?: string;
 
   @ApiPropertyOptional({ example: 'https://acme.com/webhooks/epay' })
   @IsOptional()

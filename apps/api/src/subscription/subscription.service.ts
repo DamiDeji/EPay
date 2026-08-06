@@ -1,12 +1,14 @@
+import { generateId } from '@epay/shared';
+import type { Subscription, PaginatedResponse } from '@epay/types';
 import {
   Injectable,
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+
 import { PrismaService } from '../database/prisma.service';
+
 import type { CreateSubscriptionDto } from './dto/create-subscription.dto';
-import type { Subscription, PaginatedResponse } from '@epay/types';
-import { generateId } from '@epay/shared';
 
 const INTERVAL_SECONDS: Record<string, number> = {
   DAILY: 86400,
@@ -35,7 +37,8 @@ export class SubscriptionService {
         customerId: dto.customerId,
         planName: dto.planName,
         amount: BigInt(dto.amount),
-        currency: dto.currency,
+        assetCode: dto.assetCode,
+        assetIssuer: dto.assetIssuer,
         interval: dto.interval,
         status: trialEnd ? 'TRIAL' : 'ACTIVE',
         trialEndDate: trialEnd,

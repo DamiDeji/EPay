@@ -1,6 +1,6 @@
-import { IsString, IsArray, IsOptional, ValidateNested } from 'class-validator';
-import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import { IsString, IsArray, IsOptional, ValidateNested } from 'class-validator';
 
 class MilestoneDto {
   @ApiProperty({ example: 'Design phase completion' })
@@ -28,7 +28,11 @@ export class CreateEscrowDto {
 
   @ApiProperty({ example: 'TON' })
   @IsString()
-  currency: string;
+  assetCode: string;
+
+  @ApiProperty({ example: "native", description: "Asset issuer (native for XLM)" })
+  @IsString()
+  assetIssuer: string;
 
   @ApiProperty({ type: [MilestoneDto] })
   @IsArray()

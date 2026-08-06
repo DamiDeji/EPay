@@ -8,13 +8,14 @@ import {
   Req,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { Request } from 'express';
+
 import { AuthService } from './auth.service';
-import { RegisterDto } from './dto/register.dto';
+import { CreateApiKeyDto } from './dto/create-api-key.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
-import { CreateApiKeyDto } from './dto/create-api-key.dto';
+import { RegisterDto } from './dto/register.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { Request } from 'express';
 
 @ApiTags('Auth')
 @Controller('auth')

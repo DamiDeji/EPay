@@ -97,7 +97,7 @@ async function main(): Promise<void> {
       scanner,
       checkpoint,
       prisma,
-      onLedgerProcessed: (ledger, eventCount) => { void (async () => {
+      onBlockProcessed: (ledger, eventCount) => { void (async () => {
         if (eventCount > 0) {
           try {
             const stats = await queue.getStats();

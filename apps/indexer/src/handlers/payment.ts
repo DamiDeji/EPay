@@ -27,8 +27,8 @@ export async function handlePaymentEvent(
         where: { paymentId: `pay_${paymentData.paymentId}` },
         update: {
           amount: BigInt(paymentData.amount),
-          payerAddress: paymentData.payer,
-          recipientAddress: paymentData.merchant,
+          payerPublicKey: paymentData.payer,
+          recipientPublicKey: paymentData.merchant,
           status: 'PENDING',
         },
         create: {
@@ -37,10 +37,10 @@ export async function handlePaymentEvent(
           amount: BigInt(paymentData.amount),
           currency: 'TON',
           status: 'PENDING',
-          payerAddress: paymentData.payer,
-          recipientAddress: paymentData.merchant,
+          payerPublicKey: paymentData.payer,
+          recipientPublicKey: paymentData.merchant,
           txHash: event.txHash,
-          blockHeight: event.blockHeight,
+          blockHeight: event.ledgerSequence,
           expiresAt: new Date(Date.now() + 3600_000),
         },
       });

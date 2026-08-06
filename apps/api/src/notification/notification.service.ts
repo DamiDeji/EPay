@@ -1,7 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../database/prisma.service';
 import type { Notification, PaginatedResponse } from '@epay/types';
-import { generateId } from '@epay/shared';
+import { Injectable, NotFoundException } from '@nestjs/common';
+
+import { PrismaService } from '../database/prisma.service';
 
 @Injectable()
 export class NotificationService {

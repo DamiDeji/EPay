@@ -166,7 +166,7 @@ export class BlockScanner {
    */
   async getChainTip(): Promise<number> {
     try {
-      const url = `${this.config.horizonUrl}`;
+      const url = this.config.horizonUrl;
       const response = await fetch(url);
 
       if (!response.ok) {

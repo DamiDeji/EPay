@@ -1,5 +1,5 @@
-import { IsString, IsOptional } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsString, IsOptional } from 'class-validator';
 
 export class CreatePaymentDto {
   @ApiProperty({ example: 'merchant_id_123' })
@@ -12,7 +12,11 @@ export class CreatePaymentDto {
 
   @ApiProperty({ example: 'TON' })
   @IsString()
-  currency: string;
+  assetCode: string;
+
+  @ApiProperty({ example: "native", description: "Asset issuer (native for XLM)" })
+  @IsString()
+  assetIssuer: string;
 
   @ApiPropertyOptional({ example: 'Payment for order #123' })
   @IsOptional()
@@ -22,11 +26,11 @@ export class CreatePaymentDto {
   @ApiPropertyOptional({ example: 'EQD...payer_wallet' })
   @IsOptional()
   @IsString()
-  payerAddress?: string;
+  payerPublicKey?: string;
 
   @ApiProperty({ example: 'EQD...recipient_wallet' })
   @IsString()
-  recipientAddress: string;
+  recipientPublicKey: string;
 
   @ApiPropertyOptional({ example: 'Order #123456' })
   @IsOptional()

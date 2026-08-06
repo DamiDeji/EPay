@@ -1,15 +1,16 @@
+import type { Merchant, PaginatedResponse } from '@epay/types';
 import {
   Injectable,
   ConflictException,
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
+
 import { PrismaService } from '../database/prisma.service';
+
 import type { CreateMerchantDto } from './dto/create-merchant.dto';
 import type { UpdateMerchantDto } from './dto/update-merchant.dto';
 import type { VerifyMerchantDto } from './dto/verify-merchant.dto';
-import type { Merchant, PaginatedResponse } from '@epay/types';
-import { generateId } from '@epay/shared';
 
 @Injectable()
 export class MerchantService {
@@ -31,8 +32,8 @@ export class MerchantService {
         businessEmail: dto.businessEmail,
         businessUrl: dto.businessUrl ?? null,
         description: dto.description ?? null,
-        supportedCurrencies: dto.supportedCurrencies ?? ['TON'],
-        settlementAddress: dto.settlementAddress ?? null,
+        supportedAssets: dto.supportedAssets ?? ['TON'],
+        settlementPublicKey: dto.settlementPublicKey ?? null,
         webhookUrl: dto.webhookUrl ?? null,
       },
     });
@@ -99,11 +100,11 @@ export class MerchantService {
         ...(dto.businessUrl !== undefined && { businessUrl: dto.businessUrl }),
         ...(dto.description !== undefined && { description: dto.description }),
         ...(dto.webhookUrl !== undefined && { webhookUrl: dto.webhookUrl }),
-        ...(dto.settlementAddress !== undefined && {
-          settlementAddress: dto.settlementAddress,
+        ...(dto.settlementPublicKey !== undefined && {
+          settlementPublicKey: dto.settlementPublicKey,
         }),
-        ...(dto.supportedCurrencies !== undefined && {
-          supportedCurrencies: dto.supportedCurrencies,
+        ...(dto.supportedAssets !== undefined && {
+          supportedAssets: dto.supportedAssets,
         }),
       },
     });
@@ -146,11 +147,13 @@ export class MerchantService {
     });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private sanitizeMerchant(merchant: any): Merchant {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { webhookSecret, ...safe } = merchant;
     return {
       ...safe,
-      supportedCurrencies: safe.supportedCurrencies ?? [],
+      supportedAssets: safe.supportedAssets ?? [],
       metadata: safe.metadata ?? {},
     } as Merchant;
   }

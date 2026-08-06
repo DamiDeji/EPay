@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../database/prisma.service';
 import type { TreasuryTransaction, PaginatedResponse } from '@epay/types';
+import { Injectable } from '@nestjs/common';
+
+import { PrismaService } from '../database/prisma.service';
 
 @Injectable()
 export class TreasuryService {
@@ -95,13 +96,14 @@ export class TreasuryService {
     return tx ? this.sanitizeTransaction(tx) : null;
   }
 
-  async recordDeposit(amount: string, fromAddress: string, txHash: string): Promise<TreasuryTransaction> {
+  async recordDeposit(amount: string, fromPublicKey: string, txHash: string): Promise<TreasuryTransaction> {
     const tx = await this.prisma.treasuryTransaction.create({
       data: {
         txType: 'DEPOSIT',
         amount: BigInt(amount),
-        currency: 'TON',
-        fromAddress,
+        assetCode: 'XLM',
+        assetIssuer: 'native',
+        fromPublicKey,
         txHash,
         status: 'COMPLETED',
         completedAt: new Date(),
@@ -116,7 +118,8 @@ export class TreasuryService {
       data: {
         txType: 'FEE_COLLECTION',
         amount: BigInt(amount),
-        currency: 'TON',
+        assetCode: 'XLM',
+        assetIssuer: 'native',
         status: 'COMPLETED',
         referenceId: referenceId ?? null,
         referenceType: referenceId ? 'PAYMENT' : null,

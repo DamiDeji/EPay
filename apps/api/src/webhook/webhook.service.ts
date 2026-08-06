@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException, Logger } from '@nestjs/common';
-import { PrismaService } from '../database/prisma.service';
 import type { WebhookDelivery, PaginatedResponse } from '@epay/types';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
+
+import { PrismaService } from '../database/prisma.service';
 
 @Injectable()
 export class WebhookService {

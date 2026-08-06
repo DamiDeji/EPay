@@ -167,7 +167,7 @@ export default function WalletPage() {
                     {tx.type === 'in' ? 'Received' : 'Sent'} {tx.amount}
                   </div>
                   <div className="text-xs text-slate-500 dark:text-slate-400 font-mono">
-                    {tx.type === 'in' ? `From: ${tx.from}` : `To: ${tx.to}`}
+                    {tx.type === 'in' ? `From: ${tx.from ?? ''}` : `To: ${tx.to ?? ''}`}
                   </div>
                 </div>
                 <div className="text-right flex-shrink-0">

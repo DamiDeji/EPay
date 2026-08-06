@@ -1,6 +1,6 @@
-import { IsString, IsOptional, IsInt, IsEnum, Min } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { SubscriptionBillingInterval } from '@epay/types';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsString, IsOptional, IsInt, IsEnum, Min } from 'class-validator';
 
 export class CreateSubscriptionDto {
   @ApiProperty({ example: 'merchant_id_123' })
@@ -21,7 +21,11 @@ export class CreateSubscriptionDto {
 
   @ApiProperty({ example: 'TON' })
   @IsString()
-  currency: string;
+  assetCode: string;
+
+  @ApiProperty({ example: "native", description: "Asset issuer (native for XLM)" })
+  @IsString()
+  assetIssuer: string;
 
   @ApiProperty({ enum: SubscriptionBillingInterval, example: SubscriptionBillingInterval.MONTHLY })
   @IsEnum(SubscriptionBillingInterval)

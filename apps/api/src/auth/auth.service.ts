@@ -1,3 +1,6 @@
+import * as crypto from 'crypto';
+
+import type { AuthTokens, User } from '@epay/types';
 import {
   Injectable,
   UnauthorizedException,
@@ -5,12 +8,12 @@ import {
   Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import * as crypto from 'crypto';
+
 import { PrismaService } from '../database/prisma.service';
-import type { RegisterDto } from './dto/register.dto';
+
 import type { LoginDto } from './dto/login.dto';
-import type { WalletAuthDto } from './dto/wallet-auth.dto';
-import type { AuthTokens, User } from '@epay/types';
+import type { RegisterDto } from './dto/register.dto';
+
 
 @Injectable()
 export class AuthService {
@@ -30,7 +33,7 @@ export class AuthService {
     }
 
     const passwordHash = dto.password
-      ? await this.hashPassword(dto.password)
+      ? this.hashPassword(dto.password)
       : null;
 
     const user = await this.prisma.user.create({
@@ -71,11 +74,11 @@ export class AuthService {
     password: string,
   ): Promise<{ user: User; tokens: AuthTokens }> {
     const user = await this.prisma.user.findUnique({ where: { email } });
-    if (!user || !user.passwordHash) {
+    if (!user?.passwordHash) {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    const isValid = await this.verifyPassword(password, user.passwordHash);
+    const isValid = this.verifyPassword(password, user.passwordHash);
     if (!isValid) {
       throw new UnauthorizedException('Invalid email or password');
     }
@@ -229,16 +232,18 @@ export class AuthService {
     };
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private sanitizeUser(user: any): User {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { passwordHash, refreshToken, twoFactorSecret, ...safe } = user;
     return safe as User;
   }
 
-  private async hashPassword(password: string): Promise<string> {
+  private hashPassword(password: string): string {
     return crypto.scryptSync(password, 'epay_salt', 64).toString('hex');
   }
 
-  private async verifyPassword(password: string, hash: string): Promise<boolean> {
+  private verifyPassword(password: string, hash: string): boolean {
     const computed = crypto.scryptSync(password, 'epay_salt', 64).toString('hex');
     return crypto.timingSafeEqual(Buffer.from(computed), Buffer.from(hash));
   }

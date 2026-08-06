@@ -6,9 +6,11 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { WebhookService } from './webhook.service';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+
+import { WebhookService } from './webhook.service';
 
 @ApiTags('Webhooks')
 @Controller('webhooks')

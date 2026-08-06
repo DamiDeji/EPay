@@ -10,9 +10,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { SubscriptionService } from './subscription.service';
-import { CreateSubscriptionDto } from './dto/create-subscription.dto';
+
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+
+import { CreateSubscriptionDto } from './dto/create-subscription.dto';
+import { SubscriptionService } from './subscription.service';
 
 @ApiTags('Subscriptions')
 @Controller('subscriptions')

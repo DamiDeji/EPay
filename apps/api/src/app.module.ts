@@ -1,23 +1,24 @@
+import { BullModule } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
-import { BullModule } from '@nestjs/bullmq';
-import { DatabaseModule } from './database/database.module';
-import { AuthModule } from './auth/auth.module';
-import { MerchantModule } from './merchant/merchant.module';
-import { PaymentModule } from './payment/payment.module';
-import { InvoiceModule } from './invoice/invoice.module';
-import { EscrowModule } from './escrow/escrow.module';
-import { RefundModule } from './refund/refund.module';
-import { SubscriptionModule } from './subscription/subscription.module';
-import { SettlementModule } from './settlement/settlement.module';
-import { TreasuryModule } from './treasury/treasury.module';
-import { NotificationModule } from './notification/notification.module';
-import { WebhookModule } from './webhook/webhook.module';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+
 import { AnalyticsModule } from './analytics/analytics.module';
-import { HealthModule } from './health/health.module';
 import { AuditModule } from './audit/audit.module';
+import { AuthModule } from './auth/auth.module';
+import { DatabaseModule } from './database/database.module';
+import { EscrowModule } from './escrow/escrow.module';
+import { HealthModule } from './health/health.module';
+import { InvoiceModule } from './invoice/invoice.module';
+import { MerchantModule } from './merchant/merchant.module';
+import { NotificationModule } from './notification/notification.module';
+import { PaymentModule } from './payment/payment.module';
+import { RefundModule } from './refund/refund.module';
+import { SettlementModule } from './settlement/settlement.module';
+import { SubscriptionModule } from './subscription/subscription.module';
+import { TreasuryModule } from './treasury/treasury.module';
+import { WebhookModule } from './webhook/webhook.module';
 
 @Module({
   imports: [

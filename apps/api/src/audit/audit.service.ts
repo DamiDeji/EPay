@@ -1,6 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../database/prisma.service';
 import type { AuditLog, PaginatedResponse } from '@epay/types';
+import { Injectable, Logger } from '@nestjs/common';
+
+import { PrismaService } from '../database/prisma.service';
 
 @Injectable()
 export class AuditService {

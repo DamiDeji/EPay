@@ -10,9 +10,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { EscrowService } from './escrow.service';
-import { CreateEscrowDto } from './dto/create-escrow.dto';
+
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+
+import { CreateEscrowDto } from './dto/create-escrow.dto';
+import { EscrowService } from './escrow.service';
 
 @ApiTags('Escrow')
 @Controller('escrows')

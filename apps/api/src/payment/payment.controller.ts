@@ -16,10 +16,11 @@ import {
   ApiBearerAuth,
   ApiQuery,
 } from '@nestjs/swagger';
-import { PaymentService } from './payment.service';
-import { CreatePaymentDto } from './dto/create-payment.dto';
+
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { ApiKeyGuard } from '../auth/guards/api-key.guard';
+
+import { CreatePaymentDto } from './dto/create-payment.dto';
+import { PaymentService } from './payment.service';
 
 @ApiTags('Payments')
 @Controller('payments')

@@ -1,7 +1,8 @@
 /** @type {import('eslint').Linter.Config} */
 module.exports = {
-  extends: ['../../.eslintrc.js', 'next/core-web-vitals'],
+  extends: ['../../.eslintrc.js'],
   rules: {
+    'import/no-unresolved': 'off',
     '@typescript-eslint/no-unsafe-assignment': 'off',
     '@typescript-eslint/no-unsafe-member-access': 'off',
     '@typescript-eslint/no-unsafe-call': 'off',

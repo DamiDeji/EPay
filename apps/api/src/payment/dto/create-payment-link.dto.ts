@@ -1,5 +1,5 @@
-import { IsString, IsOptional, IsInt } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsString, IsOptional, IsInt } from 'class-validator';
 
 export class CreatePaymentLinkDto {
   @ApiProperty({ example: 'merchant_id_123' })
@@ -12,7 +12,11 @@ export class CreatePaymentLinkDto {
 
   @ApiProperty({ example: 'TON' })
   @IsString()
-  currency: string;
+  assetCode: string;
+
+  @ApiProperty({ example: "native", description: "Asset issuer (native for XLM)" })
+  @IsString()
+  assetIssuer: string;
 
   @ApiPropertyOptional({ example: 'Payment for services' })
   @IsOptional()

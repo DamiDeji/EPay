@@ -1,13 +1,15 @@
+import { generateId, isExpired } from '@epay/shared';
+import type { Payment, PaymentLink, PaginatedResponse } from '@epay/types';
 import {
   Injectable,
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+
 import { PrismaService } from '../database/prisma.service';
-import type { CreatePaymentDto } from './dto/create-payment.dto';
+
 import type { CreatePaymentLinkDto } from './dto/create-payment-link.dto';
-import type { Payment, PaymentLink, PaginatedResponse } from '@epay/types';
-import { generateId, calculateFee, isExpired } from '@epay/shared';
+import type { CreatePaymentDto } from './dto/create-payment.dto';
 
 @Injectable()
 export class PaymentService {
@@ -22,10 +24,11 @@ export class PaymentService {
         paymentId,
         merchantId: dto.merchantId,
         amount: BigInt(dto.amount),
-        currency: dto.currency,
+        assetCode: dto.assetCode,
+        assetIssuer: dto.assetIssuer,
         description: dto.description ?? null,
-        payerAddress: dto.payerAddress ?? null,
-        recipientAddress: dto.recipientAddress,
+        payerPublicKey: dto.payerPublicKey ?? null,
+        recipientPublicKey: dto.recipientPublicKey,
         memo: dto.memo ?? null,
         status: 'PENDING',
         expiresAt: new Date(Date.now() + expiresIn * 1000),
@@ -165,7 +168,8 @@ export class PaymentService {
         url,
         code,
         amount: BigInt(dto.amount),
-        currency: dto.currency,
+        assetCode: dto.assetCode,
+        assetIssuer: dto.assetIssuer,
         description: dto.description ?? null,
         maxPayments: dto.maxPayments ?? null,
         expiresAt: dto.expiresIn ? new Date(Date.now() + dto.expiresIn * 1000) : null,

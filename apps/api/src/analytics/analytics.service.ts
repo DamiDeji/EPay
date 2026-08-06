@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../database/prisma.service';
 import type { PaymentAnalytics, DailyVolume } from '@epay/types';
+import { Injectable } from '@nestjs/common';
+
+import { PrismaService } from '../database/prisma.service';
 
 @Injectable()
 export class AnalyticsService {
@@ -28,12 +29,8 @@ export class AnalyticsService {
       (p) => p.status === 'REFUNDED' || p.status === 'PARTIALLY_REFUNDED',
     ).length;
 
-    const refundVolume = payments
-      .filter((p) => p.status === 'REFUNDED' || p.status === 'PARTIALLY_REFUNDED')
-      .reduce((sum, p) => sum + BigInt(p.amount.toString()), BigInt(0));
-
     const dailyVolume = this.aggregateDailyVolume(payments, days);
-    const currencyBreakdown = this.aggregateCurrencyBreakdown(payments);
+    const assetBreakdown = this.aggregateCurrencyBreakdown(payments);
 
     return {
       totalPayments,
@@ -50,7 +47,7 @@ export class AnalyticsService {
         totalPayments > 0
           ? Number(((refundedPayments / totalPayments) * 100).toFixed(2))
           : 0,
-      currencyBreakdown,
+      assetBreakdown,
       dailyVolume,
     };
   }
@@ -125,12 +122,12 @@ export class AnalyticsService {
 
     for (let i = 0; i < days; i++) {
       const date = new Date(Date.now() - i * 86400_000);
-      const dateStr = date.toISOString().split('T')[0]!;
+      const dateStr = date.toISOString().split('T')[0];
       dailyMap.set(dateStr, { amount: BigInt(0), count: 0 });
     }
 
     for (const payment of payments) {
-      const dateStr = payment.createdAt.toISOString().split('T')[0]!;
+      const dateStr = payment.createdAt.toISOString().split('T')[0] ?? '';
       const existing = dailyMap.get(dateStr);
       if (existing) {
         existing.amount += BigInt(payment.amount.toString());
@@ -153,7 +150,7 @@ export class AnalyticsService {
     const breakdown: Record<string, number> = {};
 
     for (const payment of payments) {
-      breakdown[payment.currency] = (breakdown[payment.currency] ?? 0) + 1;
+      breakdown[payment.currency] = (breakdown[String(payment.currency)] ?? 0) + 1;
     }
 
     return breakdown;

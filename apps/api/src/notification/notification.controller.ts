@@ -5,12 +5,13 @@ import {
   Param,
   Query,
   UseGuards,
-  NotFoundException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { NotificationService } from './notification.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+
+import { NotificationService } from './notification.service';
 
 @ApiTags('Notifications')
 @Controller('notifications')

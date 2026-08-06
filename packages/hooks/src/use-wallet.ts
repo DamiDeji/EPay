@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
 import type { WalletProvider, StellarNetwork } from '@epay/types';
+import { useState, useEffect, useCallback } from 'react';
 
 interface StellarWalletState {
   connected: boolean;
@@ -21,7 +21,7 @@ export function useWallet() {
     connected: false,
     publicKey: null,
     provider: null,
-    network: 'testnet',
+    network: 'testnet' as StellarNetwork,
     error: null,
     connecting: false,
   });
@@ -65,6 +65,9 @@ export function useWallet() {
 
       // In production, integrate with actual wallet APIs
       // For now, use a mock flow
+      // Simulate wallet connection delay
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       switch (provider) {
         case 'freighter':
           // const result = await window.freighterApi.getPublicKey();
@@ -88,7 +91,7 @@ export function useWallet() {
           publicKey = 'GSTUVW1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234';
           break;
         default:
-          throw new Error(`Unsupported wallet provider: ${provider}`);
+          throw new Error(`Unsupported wallet provider: ${String(provider)}`);
       }
 
       const walletData = {
@@ -133,13 +136,14 @@ export function useWallet() {
   /**
    * Sign a message with the connected wallet.
    */
-  const signMessage = useCallback(async (message: string): Promise<string> => {
+  const signMessage = useCallback(async (_message: string): Promise<string> => {
     if (!state.publicKey || !state.provider) {
       throw new Error('No wallet connected');
     }
 
     // In production, use the wallet's signing API
     // e.g., await window.freighterApi.signMessage(message);
+    await new Promise((resolve) => setTimeout(resolve, 0));
     return `mock_signature_${Date.now().toString(36)}`;
   }, [state.publicKey, state.provider]);
 

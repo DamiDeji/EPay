@@ -1,8 +1,5 @@
 #[cfg(test)]
-use soroban_sdk::{
-    testutils::{Address as _, Ledger},
-    Address, Env, String,
-};
+use soroban_sdk::{testutils::Address as _, Address, Env, String};
 
 use super::*;
 
@@ -32,7 +29,7 @@ fn test_initialize() {
     let (env, contract_id, _owner, _config, _fee_mgr) = setup_test();
     let client = create_test_client(&env, &contract_id);
 
-    assert_eq!(client.get_next_payment_id(), 1);
+    assert_eq!(client.get_next_id(), 1);
     assert_eq!(client.get_payment_count(), 0);
 }
 
@@ -45,17 +42,14 @@ fn test_create_payment() {
     let merchant = Address::generate(&env);
     let recipient = Address::generate(&env);
 
-    let asset = AssetInfo {
-        code: String::from_str(&env, "native"),
-        issuer: Address::generate(&env),
-    };
+    let asset_code = String::from_str(&env, "native");
 
     let payment_id = client.create_payment(
-        &payer,
         &merchant,
+        &payer,
         &recipient,
         &10_000_000_i128, // 1 XLM
-        &asset,
+        &asset_code,
         &None,
         &None,
     );
@@ -78,17 +72,14 @@ fn test_confirm_and_complete_payment() {
     let merchant = Address::generate(&env);
     let recipient = Address::generate(&env);
 
-    let asset = AssetInfo {
-        code: String::from_str(&env, "native"),
-        issuer: Address::generate(&env),
-    };
+    let asset_code = String::from_str(&env, "native");
 
     let payment_id = client.create_payment(
-        &payer,
         &merchant,
+        &payer,
         &recipient,
         &10_000_000_i128,
-        &asset,
+        &asset_code,
         &None,
         &None,
     );
@@ -118,23 +109,19 @@ fn test_fail_payment() {
     let merchant = Address::generate(&env);
     let recipient = Address::generate(&env);
 
-    let asset = AssetInfo {
-        code: String::from_str(&env, "native"),
-        issuer: Address::generate(&env),
-    };
+    let asset_code = String::from_str(&env, "native");
 
     let payment_id = client.create_payment(
-        &payer,
         &merchant,
+        &payer,
         &recipient,
         &10_000_000_i128,
-        &asset,
+        &asset_code,
         &None,
         &None,
     );
 
-    let reason = String::from_str(&env, "Insufficient funds");
-    client.fail_payment(&payment_id, &reason);
+    client.fail_payment(&payment_id);
 
     let payment = client.get_payment(&payment_id).unwrap();
     assert_eq!(payment.status, PaymentStatus::Failed);
@@ -149,17 +136,14 @@ fn test_refund_payment() {
     let merchant = Address::generate(&env);
     let recipient = Address::generate(&env);
 
-    let asset = AssetInfo {
-        code: String::from_str(&env, "native"),
-        issuer: Address::generate(&env),
-    };
+    let asset_code = String::from_str(&env, "native");
 
     let payment_id = client.create_payment(
-        &payer,
         &merchant,
+        &payer,
         &recipient,
         &10_000_000_i128,
-        &asset,
+        &asset_code,
         &None,
         &None,
     );
@@ -174,7 +158,7 @@ fn test_refund_payment() {
 }
 
 #[test]
-#[should_panic(expected = "Payment not in pending state")]
+#[should_panic(expected = "Not pending")]
 fn test_cannot_confirm_twice() {
     let (env, contract_id, _owner, _config, _fee_mgr) = setup_test();
     let client = create_test_client(&env, &contract_id);
@@ -183,17 +167,14 @@ fn test_cannot_confirm_twice() {
     let merchant = Address::generate(&env);
     let recipient = Address::generate(&env);
 
-    let asset = AssetInfo {
-        code: String::from_str(&env, "native"),
-        issuer: Address::generate(&env),
-    };
+    let asset_code = String::from_str(&env, "native");
 
     let payment_id = client.create_payment(
-        &payer,
         &merchant,
+        &payer,
         &recipient,
         &10_000_000_i128,
-        &asset,
+        &asset_code,
         &None,
         &None,
     );
@@ -212,20 +193,41 @@ fn test_payment_count() {
     let payer = Address::generate(&env);
     let merchant = Address::generate(&env);
     let recipient = Address::generate(&env);
-    let asset = AssetInfo {
-        code: String::from_str(&env, "native"),
-        issuer: Address::generate(&env),
-    };
+    let asset_code = String::from_str(&env, "native");
 
     assert_eq!(client.get_payment_count(), 0);
 
-    client.create_payment(&payer, &merchant, &recipient, &1_000_000_i128, &asset, &None, &None);
+    client.create_payment(
+        &merchant,
+        &payer,
+        &recipient,
+        &1_000_000_i128,
+        &asset_code,
+        &None,
+        &None,
+    );
     assert_eq!(client.get_payment_count(), 1);
 
-    client.create_payment(&payer, &merchant, &recipient, &2_000_000_i128, &asset, &None, &None);
+    client.create_payment(
+        &merchant,
+        &payer,
+        &recipient,
+        &2_000_000_i128,
+        &asset_code,
+        &None,
+        &None,
+    );
     assert_eq!(client.get_payment_count(), 2);
 
-    client.create_payment(&payer, &merchant, &recipient, &3_000_000_i128, &asset, &None, &None);
+    client.create_payment(
+        &merchant,
+        &payer,
+        &recipient,
+        &3_000_000_i128,
+        &asset_code,
+        &None,
+        &None,
+    );
     assert_eq!(client.get_payment_count(), 3);
 }
 
@@ -237,20 +239,25 @@ fn test_payment_exists() {
     let payer = Address::generate(&env);
     let merchant = Address::generate(&env);
     let recipient = Address::generate(&env);
-    let asset = AssetInfo {
-        code: String::from_str(&env, "native"),
-        issuer: Address::generate(&env),
-    };
+    let asset_code = String::from_str(&env, "native");
 
     assert!(!client.payment_exists(&1));
 
-    client.create_payment(&payer, &merchant, &recipient, &1_000_000_i128, &asset, &None, &None);
+    client.create_payment(
+        &merchant,
+        &payer,
+        &recipient,
+        &1_000_000_i128,
+        &asset_code,
+        &None,
+        &None,
+    );
     assert!(client.payment_exists(&1));
     assert!(!client.payment_exists(&999));
 }
 
 #[test]
-#[should_panic(expected = "Amount below minimum payment")]
+#[should_panic(expected = "Amount below minimum")]
 fn test_minimum_payment_amount() {
     let (env, contract_id, _owner, _config, _fee_mgr) = setup_test();
     let client = create_test_client(&env, &contract_id);
@@ -258,11 +265,16 @@ fn test_minimum_payment_amount() {
     let payer = Address::generate(&env);
     let merchant = Address::generate(&env);
     let recipient = Address::generate(&env);
-    let asset = AssetInfo {
-        code: String::from_str(&env, "native"),
-        issuer: Address::generate(&env),
-    };
+    let asset_code = String::from_str(&env, "native");
 
     // Amount below minimum of 1_000_000 stroops
-    client.create_payment(&payer, &merchant, &recipient, &100_i128, &asset, &None, &None);
+    client.create_payment(
+        &merchant,
+        &payer,
+        &recipient,
+        &100_i128,
+        &asset_code,
+        &None,
+        &None,
+    );
 }

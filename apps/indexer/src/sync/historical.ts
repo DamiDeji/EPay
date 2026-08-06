@@ -63,7 +63,7 @@ export class HistoricalSync {
         return { blocksProcessed: 0, eventsFound: 0, durationMs: 0, batchesFailed: 0 };
       }
 
-      const confirmationBuffer = this.config.confirmationBlocks;
+      const confirmationBuffer = this.config.confirmationLedgers;
       const toBlock = Math.max(fromBlock, chainTip - confirmationBuffer);
 
       log.info({ fromBlock, toBlock, chainTip, confirmationBuffer }, 'Starting historical sync');

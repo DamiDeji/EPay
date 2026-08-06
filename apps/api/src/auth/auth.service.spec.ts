@@ -19,7 +19,7 @@ describe('AuthService', () => {
     email: 'test@example.com',
     displayName: 'Test User',
     role: 'CUSTOMER',
-    walletAddress: null,
+    stellarPublicKey: null,
     avatarUrl: null,
     twoFactorEnabled: false,
     twoFactorSecret: null,
@@ -118,14 +118,14 @@ describe('AuthService', () => {
       prisma.user.create.mockResolvedValue({
         ...mockUser,
         email: 'wallet_EQD2kR_ab@epay.internal',
-        walletAddress: 'EQD2kR_abcdef',
+        stellarPublicKey: 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
       });
       prisma.user.update.mockResolvedValue(mockUser);
       (jwt.signAsync as jest.Mock).mockResolvedValueOnce('access_token');
       (jwt.signAsync as jest.Mock).mockResolvedValueOnce('refresh_token');
 
       const result = await service.login({
-        walletAddress: 'EQD2kR_abcdef',
+        stellarPublicKey: 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
         signature: '0xsig',
         message: 'hello',
       });

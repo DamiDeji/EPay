@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 // ── Stellar Asset Schema ────────────────────────────────────────────────────
 
-const stellarAssetSchema = z.object({
+export const stellarAssetSchema = z.object({
   code: z.string(),
   issuer: z.string(),
   type: z.enum(['native', 'credit_alphanum4', 'credit_alphanum12']),

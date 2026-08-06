@@ -1,6 +1,6 @@
-import { IsEmail, IsString, IsOptional, MinLength, IsEnum } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { UserRole } from '@epay/types';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsEmail, IsString, IsOptional, MinLength, IsEnum } from 'class-validator';
 
 export class RegisterDto {
   @ApiProperty({ example: 'user@example.com' })

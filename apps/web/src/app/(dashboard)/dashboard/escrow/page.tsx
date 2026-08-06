@@ -93,7 +93,7 @@ export default function EscrowPage() {
                   <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
                     <div
                       className="h-full rounded-full bg-gradient-to-r from-[#0098EA] to-[#10B981] transition-all duration-500"
-                      style={{ width: `${progress}%` }}
+                      style={{ width: `${String(progress)}%` }}
                     />
                   </div>
                 </div>

@@ -1,12 +1,13 @@
+import type { Invoice, PaginatedResponse } from '@epay/types';
 import {
   Injectable,
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+
 import { PrismaService } from '../database/prisma.service';
+
 import type { CreateInvoiceDto } from './dto/create-invoice.dto';
-import type { Invoice, PaginatedResponse } from '@epay/types';
-import { generateId } from '@epay/shared';
 
 @Injectable()
 export class InvoiceService {
@@ -25,7 +26,8 @@ export class InvoiceService {
         merchantId: dto.merchantId,
         customerId: dto.customerId ?? null,
         amount: dto.amount ? BigInt(dto.amount) : totalAmount,
-        currency: dto.currency,
+        assetCode: dto.assetCode,
+        assetIssuer: dto.assetIssuer,
         status: 'DRAFT',
         dueDate: dto.dueDate ?? new Date(Date.now() + 30 * 86400_000),
         notes: dto.notes ?? null,

@@ -10,8 +10,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { SettlementService } from './settlement.service';
+
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+
+import { SettlementService } from './settlement.service';
 
 @ApiTags('Settlements')
 @Controller('settlements')

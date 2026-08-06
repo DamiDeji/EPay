@@ -128,7 +128,7 @@ export default function DashboardPage() {
                   key={i}
                   className="flex-1 bg-gradient-to-t from-[#0098EA]/20 to-[#0098EA]/60 rounded-t-lg"
                   initial={{ height: 0 }}
-                  animate={{ height: `${h}%` }}
+                  animate={{ height: `${String(h)}%` }}
                   transition={{ duration: 0.8, delay: i * 0.05 }}
                 />
               ))}
@@ -160,7 +160,7 @@ export default function DashboardPage() {
                 <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
                   <div
                     className={`h-full rounded-full ${item.color} transition-all duration-500`}
-                    style={{ width: `${(item.value / 156) * 100}%` }}
+                    style={{ width: `${String((item.value / 156) * 100)}%` }}
                   />
                 </div>
               </div>

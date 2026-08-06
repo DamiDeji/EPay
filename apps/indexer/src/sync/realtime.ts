@@ -81,7 +81,7 @@ export class RealtimeSync {
     try {
       const currentBlock = this.checkpoint.getCurrentBlock();
       const chainTip = await this.scanner.getChainTip();
-      const confirmationBuffer = this.config.confirmationBlocks;
+      const confirmationBuffer = this.config.confirmationLedgers;
       const targetBlock = Math.max(currentBlock, chainTip - confirmationBuffer);
 
       if (targetBlock <= currentBlock) {
