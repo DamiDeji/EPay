@@ -1,4 +1,4 @@
-// EPay Core Type Definitions
+// EPay Core Type Definitions — Stellar Network
 // ============================================================================
 
 // ── Enums ───────────────────────────────────────────────────────────────────
@@ -117,9 +117,11 @@ export enum UserRole {
   DEVELOPER = 'DEVELOPER',
 }
 
-export enum TONNetwork {
-  MAINNET = 'mainnet',
+export enum StellarNetwork {
+  PUBLIC = 'public',
   TESTNET = 'testnet',
+  FUTURENET = 'futurenet',
+  SANDBOX = 'sandbox',
 }
 
 export enum NotificationChannel {
@@ -130,6 +132,32 @@ export enum NotificationChannel {
   IN_APP = 'IN_APP',
 }
 
+// ── Stellar Asset ───────────────────────────────────────────────────────────
+
+export interface StellarAsset {
+  code: string;
+  issuer: string;
+  type: 'native' | 'credit_alphanum4' | 'credit_alphanum12';
+}
+
+export interface AssetBalance {
+  asset: StellarAsset;
+  balance: string;
+  limit: string;
+  buyingLiabilities: string;
+  sellingLiabilities: string;
+  isAuthorized: boolean;
+}
+
+export interface Trustline {
+  asset: StellarAsset;
+  account: string;
+  limit: string;
+  balance: string;
+  isAuthorized: boolean;
+  createdAt: Date;
+}
+
 // ── User & Auth ─────────────────────────────────────────────────────────────
 
 export interface User {
@@ -137,7 +165,7 @@ export interface User {
   email: string;
   displayName: string;
   role: UserRole;
-  walletAddress: string | null;
+  stellarPublicKey: string | null;
   avatarUrl: string | null;
   twoFactorEnabled: boolean;
   createdAt: Date;
@@ -145,12 +173,14 @@ export interface User {
 }
 
 export interface WalletAuth {
-  address: string;
   publicKey: string;
   signature: string;
   message: string;
-  network: TONNetwork;
+  network: StellarNetwork;
+  walletProvider: WalletProvider;
 }
+
+export type WalletProvider = 'freighter' | 'xbull' | 'albedo' | 'rabet' | 'lobstr';
 
 export interface AuthTokens {
   accessToken: string;
@@ -170,9 +200,9 @@ export interface Merchant {
   description: string | null;
   status: MerchantStatus;
   verificationLevel: MerchantVerificationLevel;
-  supportedCurrencies: string[];
+  supportedAssets: StellarAsset[];
   feeRate: number;
-  settlementAddress: string | null;
+  settlementPublicKey: string | null;
   webhookUrl: string | null;
   apiKey: string | null;
   metadata: Record<string, unknown>;
@@ -185,8 +215,8 @@ export interface MerchantOnboardingRequest {
   businessEmail: string;
   businessUrl?: string;
   description?: string;
-  supportedCurrencies: string[];
-  settlementAddress: string;
+  supportedAssets: StellarAsset[];
+  settlementPublicKey: string;
 }
 
 export interface MerchantOnboardingResponse {
@@ -203,14 +233,14 @@ export interface Payment {
   merchantId: string;
   customerId: string | null;
   amount: string;
-  currency: string;
+  asset: StellarAsset;
   status: PaymentStatus;
   description: string | null;
-  payerAddress: string | null;
-  recipientAddress: string;
+  payerPublicKey: string | null;
+  recipientPublicKey: string;
   memo: string | null;
   txHash: string | null;
-  blockHeight: number | null;
+  ledgerSequence: number | null;
   expiresAt: Date;
   metadata: Record<string, unknown>;
   createdAt: Date;
@@ -220,10 +250,10 @@ export interface Payment {
 export interface CreatePaymentRequest {
   merchantId: string;
   amount: string;
-  currency: string;
+  asset: StellarAsset;
   description?: string;
-  payerAddress?: string;
-  recipientAddress: string;
+  payerPublicKey?: string;
+  recipientPublicKey: string;
   memo?: string;
   expiresIn?: number;
   metadata?: Record<string, unknown>;
@@ -237,14 +267,14 @@ export interface BatchPaymentRequest {
 export interface SplitPaymentRequest {
   merchantId: string;
   totalAmount: string;
-  currency: string;
+  asset: StellarAsset;
   recipients: SplitPaymentRecipient[];
   description?: string;
   metadata?: Record<string, unknown>;
 }
 
 export interface SplitPaymentRecipient {
-  address: string;
+  publicKey: string;
   amount: string;
   percentage?: number;
 }
@@ -255,7 +285,7 @@ export interface PaymentLink {
   url: string;
   code: string;
   amount: string;
-  currency: string;
+  asset: StellarAsset;
   description: string | null;
   maxPayments: number | null;
   currentPayments: number;
@@ -268,7 +298,7 @@ export interface PaymentLink {
 
 export interface CreatePaymentLinkRequest {
   amount: string;
-  currency: string;
+  asset: StellarAsset;
   description?: string;
   maxPayments?: number;
   expiresIn?: number;
@@ -283,7 +313,7 @@ export interface Invoice {
   merchantId: string;
   customerId: string | null;
   amount: string;
-  currency: string;
+  asset: StellarAsset;
   status: InvoiceStatus;
   items: InvoiceItem[];
   dueDate: Date;
@@ -306,7 +336,7 @@ export interface InvoiceItem {
 export interface CreateInvoiceRequest {
   merchantId: string;
   amount: string;
-  currency: string;
+  asset: StellarAsset;
   items: InvoiceItem[];
   dueDate?: Date;
   customerId?: string;
@@ -322,7 +352,7 @@ export interface Escrow {
   merchantId: string;
   customerId: string;
   amount: string;
-  currency: string;
+  asset: StellarAsset;
   status: EscrowStatus;
   milestones: Milestone[];
   currentMilestone: number;
@@ -356,7 +386,7 @@ export interface CreateEscrowRequest {
   merchantId: string;
   customerId: string;
   amount: string;
-  currency: string;
+  asset: StellarAsset;
   milestones: Omit<Milestone, 'status' | 'completedAt' | 'releasedAt' | 'releaseTxHash'>[];
   metadata?: Record<string, unknown>;
 }
@@ -370,7 +400,7 @@ export interface Refund {
   merchantId: string;
   amount: string;
   originalAmount: string;
-  currency: string;
+  asset: StellarAsset;
   status: RefundStatus;
   reason: string;
   isPartial: boolean;
@@ -397,7 +427,7 @@ export interface Subscription {
   customerId: string;
   planName: string;
   amount: string;
-  currency: string;
+  asset: StellarAsset;
   interval: SubscriptionBillingInterval;
   status: SubscriptionStatus;
   trialEndDate: Date | null;
@@ -418,7 +448,7 @@ export interface CreateSubscriptionRequest {
   customerId: string;
   planName: string;
   amount: string;
-  currency: string;
+  asset: StellarAsset;
   interval: SubscriptionBillingInterval;
   trialDays?: number;
   maxPayments?: number;
@@ -432,13 +462,13 @@ export interface Settlement {
   settlementId: string;
   merchantId: string;
   amount: string;
-  currency: string;
+  asset: StellarAsset;
   feeAmount: string;
   netAmount: string;
   status: SettlementStatus;
   paymentIds: string[];
   txHash: string | null;
-  settlementAddress: string;
+  settlementPublicKey: string;
   periodStart: Date;
   periodEnd: Date;
   processedAt: Date | null;
@@ -453,9 +483,9 @@ export interface TreasuryTransaction {
   id: string;
   txType: TreasuryTxType;
   amount: string;
-  currency: string;
-  fromAddress: string | null;
-  toAddress: string | null;
+  asset: StellarAsset;
+  fromPublicKey: string | null;
+  toPublicKey: string | null;
   txHash: string | null;
   status: TreasuryTxStatus;
   referenceId: string | null;
@@ -552,7 +582,7 @@ export interface PaymentAnalytics {
   averagePaymentSize: string;
   successRate: number;
   refundRate: number;
-  currencyBreakdown: Record<string, number>;
+  assetBreakdown: Record<string, number>;
   dailyVolume: DailyVolume[];
 }
 

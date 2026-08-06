@@ -1,5 +1,13 @@
 import { z } from 'zod';
 
+// ── Stellar Asset Schema ────────────────────────────────────────────────────
+
+const stellarAssetSchema = z.object({
+  code: z.string(),
+  issuer: z.string(),
+  type: z.enum(['native', 'credit_alphanum4', 'credit_alphanum12']),
+});
+
 // ── Environment Schema ──────────────────────────────────────────────────────
 
 const envSchema = z.object({
@@ -13,10 +21,10 @@ const envSchema = z.object({
   // Redis
   REDIS_URL: z.string().url().default('redis://localhost:6379'),
 
-  // TON
-  TON_NETWORK: z.enum(['mainnet', 'testnet']).default('testnet'),
-  TON_ENDPOINT: z.string().url().default('https://toncenter.com/api/v2/jsonRPC'),
-  TON_API_KEY: z.string().optional(),
+  // Stellar
+  STELLAR_NETWORK: z.enum(['public', 'testnet', 'futurenet', 'sandbox']).default('testnet'),
+  STELLAR_HORIZON_URL: z.string().url().default('https://horizon-testnet.stellar.org'),
+  STELLAR_SOROBAN_RPC_URL: z.string().url().default('https://soroban-testnet.stellar.org'),
 
   // JWT
   JWT_SECRET: z.string().min(32),
@@ -33,16 +41,19 @@ const envSchema = z.object({
   // Logging
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
 
-  // Contracts
-  PAYMENT_ROUTER_ADDRESS: z.string().optional(),
-  MERCHANT_REGISTRY_ADDRESS: z.string().optional(),
-  INVOICE_MANAGER_ADDRESS: z.string().optional(),
-  ESCROW_MANAGER_ADDRESS: z.string().optional(),
-  SUBSCRIPTION_MANAGER_ADDRESS: z.string().optional(),
-  REFUND_MANAGER_ADDRESS: z.string().optional(),
-  TREASURY_VAULT_ADDRESS: z.string().optional(),
-  FEE_MANAGER_ADDRESS: z.string().optional(),
-  SETTLEMENT_MANAGER_ADDRESS: z.string().optional(),
+  // Contracts (Soroban)
+  PAYMENT_ROUTER_CONTRACT_ID: z.string().optional(),
+  MERCHANT_REGISTRY_CONTRACT_ID: z.string().optional(),
+  INVOICE_MANAGER_CONTRACT_ID: z.string().optional(),
+  ESCROW_MANAGER_CONTRACT_ID: z.string().optional(),
+  SUBSCRIPTION_MANAGER_CONTRACT_ID: z.string().optional(),
+  REFUND_MANAGER_CONTRACT_ID: z.string().optional(),
+  TREASURY_VAULT_CONTRACT_ID: z.string().optional(),
+  FEE_MANAGER_CONTRACT_ID: z.string().optional(),
+  SETTLEMENT_MANAGER_CONTRACT_ID: z.string().optional(),
+  CONFIGURATION_MANAGER_CONTRACT_ID: z.string().optional(),
+  ROLE_MANAGER_CONTRACT_ID: z.string().optional(),
+  EMERGENCY_PAUSE_CONTRACT_ID: z.string().optional(),
 
   // Webhook
   WEBHOOK_SECRET: z.string().optional(),
@@ -83,7 +94,7 @@ export function resetConfig(): void {
 
 export const APP_NAME = 'EPay';
 export const APP_VERSION = '1.0.0';
-export const APP_DESCRIPTION = 'Decentralized Payment Gateway on TON';
+export const APP_DESCRIPTION = 'Decentralized Payment Gateway on Stellar';
 
 export const DEFAULT_PAGE_SIZE = 20;
 export const MAX_PAGE_SIZE = 100;
@@ -97,8 +108,11 @@ export const SUBSCRIPTION_GRACE_PERIOD_DAYS = 7;
 export const DEFAULT_FEE_BPS = 50; // 0.5%
 export const MAX_FEE_BPS = 500; // 5%
 
-export const TON_DECIMALS = 9;
-export const TON_MIN_PAYMENT = '10000000'; // 0.01 TON in nanoTON
+// Stellar constants
+export const STELLAR_DECIMALS = 7; // 1 XLM = 10^7 stroops
+export const STELLAR_MIN_PAYMENT = '1000000'; // 0.1 XLM in stroops
+export const STELLAR_BASE_RESERVE = '10000000'; // 1 XLM (base reserve)
+export const STELLAR_BASE_FEE = '100'; // 100 stroops = 0.00001 XLM
 
 export const RATE_LIMIT_WINDOW_MS = 60_000;
 export const RATE_LIMIT_MAX_REQUESTS = 100;
@@ -109,4 +123,29 @@ export const WEBHOOK_BACKOFF_MULTIPLIER = 2;
 
 export const INDEXER_BATCH_SIZE = 100;
 export const INDEXER_POLL_INTERVAL_MS = 10_000;
-export const INDEXER_CONFIRMATION_BLOCKS = 20;
+export const INDEXER_CONFIRMATION_LEDGERS = 12;
+
+// ── Stellar Network URLs ────────────────────────────────────────────────────
+
+export const STELLAR_NETWORK_URLS: Record<string, { horizon: string; sorobanRpc: string; passphrase: string }> = {
+  public: {
+    horizon: 'https://horizon.stellar.org',
+    sorobanRpc: 'https://soroban-rpc.stellar.org',
+    passphrase: 'Public Global Stellar Network ; September 2015',
+  },
+  testnet: {
+    horizon: 'https://horizon-testnet.stellar.org',
+    sorobanRpc: 'https://soroban-testnet.stellar.org',
+    passphrase: 'Test SDF Network ; September 2015',
+  },
+  futurenet: {
+    horizon: 'https://horizon-futurenet.stellar.org',
+    sorobanRpc: 'https://rpc-futurenet.stellar.org',
+    passphrase: 'Test SDF Future Network ; October 2022',
+  },
+  sandbox: {
+    horizon: 'http://localhost:8000',
+    sorobanRpc: 'http://localhost:8000/soroban/rpc',
+    passphrase: 'Standalone Network ; February 2017',
+  },
+};

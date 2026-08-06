@@ -1,9 +1,12 @@
-import type { ApiResponse, ApiError, PaginatedResponse, PaginationQuery } from '@epay/types';
+// EPay Shared Utilities — Stellar Network
+// ============================================================================
 
-/**
- * Create a standardized API success response
- */
-export function createSuccessResponse<T>(data: T, message?: string): ApiResponse<T> {
+import { STELLAR_DECIMALS } from '@epay/config';
+import type { StellarNetwork } from '@epay/types';
+
+// ── API Response Helpers ────────────────────────────────────────────────────
+
+export function successResponse<T>(data: T, message?: string) {
   return {
     success: true,
     data,
@@ -12,10 +15,7 @@ export function createSuccessResponse<T>(data: T, message?: string): ApiResponse
   };
 }
 
-/**
- * Create a standardized API error response
- */
-export function createErrorResponse(message: string, errors: ApiError[] = []): ApiResponse<null> {
+export function errorResponse(message: string, errors?: { code: string; message: string; field?: string }[]) {
   return {
     success: false,
     data: null,
@@ -25,24 +25,183 @@ export function createErrorResponse(message: string, errors: ApiError[] = []): A
   };
 }
 
+// ── ID Generation ───────────────────────────────────────────────────────────
+
+export function generateId(prefix: string): string {
+  const timestamp = Date.now().toString(36);
+  const random = Math.random().toString(36).substring(2, 8);
+  return `${prefix}_${timestamp}${random}`;
+}
+
+export function generateApiKey(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let key = 'epay_';
+  for (let i = 0; i < 32; i++) {
+    key += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return key;
+}
+
+// ── Stellar Unit Conversion ─────────────────────────────────────────────────
+
 /**
- * Format a validation error
+ * Convert stroops (smallest Stellar unit) to human-readable XLM.
+ * 1 XLM = 10^7 stroops
  */
-export function formatValidationError(field: string, message: string): ApiError {
-  return { code: 'VALIDATION_ERROR', message, field };
+export function stroopsToXlm(stroops: string): string {
+  const value = BigInt(stroops);
+  const whole = value / BigInt(10 ** STELLAR_DECIMALS);
+  const fraction = value % BigInt(10 ** STELLAR_DECIMALS);
+  const fracStr = fraction.toString().padStart(STELLAR_DECIMALS, '0').replace(/0+$/, '');
+  return fracStr ? `${whole.toString()}.${fracStr}` : whole.toString();
 }
 
 /**
- * Create paginated response
+ * Convert human-readable XLM to stroops string.
  */
-export function createPaginatedResponse<T>(
-  data: T[],
-  total: number,
-  query: PaginationQuery,
-): PaginatedResponse<T> {
-  const page = query.page ?? 1;
-  const pageSize = query.pageSize ?? 20;
+export function xlmToStroops(xlm: string): string {
+  const [whole = '0', fraction = '0'] = xlm.split('.');
+  const padded = fraction.padEnd(STELLAR_DECIMALS, '0').slice(0, STELLAR_DECIMALS);
+  return (BigInt(whole) * BigInt(10 ** STELLAR_DECIMALS) + BigInt(padded)).toString();
+}
+
+/**
+ * Format any Stellar asset amount for display.
+ */
+export function formatAssetAmount(amount: string, decimals = STELLAR_DECIMALS): string {
+  const value = BigInt(amount);
+  const whole = value / BigInt(10 ** decimals);
+  const fraction = value % BigInt(10 ** decimals);
+  const fracStr = fraction.toString().padStart(decimals, '0').replace(/0+$/, '');
+  return fracStr ? `${whole.toString()}.${fracStr}` : whole.toString();
+}
+
+// ── Stellar Address Validation ──────────────────────────────────────────────
+
+/**
+ * Validate a Stellar public key (G... address).
+ */
+export function isValidStellarPublicKey(key: string): boolean {
+  if (typeof key !== 'string' || key.length !== 56) return false;
+  return /^G[A-Z2-7]{55}$/.test(key);
+}
+
+/**
+ * Validate a Stellar secret key (S...).
+ */
+export function isValidStellarSecretKey(key: string): boolean {
+  if (typeof key !== 'string' || key.length !== 56) return false;
+  return /^S[A-Z2-7]{55}$/.test(key);
+}
+
+/**
+ * Validate a Soroban contract ID (C...).
+ */
+export function isValidContractId(id: string): boolean {
+  if (typeof id !== 'string' || id.length !== 56) return false;
+  return /^C[A-Z2-7]{55}$/.test(id);
+}
+
+/**
+ * Truncate a Stellar address for display.
+ */
+export function formatStellarAddress(address: string, prefix = 8, suffix = 4): string {
+  if (address.length <= prefix + suffix + 3) return address;
+  return `${address.slice(0, prefix)}...${address.slice(-suffix)}`;
+}
+
+// ── Explorer URLs ───────────────────────────────────────────────────────────
+
+/**
+ * Get the Stellar explorer URL for a transaction, account, or ledger.
+ */
+export function getExplorerUrl(
+  type: 'tx' | 'account' | 'ledger' | 'contract',
+  value: string,
+  network: StellarNetwork = 'testnet' as StellarNetwork,
+): string {
+  const base = network === ('public' as StellarNetwork)
+    ? 'https://stellar.expert/explorer/public'
+    : 'https://stellar.expert/explorer/testnet';
+
+  switch (type) {
+    case 'tx': return `${base}/tx/${value}`;
+    case 'account': return `${base}/account/${value}`;
+    case 'ledger': return `${base}/ledger/${value}`;
+    case 'contract': return `${base}/contract/${value}`;
+    default: return base;
+  }
+}
+
+// ── Fee Calculation ─────────────────────────────────────────────────────────
+
+/**
+ * Calculate EPay fee for a given amount in stroops.
+ * @param amountStroops - Amount in stroops as string
+ * @param feeBps - Fee in basis points (default 50 = 0.5%)
+ */
+export function calculateFee(amountStroops: string, feeBps = 50): string {
+  return ((BigInt(amountStroops) * BigInt(feeBps)) / BigInt(10000)).toString();
+}
+
+/**
+ * Calculate net amount after deducting fee.
+ */
+export function calculateNetAmount(amountStroops: string, feeBps = 50): string {
+  const fee = calculateFee(amountStroops, feeBps);
+  return (BigInt(amountStroops) - BigInt(fee)).toString();
+}
+
+/**
+ * Calculate the minimum Stellar account balance including reserves.
+ */
+export function calculateMinBalance(
+  numTrustlines = 0,
+  numOffers = 0,
+  numSigners = 0,
+): string {
+  const baseReserve = BigInt('10000000'); // 1 XLM
+  const trustlineReserve = BigInt('5000000'); // 0.5 XLM per trustline
+  const offerReserve = BigInt('5000000'); // 0.5 XLM per offer
+  const signerReserve = BigInt('5000000'); // 0.5 XLM per signer
+
+  let total = BigInt(2) * baseReserve;
+  total += BigInt(numTrustlines) * trustlineReserve;
+  total += BigInt(numOffers) * offerReserve;
+  total += BigInt(numSigners) * signerReserve;
+
+  return total.toString();
+}
+
+// ── Memo Helpers ────────────────────────────────────────────────────────────
+
+export function createMemoText(text: string): { type: 'text'; value: string } {
+  return { type: 'text', value: text.slice(0, 28) };
+}
+
+export function createMemoId(id: string): { type: 'id'; value: string } {
+  return { type: 'id', value: id };
+}
+
+export function createMemoHash(hash: string): { type: 'hash'; value: string } {
+  return { type: 'hash', value: hash };
+}
+
+// ── Misc Utilities ──────────────────────────────────────────────────────────
+
+export function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export function paginate<T>(
+  items: T[],
+  page: number,
+  pageSize: number,
+): { data: T[]; total: number; page: number; pageSize: number; totalPages: number; hasNext: boolean; hasPrevious: boolean } {
+  const total = items.length;
   const totalPages = Math.ceil(total / pageSize);
+  const start = (page - 1) * pageSize;
+  const data = items.slice(start, start + pageSize);
 
   return {
     data,
@@ -55,135 +214,25 @@ export function createPaginatedResponse<T>(
   };
 }
 
-/**
- * Generate a unique ID with prefix
- */
-export function generateId(prefix: string): string {
-  const timestamp = Date.now().toString(36);
-  const random = Math.random().toString(36).substring(2, 10);
-  return `${prefix}_${timestamp}${random}`;
+export function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
 }
 
-/**
- * Format nanoTON amount to human-readable TON
- */
-export function nanoTonToTon(nanoTon: string | bigint): string {
-  const value = BigInt(nanoTon);
-  const whole = value / BigInt(1_000_000_000);
-  const fraction = value % BigInt(1_000_000_000);
-  return `${whole}.${fraction.toString().padStart(9, '0')}`;
-}
+// ── Error Class ─────────────────────────────────────────────────────────────
 
-/**
- * Format TON amount to nanoTON
- */
-export function tonToNanoTon(ton: string): bigint {
-  const [whole = '0', fraction = '0'] = ton.split('.');
-  const paddedFraction = (fraction ?? '0').padEnd(9, '0').substring(0, 9);
-  return BigInt(whole) * BigInt(1_000_000_000) + BigInt(paddedFraction);
-}
-
-/**
- * Calculate fee amount in basis points
- */
-export function calculateFee(amount: string, feeBps: number): string {
-  const amountBigInt = BigInt(amount);
-  const fee = (amountBigInt * BigInt(feeBps)) / BigInt(10_000);
-  return fee.toString();
-}
-
-/**
- * Calculate net amount after fee
- */
-export function calculateNetAmount(amount: string, feeBps: number): string {
-  const amountBigInt = BigInt(amount);
-  const fee = (amountBigInt * BigInt(feeBps)) / BigInt(10_000);
-  return (amountBigInt - fee).toString();
-}
-
-/**
- * Check if a value is expired
- */
-export function isExpired(expiresAt: Date | string | null): boolean {
-  if (!expiresAt) return false;
-  return new Date(expiresAt) < new Date();
-}
-
-/**
- * Sleep utility
- */
-export function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-/**
- * Retry with exponential backoff
- */
-export async function retryWithBackoff<T>(
-  fn: () => Promise<T>,
-  options: {
-    maxRetries?: number;
-    initialDelayMs?: number;
-    backoffMultiplier?: number;
-    maxDelayMs?: number;
-  } = {},
-): Promise<T> {
-  const {
-    maxRetries = 5,
-    initialDelayMs = 1000,
-    backoffMultiplier = 2,
-    maxDelayMs = 60_000,
-  } = options;
-
-  let lastError: Error | undefined;
-
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    try {
-      return await fn();
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
-      if (attempt === maxRetries) break;
-
-      const delay = Math.min(initialDelayMs * backoffMultiplier ** attempt, maxDelayMs);
-      await sleep(delay);
-    }
+export class EPayError extends Error {
+  constructor(
+    message: string,
+    public readonly statusCode: number,
+    public readonly errors?: { code: string; message: string; field?: string }[],
+  ) {
+    super(message);
+    this.name = 'EPayError';
   }
 
-  throw lastError;
-}
-
-/**
- * Mask sensitive data
- */
-export function maskAddress(address: string, visibleChars = 6): string {
-  if (address.length <= visibleChars * 2) return '*'.repeat(address.length);
-  return `${address.slice(0, visibleChars)}...${address.slice(-visibleChars)}`;
-}
-
-/**
- * Safe JSON parse
- */
-export function safeJsonParse<T>(json: string, fallback: T): T {
-  try {
-    return JSON.parse(json) as T;
-  } catch {
-    return fallback;
+  static fromResponse(status: number, body: Record<string, unknown>): EPayError {
+    const message = (body.message as string | undefined) ?? `EPay API error: ${String(status)}`;
+    const errors = body.errors as { code: string; message: string; field?: string }[] | undefined;
+    return new EPayError(message, status, errors);
   }
-}
-
-/**
- * Generate a random nonce
- */
-export function generateNonce(): string {
-  const array = new Uint8Array(32);
-  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
-    crypto.getRandomValues(array);
-  } else {
-    for (let i = 0; i < array.length; i++) {
-      array[i] = Math.floor(Math.random() * 256);
-    }
-  }
-  return Array.from(array)
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
 }
