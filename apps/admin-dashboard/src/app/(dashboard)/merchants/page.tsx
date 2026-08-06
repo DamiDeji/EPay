@@ -1,12 +1,11 @@
 'use client';
 
-import { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
-  Search, Filter, Building2, ShieldCheck, ShieldX,
-  MoreHorizontal, Download, Clock, CheckCircle2,
-  XCircle, AlertCircle, Ban,
+  Search, Building2, ShieldCheck,
+  MoreHorizontal, Download, CheckCircle2, AlertCircle, Ban,
 } from 'lucide-react';
+import { useState } from 'react';
 
 const allMerchants = [
   { id: 'merch_001', name: 'Acme Corp', email: 'payments@acme.dev', status: 'active', verification: 'verified', volume: '$1.2M', payments: 3400, joined: '2024-03-15' },
@@ -33,7 +32,6 @@ const verificationStyles: Record<string, { icon: React.ElementType; color: strin
 export default function MerchantsPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [selected, setSelected] = useState<string[]>([]);
 
   const filtered = allMerchants.filter((m) => {
     const matchSearch = m.name.toLowerCase().includes(search.toLowerCase()) ||

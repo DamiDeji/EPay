@@ -1,10 +1,10 @@
 'use client';
 
 import { useTheme } from 'next-themes';
+import { useState, useEffect } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
-import { useState, useEffect } from 'react';
 
 const DATA = [
   { month: 'Jan', revenue: 420, volume: 520, fees: 21 },
@@ -20,7 +20,7 @@ const DATA = [
 export function RevenueChart() {
   const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  useEffect(() => { setMounted(true); }, []);
 
   if (!mounted) return <div className="h-80" />;
 

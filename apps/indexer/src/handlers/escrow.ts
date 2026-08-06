@@ -1,5 +1,5 @@
-import { createChildLogger } from '../logger';
 import type { ParsedEvent } from '../blockchain/contracts';
+import { createChildLogger } from '../logger';
 
 const log = createChildLogger('handler:escrow');
 

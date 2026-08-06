@@ -1,7 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent, Button, Input, Badge } from '@epay/ui';
+import { Card, CardContent, Button, Input, Badge } from '@epay/ui';
 import {
   Search,
   Filter,
@@ -12,6 +11,7 @@ import {
   CheckCircle2,
   AlertCircle,
 } from 'lucide-react';
+import { useState } from 'react';
 
 const PAYMENTS = [
   { id: 'pay_7xK2m', amount: '125.50 TON', currency: 'TON', status: 'COMPLETED', payer: 'EQD...x9m2', date: '2026-08-05 14:22', txHash: '0xabc...123' },
@@ -66,7 +66,7 @@ export default function PaymentsPage() {
           <Input
             placeholder="Search by payment ID or payer address..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); }}
             className="pl-10"
           />
         </div>

@@ -1,5 +1,5 @@
-import Link from 'next/link';
 import { Zap } from 'lucide-react';
+import Link from 'next/link';
 
 const FOOTER_LINKS = {
   Product: ['Features', 'Pricing', 'Documentation', 'API Reference', 'Changelog'],

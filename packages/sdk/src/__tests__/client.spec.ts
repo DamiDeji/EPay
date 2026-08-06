@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
 import { EPayClient } from '../client';
 import { EPayError } from '../utils';
 
@@ -130,7 +131,9 @@ describe('EPayClient', () => {
       await client.get('/no-auth');
       const call = mockFetch.mock.calls[0] as [string, RequestInit];
       const headers = call[1].headers as Record<string, string>;
+      // eslint-disable-next-line @typescript-eslint/dot-notation
       expect(headers['Authorization']).toBeUndefined();
+      // eslint-disable-next-line @typescript-eslint/dot-notation
       expect(headers['x-api-key']).toBeUndefined();
     });
   });

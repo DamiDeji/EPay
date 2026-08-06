@@ -2,15 +2,17 @@
 
 import { Card, CardHeader, CardTitle, CardContent } from '@epay/ui';
 import { motion } from 'framer-motion';
-import { RevenueChart } from '@/components/charts/revenue-chart';
-import { SuccessRateChart } from '@/components/charts/success-rate-chart';
+import { DollarSign, TrendingUp, Wallet, Percent } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useState, useEffect } from 'react';
 import {
   LineChart, Line, PieChart, Pie, Cell, ResponsiveContainer,
 } from 'recharts';
+
+import { RevenueChart } from '@/components/charts/revenue-chart';
+import { SuccessRateChart } from '@/components/charts/success-rate-chart';
 import { StatCard } from '@/components/stat-card';
-import { DollarSign, TrendingUp, Wallet, Percent } from 'lucide-react';
+
 
 const PIE_DATA = [
   { name: 'TON', value: 65, color: '#0098EA' },
@@ -33,7 +35,7 @@ const TREND_DATA = [
 export default function AnalyticsPage() {
   const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  useEffect(() => { setMounted(true); }, []);
   const isDark = theme === 'dark';
 
   return (

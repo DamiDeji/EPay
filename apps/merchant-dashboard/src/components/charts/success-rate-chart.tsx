@@ -1,10 +1,10 @@
 'use client';
 
 import { useTheme } from 'next-themes';
+import { useState, useEffect } from 'react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
-import { useState, useEffect } from 'react';
 
 const DATA = [
   { day: 'Mon', rate: 96 }, { day: 'Tue', rate: 98 }, { day: 'Wed', rate: 94 },
@@ -15,7 +15,7 @@ const DATA = [
 export function SuccessRateChart() {
   const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  useEffect(() => { setMounted(true); }, []);
 
   if (!mounted) return <div className="h-64" />;
 

@@ -1,7 +1,8 @@
-import { createChildLogger } from '../logger';
 import type { ParsedEvent } from '../blockchain/contracts';
-import { handlePaymentEvent } from './payment';
+import { createChildLogger } from '../logger';
+
 import { handleEscrowEvent } from './escrow';
+import { handlePaymentEvent } from './payment';
 import { handleRefundEvent } from './refund';
 import { handleSubscriptionEvent } from './subscription';
 import { handleTreasuryEvent } from './treasury';

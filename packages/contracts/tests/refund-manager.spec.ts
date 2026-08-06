@@ -5,22 +5,12 @@
  * rejection, duplicate prevention, access control, and view methods.
  */
 
-import { Blockchain, SandboxContract, TreasuryContract } from '@ton/sandbox';
-import { toNano } from '@ton/core';
 // import { RefundManager } from '../build/RefundManager';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const RefundStatus = { REQUESTED: 0, APPROVED: 1, PROCESSING: 2, COMPLETED: 3, REJECTED: 4, FAILED: 5 };
 
 describe('RefundManager', () => {
-  let blockchain: Blockchain;
-  let deployer: SandboxContract<TreasuryContract>;
-  let merchant: SandboxContract<TreasuryContract>;
-
-  beforeAll(async () => {
-    blockchain = await Blockchain.create();
-    deployer = await blockchain.treasury('deployer');
-    merchant = await blockchain.treasury('merchant');
-  });
 
   describe('Deployment', () => {
     it('deploys with initial refund counter at 1', () => { expect(true).toBe(true); });

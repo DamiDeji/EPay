@@ -1,8 +1,8 @@
-import { createChildLogger } from '../logger';
+import type { BlockScanner } from '../blockchain/scanner';
+import type { CheckpointManager } from '../checkpoint';
 import type { IndexerConfig } from '../config';
-import { BlockScanner } from '../blockchain/scanner';
-import { CheckpointManager } from '../checkpoint';
 import { dispatchEvent } from '../handlers/dispatcher';
+import { createChildLogger } from '../logger';
 
 const log = createChildLogger('sync:realtime');
 
@@ -59,7 +59,7 @@ export class RealtimeSync {
   private scheduleNextPoll(): void {
     if (this.stopRequested) return;
 
-    this.pollTimer = setTimeout(async () => {
+    this.pollTimer = setTimeout(() => { void (async () => {
       try {
         await this.poll();
       } catch (error) {
@@ -69,7 +69,7 @@ export class RealtimeSync {
       if (!this.stopRequested) {
         this.scheduleNextPoll();
       }
-    }, this.config.pollIntervalMs);
+    })(); }, this.config.pollIntervalMs);
   }
 
   private async poll(): Promise<void> {

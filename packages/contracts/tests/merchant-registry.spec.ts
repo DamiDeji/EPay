@@ -5,23 +5,14 @@
  * settlement address updates, verifier management, address uniqueness, and views.
  */
 
-import { Blockchain, SandboxContract, TreasuryContract } from '@ton/sandbox';
-import { toNano } from '@ton/core';
 // import { MerchantRegistry } from '../build/MerchantRegistry';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const Status = { PENDING: 0, ACTIVE: 1, SUSPENDED: 2, REJECTED: 3, INACTIVE: 4 };
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const Verif = { NONE: 0, BASIC: 1, VERIFIED: 2, ENTERPRISE: 3 };
 
 describe('MerchantRegistry', () => {
-  let blockchain: Blockchain;
-  let deployer: SandboxContract<TreasuryContract>;
-  let merchant: SandboxContract<TreasuryContract>;
-
-  beforeAll(async () => {
-    blockchain = await Blockchain.create();
-    deployer = await blockchain.treasury('deployer');
-    merchant = await blockchain.treasury('merchant');
-  });
 
   describe('Deployment', () => {
     it('deploys with initial merchant counter at 1', () => { expect(true).toBe(true); });

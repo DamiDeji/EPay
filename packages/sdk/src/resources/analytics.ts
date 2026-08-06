@@ -1,4 +1,5 @@
 import type { PaymentAnalytics } from '@epay/types';
+
 import { BaseResource } from './base';
 
 /**
@@ -12,7 +13,7 @@ export class AnalyticsResource extends BaseResource {
     merchantId: string,
     days?: number,
   ): Promise<PaymentAnalytics> {
-    const qs = days ? `?days=${days}` : '';
+    const qs = days !== undefined ? `?days=${String(days)}` : '';
     return this.client.get<PaymentAnalytics>(`/analytics/merchant/${merchantId}${qs}`);
   }
 
@@ -23,9 +24,9 @@ export class AnalyticsResource extends BaseResource {
     totalRevenue: string;
     totalFees: string;
     netRevenue: string;
-    daily: Array<{ date: string; amount: string; count: number }>;
+    daily: { date: string; amount: string; count: number }[];
   }> {
-    const qs = days ? `?days=${days}` : '';
+    const qs = days !== undefined ? `?days=${String(days)}` : '';
     return this.client.get(`/analytics/merchant/${merchantId}/revenue${qs}`);
   }
 
@@ -38,7 +39,7 @@ export class AnalyticsResource extends BaseResource {
     totalVolume: string;
     activeMerchants: number;
   }> {
-    const qs = days ? `?days=${days}` : '';
+    const qs = days !== undefined ? `?days=${String(days)}` : '';
     return this.client.get(`/analytics/platform${qs}`);
   }
 }

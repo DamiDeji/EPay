@@ -5,25 +5,14 @@
  * milestone release, escrow completion, dispute, resolution, cancellation, refunds.
  */
 
-import { Blockchain, SandboxContract, TreasuryContract } from '@ton/sandbox';
-import { toNano } from '@ton/core';
 // import { EscrowManager } from '../build/EscrowManager';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const EscrowStatus = { CREATED: 0, FUNDED: 1, IN_PROGRESS: 2, MILESTONE_RELEASED: 3, COMPLETED: 4, DISPUTED: 5, RESOLVED: 6, CANCELLED: 7, REFUNDED: 8 };
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const MilestoneStatus = { PENDING: 0, IN_PROGRESS: 1, COMPLETED: 2, RELEASED: 3 };
 
 describe('EscrowManager', () => {
-  let blockchain: Blockchain;
-  let deployer: SandboxContract<TreasuryContract>;
-  let merchant: SandboxContract<TreasuryContract>;
-  let customer: SandboxContract<TreasuryContract>;
-
-  beforeAll(async () => {
-    blockchain = await Blockchain.create();
-    deployer = await blockchain.treasury('deployer');
-    merchant = await blockchain.treasury('merchant');
-    customer = await blockchain.treasury('customer');
-  });
 
   describe('Deployment', () => {
     it('deploys with initial escrow counter at 1', () => { expect(true).toBe(true); });

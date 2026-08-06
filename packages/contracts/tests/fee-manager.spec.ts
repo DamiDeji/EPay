@@ -5,20 +5,9 @@
  * fee collection, tier management, and view methods.
  */
 
-import { Blockchain, SandboxContract, TreasuryContract } from '@ton/sandbox';
-import { toNano } from '@ton/core';
 // import { FeeManager } from '../build/FeeManager';
 
 describe('FeeManager', () => {
-  let blockchain: Blockchain;
-  let deployer: SandboxContract<TreasuryContract>;
-  let merchant: SandboxContract<TreasuryContract>;
-
-  beforeAll(async () => {
-    blockchain = await Blockchain.create();
-    deployer = await blockchain.treasury('deployer');
-    merchant = await blockchain.treasury('merchant');
-  });
 
   describe('Deployment', () => {
     it('deploys with 4 default fee tiers', () => { expect(true).toBe(true); });

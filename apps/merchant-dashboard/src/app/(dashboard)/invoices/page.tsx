@@ -1,9 +1,8 @@
 'use client';
 
-import { useState } from 'react';
 import { Card, CardContent, Button, Badge } from '@epay/ui';
 import { FileText, Plus, Download, Eye, Clock, CheckCircle2, AlertCircle, Send } from 'lucide-react';
-import { StatCard } from '@/components/stat-card';
+
 
 const INVOICES = [
   { id: 'INV-LZ8XK2M', amount: '500.00 TON', customer: 'Acme Corp', status: 'PAID', dueDate: '2026-08-15', paidAt: '2026-08-05', items: 3 },

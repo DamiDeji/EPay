@@ -5,22 +5,12 @@
  * cancellation, refund, overdue marking, and view methods.
  */
 
-import { Blockchain, SandboxContract, TreasuryContract } from '@ton/sandbox';
-import { toNano } from '@ton/core';
 // import { InvoiceManager } from '../build/InvoiceManager';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const Status = { DRAFT: 0, ISSUED: 1, SENT: 2, VIEWED: 3, PARTIALLY_PAID: 4, PAID: 5, OVERDUE: 6, CANCELLED: 7, REFUNDED: 8 };
 
 describe('InvoiceManager', () => {
-  let blockchain: Blockchain;
-  let deployer: SandboxContract<TreasuryContract>;
-  let merchant: SandboxContract<TreasuryContract>;
-
-  beforeAll(async () => {
-    blockchain = await Blockchain.create();
-    deployer = await blockchain.treasury('deployer');
-    merchant = await blockchain.treasury('merchant');
-  });
 
   describe('Deployment', () => {
     it('deploys with initial invoice counter at 1', () => { expect(true).toBe(true); });

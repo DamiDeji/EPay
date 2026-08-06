@@ -10,9 +10,6 @@ import {
   Users,
   TrendingUp,
   Clock,
-  CheckCircle2,
-  XCircle,
-  MoreHorizontal,
 } from 'lucide-react';
 
 const STATS = [

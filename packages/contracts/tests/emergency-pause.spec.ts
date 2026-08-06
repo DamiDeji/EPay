@@ -5,20 +5,9 @@
  * access control, isPaused/notPaused checks, and events.
  */
 
-import { Blockchain, SandboxContract, TreasuryContract } from '@ton/sandbox';
-import { toNano } from '@ton/core';
 // import { EmergencyPause } from '../build/EmergencyPause';
 
 describe('EmergencyPause', () => {
-  let blockchain: Blockchain;
-  let deployer: SandboxContract<TreasuryContract>;
-  let pauser: SandboxContract<TreasuryContract>;
-
-  beforeAll(async () => {
-    blockchain = await Blockchain.create();
-    deployer = await blockchain.treasury('deployer');
-    pauser = await blockchain.treasury('pauser');
-  });
 
   describe('Deployment', () => {
     it('starts in unpaused state', () => { expect(true).toBe(true); });

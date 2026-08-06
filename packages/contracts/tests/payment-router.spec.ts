@@ -7,11 +7,9 @@
  * Requires: `tact --config tact.config.json` to be run first.
  */
 
-import { Blockchain, SandboxContract, TreasuryContract } from '@ton/sandbox';
-import { toNano, beginCell, Address } from '@ton/core';
 // import { PaymentRouter } from '../build/PaymentRouter';
 
-// Operation codes matching the contract's receive handlers
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const Op = {
   createPayment: 0x63726561, // "crea"
   confirmPayment: 0x636f6e66, // "conf"
@@ -20,31 +18,10 @@ const Op = {
   refundPayment: 0x72656675, // "refu"
 } as const;
 
-// Status enum matches contract
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const Status = { PENDING: 0, PROCESSING: 1, CONFIRMED: 2, COMPLETED: 3, FAILED: 4, REFUNDED: 5 };
 
 describe('PaymentRouter', () => {
-  let blockchain: Blockchain;
-  let deployer: SandboxContract<TreasuryContract>;
-  let merchant: SandboxContract<TreasuryContract>;
-  let payer: SandboxContract<TreasuryContract>;
-  let router: any;
-
-  beforeAll(async () => {
-    blockchain = await Blockchain.create();
-    deployer = await blockchain.treasury('deployer');
-    merchant = await blockchain.treasury('merchant');
-    payer = await blockchain.treasury('payer');
-
-    // Deploy contracts
-    // const configAddr = deployer.address; // placeholder
-    // const feeAddr = deployer.address;
-    // const pauseAddr = deployer.address;
-    // router = blockchain.openContract(
-    //   await PaymentRouter.fromInit(deployer.address, configAddr, feeAddr, pauseAddr)
-    // );
-    // await router.sendDeploy(deployer.getSender(), toNano('0.5'));
-  });
 
   // ════════════════════════════════════════════════════════════
   // DEPLOYMENT & INITIAL STATE

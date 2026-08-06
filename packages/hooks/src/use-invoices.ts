@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useCallback } from 'react';
 import type { Invoice, PaginatedResponse } from '@epay/types';
+import { useState, useCallback } from 'react';
+
 import { useApi } from './use-api';
 
 interface UseInvoicesReturn {

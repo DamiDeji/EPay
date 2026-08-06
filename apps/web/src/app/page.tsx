@@ -2,7 +2,6 @@
 
 import { Button, Badge } from '@epay/ui';
 import { motion } from 'framer-motion';
-import Link from 'next/link';
 import {
   ArrowRight,
   Wallet,
@@ -16,8 +15,10 @@ import {
   Users,
   Smartphone,
 } from 'lucide-react';
-import { Navbar } from '@/components/landing/navbar';
+import Link from 'next/link';
+
 import { Footer } from '@/components/landing/footer';
+import { Navbar } from '@/components/landing/navbar';
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },

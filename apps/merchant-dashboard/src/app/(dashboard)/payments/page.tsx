@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
 import { Card, CardContent, Button, Input, Badge } from '@epay/ui';
 import { Search, Filter, Download, ExternalLink, Clock, CheckCircle2, AlertCircle, XCircle } from 'lucide-react';
+import { useState } from 'react';
 
 const PAYMENTS = [
   { id: 'pay_7xK2m', amount: '125.50 TON', currency: 'TON', status: 'COMPLETED', payer: 'EQD...x9m2', date: '2026-08-05 14:22', txHash: '0xabc...123', fee: '0.63 TON' },
@@ -49,7 +49,7 @@ export default function PaymentsPage() {
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <Input placeholder="Search by ID or payer address..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-10" />
+          <Input placeholder="Search by ID or payer address..." value={search} onChange={(e) => { setSearch(e.target.value); }} className="pl-10" />
         </div>
         <div className="flex gap-1">
           {['ALL', 'COMPLETED', 'PENDING', 'FAILED', 'PROCESSING', 'REFUNDED'].map((s) => (
@@ -57,7 +57,7 @@ export default function PaymentsPage() {
               key={s}
               variant={statusFilter === s ? 'primary' : 'slate'}
               className="cursor-pointer"
-              onClick={() => setStatusFilter(s)}
+              onClick={() => { setStatusFilter(s); }}
             >
               {s}
             </Badge>

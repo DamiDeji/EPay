@@ -5,18 +5,9 @@
  * escrow hold/release, multi-sig signer management, transaction recording, and views.
  */
 
-import { Blockchain, SandboxContract, TreasuryContract } from '@ton/sandbox';
-import { toNano } from '@ton/core';
 // import { TreasuryVault } from '../build/TreasuryVault';
 
 describe('TreasuryVault', () => {
-  let blockchain: Blockchain;
-  let deployer: SandboxContract<TreasuryContract>;
-
-  beforeAll(async () => {
-    blockchain = await Blockchain.create();
-    deployer = await blockchain.treasury('deployer');
-  });
 
   describe('Deployment', () => {
     it('deploys with zero protocol, fee, and escrow balances', () => { expect(true).toBe(true); });

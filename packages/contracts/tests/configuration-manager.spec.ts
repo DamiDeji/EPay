@@ -6,18 +6,9 @@
  * ownership transfer, and view methods.
  */
 
-import { Blockchain, SandboxContract, TreasuryContract } from '@ton/sandbox';
-import { toNano } from '@ton/core';
 // import { ConfigurationManager } from '../build/ConfigurationManager';
 
 describe('ConfigurationManager', () => {
-  let blockchain: Blockchain;
-  let deployer: SandboxContract<TreasuryContract>;
-
-  beforeAll(async () => {
-    blockchain = await Blockchain.create();
-    deployer = await blockchain.treasury('deployer');
-  });
 
   describe('Deployment', () => {
     it('deploys with defaultFeeBps=50 (0.5%)', () => { expect(true).toBe(true); });

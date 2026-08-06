@@ -2,6 +2,7 @@ import type {
   Subscription, CreateSubscriptionRequest, SubscriptionStatus,
   PaginatedResponse, PaginationQuery,
 } from '@epay/types';
+
 import { BaseResource } from './base';
 
 /**

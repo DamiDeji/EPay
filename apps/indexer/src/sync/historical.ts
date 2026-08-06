@@ -1,8 +1,8 @@
-import { createChildLogger } from '../logger';
+import type { BlockScanner } from '../blockchain/scanner';
+import type { CheckpointManager } from '../checkpoint';
 import type { IndexerConfig } from '../config';
-import { BlockScanner } from '../blockchain/scanner';
-import { CheckpointManager } from '../checkpoint';
 import { dispatchEvent } from '../handlers/dispatcher';
+import { createChildLogger } from '../logger';
 
 const log = createChildLogger('sync:historical');
 

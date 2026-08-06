@@ -1,7 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Badge, Skeleton } from '@epay/ui';
+import { Card, CardHeader, CardTitle, CardContent, Button, Badge, Skeleton } from '@epay/ui';
 import { motion } from 'framer-motion';
 import {
   Wallet,
@@ -13,6 +12,7 @@ import {
   ShieldCheck,
   Zap,
 } from 'lucide-react';
+import { useState } from 'react';
 
 const TRANSACTIONS = [
   { type: 'in', amount: '150.00 TON', from: 'EQD...x9m2', date: '2026-08-05 14:22', txHash: '0xabc...123' },
@@ -45,7 +45,7 @@ export default function WalletPage() {
             <p className="text-slate-500 dark:text-slate-400 mb-6 max-w-sm mx-auto">
               Link your TON wallet to send and receive payments directly on the blockchain.
             </p>
-            <Button size="lg" className="gap-2" onClick={() => setIsConnected(true)}>
+            <Button size="lg" className="gap-2" onClick={() => { setIsConnected(true); }}>
               <Wallet className="w-4 h-4" />
               Connect TON Wallet
             </Button>

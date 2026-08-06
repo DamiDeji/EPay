@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Button, Input, Card, CardHeader, CardContent, CardTitle, CardDescription, CardFooter } from '@epay/ui';
 import { motion } from 'framer-motion';
-import { Zap, Mail, Lock, ArrowRight, AlertCircle, Building2 } from 'lucide-react';
+import { Mail, Lock, ArrowRight, AlertCircle, Building2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 export default function MerchantLoginPage() {
   const router = useRouter();
@@ -62,14 +62,14 @@ export default function MerchantLoginPage() {
                 <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Email Address</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <Input type="email" placeholder="merchant@business.com" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-10" required />
+                  <Input type="email" placeholder="merchant@business.com" value={email} onChange={(e) => { setEmail(e.target.value); }} className="pl-10" required />
                 </div>
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Password</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <Input type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} className="pl-10" required />
+                  <Input type="password" placeholder="••••••••" value={password} onChange={(e) => { setPassword(e.target.value); }} className="pl-10" required />
                 </div>
               </div>
               <Button type="submit" className="w-full gap-2" size="lg" disabled={isLoading}>

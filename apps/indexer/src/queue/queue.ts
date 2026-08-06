@@ -1,8 +1,9 @@
 import { Queue, Worker, type Job } from 'bullmq';
-import { createChildLogger } from '../logger';
-import type { IndexerConfig } from '../config';
+
 import type { ParsedEvent } from '../blockchain/contracts';
+import type { IndexerConfig } from '../config';
 import { dispatchEvent } from '../handlers/dispatcher';
+import { createChildLogger } from '../logger';
 
 const log = createChildLogger('queue');
 
@@ -60,11 +61,11 @@ export class IndexerQueue {
     });
 
     // Handle queue connection errors
-    this.queue.on('error', (error) => {
+    void this.queue.on('error', (error) => {
       log.error({ error: error.message }, 'Queue connection error');
     });
 
-    this.queue.on('waiting', (jobId) => {
+    void this.queue.on('waiting', (jobId) => {
       log.debug({ jobId }, 'Job waiting in queue');
     });
 
@@ -174,7 +175,7 @@ export class IndexerQueue {
     return { waiting, active, completed, failed, delayed };
   }
 
-  async cleanOldJobs(graceMs: number = 86_400_000): Promise<void> {
+  async cleanOldJobs(graceMs = 86_400_000): Promise<void> {
     await Promise.all([
       this.queue.clean(graceMs, 10_000, 'completed'),
       this.queue.clean(graceMs, 5_000, 'failed'),
@@ -184,13 +185,13 @@ export class IndexerQueue {
 
   async pause(): Promise<void> {
     await this.queue.pause();
-    await this.worker?.pause();
+    this.worker?.pause();
     log.info('Queue paused');
   }
 
   async resume(): Promise<void> {
     await this.queue.resume();
-    await this.worker?.resume();
+    this.worker?.resume();
     log.info('Queue resumed');
   }
 

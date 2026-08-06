@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input, Badge } from '@epay/ui';
 import {
   Building2, Globe, Key, Bell, Shield, Save, Copy, Eye, EyeOff, Wallet, Trash2,
 } from 'lucide-react';
+import { useState } from 'react';
 
 export default function SettingsPage() {
   const [showApiKey, setShowApiKey] = useState(false);
@@ -81,7 +81,7 @@ export default function SettingsPage() {
                   <code className="text-xs font-mono text-slate-500">
                     {showApiKey ? `${key.prefix}_7xK2mP9yN3pQ8rB4sV1t...` : `${key.prefix}_••••••••••••••••••••`}
                   </code>
-                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setShowApiKey(!showApiKey)}>
+                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setShowApiKey(!showApiKey); }}>
                     {showApiKey ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
                   </Button>
                   <Button variant="ghost" size="icon" className="h-6 w-6"><Copy className="w-3 h-3" /></Button>

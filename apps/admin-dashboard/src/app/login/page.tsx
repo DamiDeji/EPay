@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Shield, Eye, EyeOff, LogIn, AlertCircle } from 'lucide-react';
+import { AlertCircle, Eye, EyeOff, LogIn, Shield } from 'lucide-react';
+import { useState } from 'react';
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);

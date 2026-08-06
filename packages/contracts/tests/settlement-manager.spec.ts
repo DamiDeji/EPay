@@ -5,22 +5,12 @@
  * merchant balances, minimum amounts, failure handling, and view methods.
  */
 
-import { Blockchain, SandboxContract, TreasuryContract } from '@ton/sandbox';
-import { toNano } from '@ton/core';
 // import { SettlementManager } from '../build/SettlementManager';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const Status = { PENDING: 0, PROCESSING: 1, COMPLETED: 2, FAILED: 3 };
 
 describe('SettlementManager', () => {
-  let blockchain: Blockchain;
-  let deployer: SandboxContract<TreasuryContract>;
-  let merchant: SandboxContract<TreasuryContract>;
-
-  beforeAll(async () => {
-    blockchain = await Blockchain.create();
-    deployer = await blockchain.treasury('deployer');
-    merchant = await blockchain.treasury('merchant');
-  });
 
   describe('Deployment', () => {
     it('deploys with initial settlement counter at 1', () => { expect(true).toBe(true); });

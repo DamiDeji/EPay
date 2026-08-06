@@ -1,13 +1,12 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  LayoutDashboard, Building2, CreditCard, FileSearch,
-  BarChart3, Settings, Shield, ChevronLeft, ChevronRight,
-  LogOut, ScrollText, Menu, X,
+  BarChart3, Building2, ChevronLeft, ChevronRight,
+  CreditCard, LayoutDashboard, LogOut, ScrollText, Settings, Shield,
 } from 'lucide-react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 interface SidebarProps {
   collapsed: boolean;

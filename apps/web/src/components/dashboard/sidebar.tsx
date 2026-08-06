@@ -1,8 +1,6 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { cn } from '@epay/ui';
+import { cn , Button } from '@epay/ui';
 import {
   LayoutDashboard,
   ArrowLeftRight,
@@ -15,8 +13,9 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { Button } from '@epay/ui';
 
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
@@ -84,7 +83,7 @@ export function Sidebar() {
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => setCollapsed(!collapsed)}
+          onClick={() => { setCollapsed(!collapsed); }}
           className="w-full flex items-center gap-2 mb-2"
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >

@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { Button, Input, Card, CardHeader, CardContent, CardTitle, CardDescription, CardFooter, Badge } from '@epay/ui';
+import { Button, Input, Card, CardHeader, CardContent, CardTitle, CardDescription, CardFooter } from '@epay/ui';
 import { motion } from 'framer-motion';
 import { Zap, Mail, Lock, ArrowRight, AlertCircle, Wallet } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -89,7 +89,7 @@ export default function LoginPage() {
                     type="email"
                     placeholder="you@example.com"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => { setEmail(e.target.value); }}
                     className="pl-10"
                     required
                   />
@@ -106,7 +106,7 @@ export default function LoginPage() {
                     type="password"
                     placeholder="••••••••"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => { setPassword(e.target.value); }}
                     className="pl-10"
                     required
                   />
@@ -132,7 +132,7 @@ export default function LoginPage() {
               variant="outline"
               className="w-full gap-2"
               size="lg"
-              onClick={() => router.push('/dashboard')}
+              onClick={() => { router.push('/dashboard'); }}
             >
               <Wallet className="w-4 h-4" />
               Connect TON Wallet

@@ -3,11 +3,12 @@
 import { Card, CardHeader, CardTitle, CardContent, Badge } from '@epay/ui';
 import { motion } from 'framer-motion';
 import {
-  DollarSign, CreditCard, TrendingUp, Users, Clock, CheckCircle2, XCircle, ArrowUpRight,
+  DollarSign, CreditCard, TrendingUp, Users, Clock, ArrowUpRight,
 } from 'lucide-react';
-import { StatCard } from '@/components/stat-card';
+
 import { RevenueChart } from '@/components/charts/revenue-chart';
 import { SuccessRateChart } from '@/components/charts/success-rate-chart';
+import { StatCard } from '@/components/stat-card';
 
 const RECENT = [
   { id: 'pay_7xK2m', amount: '125.50 TON', payer: 'EQD...x9m2', status: 'COMPLETED', date: '2 min ago' },

@@ -1,6 +1,7 @@
 import type {
   Invoice, CreateInvoiceRequest, InvoiceStatus, PaginatedResponse, PaginationQuery,
 } from '@epay/types';
+
 import { BaseResource } from './base';
 
 /**

@@ -1,5 +1,4 @@
 import type { EPayClient } from '../client';
-import type { PaginatedResponse, PaginationQuery } from '@epay/types';
 
 export class BaseResource {
   constructor(protected readonly client: EPayClient) {}

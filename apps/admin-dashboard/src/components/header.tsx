@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import { useTheme } from 'next-themes';
-import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sun, Moon, Bell, Search, ChevronDown, User, Settings, LogOut } from 'lucide-react';
+import { Bell, ChevronDown, LogOut, Moon, Search, Settings, Sun, User } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useTheme } from 'next-themes';
+import { useCallback, useState } from 'react';
 
 export function Header() {
   const { theme, setTheme } = useTheme();

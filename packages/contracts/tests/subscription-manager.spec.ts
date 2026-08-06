@@ -5,25 +5,14 @@
  * renewal processing, payment failure, max payments expiry, and view methods.
  */
 
-import { Blockchain, SandboxContract, TreasuryContract } from '@ton/sandbox';
-import { toNano } from '@ton/core';
 // import { SubscriptionManager } from '../build/SubscriptionManager';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const Status = { ACTIVE: 0, PAUSED: 1, CANCELLED: 2, EXPIRED: 3, PAYMENT_FAILED: 4, TRIAL: 5 };
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const Interval = { DAILY: 0, WEEKLY: 1, MONTHLY: 2, QUARTERLY: 3, ANNUALLY: 4 };
 
 describe('SubscriptionManager', () => {
-  let blockchain: Blockchain;
-  let deployer: SandboxContract<TreasuryContract>;
-  let merchant: SandboxContract<TreasuryContract>;
-  let customer: SandboxContract<TreasuryContract>;
-
-  beforeAll(async () => {
-    blockchain = await Blockchain.create();
-    deployer = await blockchain.treasury('deployer');
-    merchant = await blockchain.treasury('merchant');
-    customer = await blockchain.treasury('customer');
-  });
 
   describe('Deployment', () => {
     it('deploys with initial subscription counter at 1', () => { expect(true).toBe(true); });

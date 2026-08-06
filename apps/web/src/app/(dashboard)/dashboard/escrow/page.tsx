@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, CardHeader, CardTitle, CardContent, Button, Badge } from '@epay/ui';
+import { Card, CardContent, Button, Badge } from '@epay/ui';
 import { ShieldCheck, Clock, AlertCircle, CheckCircle2, Plus } from 'lucide-react';
 
 const ESCROWS = [

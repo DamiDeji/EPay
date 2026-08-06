@@ -1,11 +1,10 @@
 'use client';
 
-import { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
-  Search, Filter, Download, ExternalLink,
-  AlertCircle, Clock, CheckCircle2, XCircle, RotateCcw,
+  Search, Download, ExternalLink, Clock, CheckCircle2, XCircle, RotateCcw,
 } from 'lucide-react';
+import { useState } from 'react';
 
 const payments = [
   { id: 'pay_a1b2', merchant: 'Acme Corp', amount: '1,500 TON', currency: 'TON', fiatValue: '$3,750', status: 'completed', payer: 'EQD...1a2b', txHash: '0xabc...def1', time: '2 min ago' },

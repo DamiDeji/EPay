@@ -1,7 +1,5 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import { cn, Button } from '@epay/ui';
 import {
   LayoutDashboard,
@@ -14,11 +12,12 @@ import {
   Link as LinkIcon,
   Settings,
   LogOut,
-  Zap,
   ChevronLeft,
   ChevronRight,
   Building2,
 } from 'lucide-react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 
 const NAV_ITEMS = [
@@ -79,7 +78,7 @@ export function Sidebar() {
       </nav>
 
       <div className={cn('p-3 border-t border-slate-200 dark:border-slate-700', collapsed && 'flex flex-col items-center')}>
-        <Button variant="ghost" size="icon" onClick={() => setCollapsed(!collapsed)} className="w-full flex items-center gap-2 mb-2">
+        <Button variant="ghost" size="icon" onClick={() => { setCollapsed(!collapsed); }} className="w-full flex items-center gap-2 mb-2">
           {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
           {!collapsed && <span className="text-xs">Collapse</span>}
         </Button>

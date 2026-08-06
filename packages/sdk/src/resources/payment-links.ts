@@ -1,4 +1,5 @@
 import type { PaymentLink, CreatePaymentLinkRequest } from '@epay/types';
+
 import { BaseResource } from './base';
 
 /**

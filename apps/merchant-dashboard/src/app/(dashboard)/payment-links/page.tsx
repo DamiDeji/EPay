@@ -1,8 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent, Button, Badge, Input } from '@epay/ui';
-import { LinkIcon, Plus, Copy, QrCode, ExternalLink, Search, Trash2 } from 'lucide-react';
+import { Card, CardContent, Button, Badge } from '@epay/ui';
+import { LinkIcon, Plus, Copy, QrCode, ExternalLink, Trash2 } from 'lucide-react';
 
 const LINKS = [
   { id: 'link_a1B2c', code: 'pay-demo-store', url: 'https://epay.dev/pay/pay-demo-store', amount: '50 TON', currency: 'TON', description: 'Demo Store Payment', maxPayments: null, current: 15, status: 'ACTIVE', createdAt: '2026-07-15' },

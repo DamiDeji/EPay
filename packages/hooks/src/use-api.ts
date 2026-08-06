@@ -42,7 +42,7 @@ export function useApi<T = unknown>(options: UseApiOptions = {}) {
         };
 
         if (token) {
-          headers['Authorization'] = `Bearer ${token}`;
+          headers.Authorization = `Bearer ${token}`;
         }
 
         const response = await fetch(`${API_URL}${path}`, {
@@ -51,8 +51,9 @@ export function useApi<T = unknown>(options: UseApiOptions = {}) {
         });
 
         if (!response.ok) {
-          const err = await response.json().catch(() => ({}));
-          throw new Error(err.message ?? `Request failed: ${response.status}`);
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          const body: { message?: string } = await response.json().catch(() => ({ message: 'Unknown error' }));
+          throw new Error(body.message ?? `Request failed: ${String(response.status)}`);
         }
 
         const data = (await response.json()) as R;

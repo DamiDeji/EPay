@@ -1,6 +1,7 @@
 import type {
   Merchant, MerchantOnboardingRequest, MerchantStatus, PaginatedResponse, PaginationQuery,
 } from '@epay/types';
+
 import { BaseResource } from './base';
 
 /**

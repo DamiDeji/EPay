@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import {
-  Building2, CreditCard, Users, TrendingUp,
+  Building2, Users,
   AlertTriangle, ArrowUpRight, ArrowDownRight,
   DollarSign, Activity, ShieldCheck, Clock,
 } from 'lucide-react';

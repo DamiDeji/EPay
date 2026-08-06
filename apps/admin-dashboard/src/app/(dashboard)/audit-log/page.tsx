@@ -1,12 +1,11 @@
 'use client';
 
-import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Search, Filter, Calendar, ChevronDown, ChevronRight,
-  User, CreditCard, Building2, Settings, Shield, Key,
-  Download, Copy, Check,
+  Search, Calendar, ChevronDown, ChevronRight,
+  User, CreditCard, Settings, Shield, Key, Copy, Check,
 } from 'lucide-react';
+import { useState } from 'react';
 
 const auditLogs = [
   { id: 'log_001', action: 'merchant.verified', resource: 'Merchant', resourceId: 'merch_003', userId: 'admin_001', userName: 'Admin User', details: 'Approved merchant verification for Acme Corp', changes: { status: 'pending → active', verification: 'basic → verified' }, ip: '192.168.1.100', timestamp: '2026-08-05T14:32:00Z' },

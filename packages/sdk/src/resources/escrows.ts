@@ -1,6 +1,7 @@
 import type {
   Escrow, CreateEscrowRequest, EscrowStatus, PaginatedResponse, PaginationQuery,
 } from '@epay/types';
+
 import { BaseResource } from './base';
 
 /**
@@ -61,7 +62,7 @@ export class EscrowsResource extends BaseResource {
     releaseTxHash?: string,
   ): Promise<Escrow> {
     return this.client.patch<Escrow>(
-      `/escrows/${id}/milestones/${milestoneIndex}/complete`,
+      `/escrows/${id}/milestones/${String(milestoneIndex)}/complete`,
       { releaseTxHash },
     );
   }

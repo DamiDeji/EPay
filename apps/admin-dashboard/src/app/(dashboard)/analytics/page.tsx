@@ -2,9 +2,8 @@
 
 import { motion } from 'framer-motion';
 import {
-  BarChart3, TrendingUp, Users, DollarSign,
-  Activity, ArrowUpRight, ArrowDownRight,
-  Globe, Shield, Zap,
+  BarChart3, TrendingUp, Users, DollarSign, ArrowUpRight, ArrowDownRight,
+  Globe, Zap,
 } from 'lucide-react';
 
 const metrics = [

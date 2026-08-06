@@ -1,6 +1,7 @@
 import type {
   Refund, CreateRefundRequest, RefundStatus, PaginatedResponse, PaginationQuery,
 } from '@epay/types';
+
 import { BaseResource } from './base';
 
 /**

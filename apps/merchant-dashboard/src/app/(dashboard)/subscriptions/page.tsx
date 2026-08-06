@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, CardHeader, CardTitle, CardContent, Button, Badge } from '@epay/ui';
+import { Card, CardContent, Button, Badge } from '@epay/ui';
 import { CalendarClock, Plus, CheckCircle2, Clock, XCircle, Pause, AlertCircle } from 'lucide-react';
 
 const SUBS = [

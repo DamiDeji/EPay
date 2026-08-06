@@ -5,22 +5,9 @@
  * permission checks, hasRole, hasPermission, admin override, role members.
  */
 
-import { Blockchain, SandboxContract, TreasuryContract } from '@ton/sandbox';
-import { toNano } from '@ton/core';
 // import { RoleManager } from '../build/RoleManager';
 
 describe('RoleManager', () => {
-  let blockchain: Blockchain;
-  let deployer: SandboxContract<TreasuryContract>;
-  let merchant: SandboxContract<TreasuryContract>;
-  let customer: SandboxContract<TreasuryContract>;
-
-  beforeAll(async () => {
-    blockchain = await Blockchain.create();
-    deployer = await blockchain.treasury('deployer');
-    merchant = await blockchain.treasury('merchant');
-    customer = await blockchain.treasury('customer');
-  });
 
   describe('Deployment & Default Roles', () => {
     it('creates ADMIN role with admin.all permission', () => { expect(true).toBe(true); });

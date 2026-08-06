@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   User, Key, Settings, Shield, Globe,
@@ -8,6 +7,7 @@ import {
   Bell, Smartphone, Mail, AlertTriangle,
   Server, Database, Activity,
 } from 'lucide-react';
+import { useState } from 'react';
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('profile');

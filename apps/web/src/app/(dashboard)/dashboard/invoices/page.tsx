@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, CardHeader, CardTitle, CardContent, Button, Badge } from '@epay/ui';
+import { Card, CardContent, Button, Badge } from '@epay/ui';
 import {
   FileText,
   Plus,
