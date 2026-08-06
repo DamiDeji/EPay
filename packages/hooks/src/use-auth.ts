@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
 import type { User, AuthTokens } from '@epay/types';
+import { useState, useEffect, useCallback } from 'react';
+
 import { useApi } from './use-api';
 
 interface AuthState {
@@ -43,9 +44,9 @@ export function useAuth() {
   );
 
   const loginWithWallet = useCallback(
-    async (address: string, signature: string, message: string): Promise<void> => {
+    async (stellarPublicKey: string, signature: string, message: string): Promise<void> => {
       const result = await api.post<{ user: User; tokens: AuthTokens }>('/auth/login', {
-        walletAddress: address,
+        stellarPublicKey,
         signature,
         message,
       });
