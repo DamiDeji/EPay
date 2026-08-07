@@ -138,9 +138,6 @@ jobs:
           DATABASE_URL: postgresql://epay:epay_test@localhost:5432/epay_test
           REDIS_URL: redis://localhost:6379
           TURBO_CONCURRENCY: 2
-        env:
-          DATABASE_URL: postgresql://epay:epay_test@localhost:5432/epay_test
-          REDIS_URL: redis://localhost:6379
       - uses: actions/upload-artifact@v4
         if: always()
         with:
