@@ -3,46 +3,16 @@
 
 title = "EPay Gitleaks Config"
 
-# Allowlist - patterns that should not be flagged
 [allowlist]
   description = "Global allowlist"
   paths = [
-    '''pnpm-lock\.yaml''',
-    '''\.git/.*''',
-    '''node_modules/.*''',
-    '''dist/.*''',
-    '''\.turbo/.*''',
-    '''coverage/.*''',
-    '''\.next/.*''',
+    "pnpm-lock.yaml",
+    "node_modules/",
+    "dist/",
+    ".turbo/",
+    "coverage/",
+    ".next/",
   ]
-  commits = [
-    # Add commit SHAs to skip if needed
-  ]
-
-# Rules for detecting secrets
-[[rules]]
-  id = "generic-api-key"
-  description = "Generic API Key"
-  regex = '''(?i)(api[_-]?key|apikey|secret|token|password|passwd|auth)[''"]?\s*[:=]\s*[''"][\w\-\.+/=]{20,}[''"]'''
-  tags = ["key", "api"]
-
-[[rules]]
-  id = "private-key"
-  description = "Private Key"
-  regex = '''-----BEGIN[ A-Z0-9_-]*PRIVATE KEY( BLOCK)?-----'''
-  tags = ["key", "crypto"]
-
-[[rules]]
-  id = "stellar-secret"
-  description = "Stellar Secret Key"
-  regex = '''S[0-9A-Z]{55}(?![0-9A-Z])'''
-  tags = ["stellar", "key"]
-
-[[rules]]
-  id = "jwt-token"
-  description = "JWT Token"
-  regex = '''eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}'''
-  tags = ["jwt", "token"]
 
 [extend]
-  useDefault = false
+  useDefault = true
