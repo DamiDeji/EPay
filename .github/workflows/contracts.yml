@@ -87,7 +87,7 @@ jobs:
             cargo-contracts-${{ runner.os }}-
 
       - name: Install soroban-cli
-        run: cargo install soroban-cli
+        run: cargo install soroban-cli --version 23.0.1
 
       - name: Build all contracts
         working-directory: packages/contracts
