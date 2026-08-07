@@ -38,7 +38,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: '1.88'
+          toolchain: '1.89'
           target: wasm32-unknown-unknown
           components: clippy, rustfmt
       - uses: actions/cache@v4
@@ -76,7 +76,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: '1.88'
+          toolchain: '1.89'
           target: wasm32-unknown-unknown
       - uses: actions/cache@v4
         with:
@@ -89,7 +89,7 @@ jobs:
             cargo-contracts-${{ runner.os }}-
 
       - name: Install soroban-cli
-        run: cargo install soroban-cli --version 23.0.1
+        run: cargo install soroban-cli --version 23.0.1 --locked
 
       - name: Build all contracts
         working-directory: packages/contracts
