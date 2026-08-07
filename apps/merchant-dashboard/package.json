@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "next lint",
     "test": "vitest run --passWithNoTests",
-    "test:coverage": "vitest run --coverage",
+    "test:coverage": "vitest run --coverage --passWithNoTests",
     "clean": "rm -rf .next"
   },
   "dependencies": {

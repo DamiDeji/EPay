@@ -26,12 +26,6 @@ jobs:
           node-version: 22
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
-      - uses: actions/cache@v4
-        with:
-          path: .turbo
-          key: turbo-lint-${{ runner.os }}-${{ github.sha }}
-          restore-keys: |
-            turbo-lint-${{ runner.os }}-
       - run: pnpm lint
         env:
           TURBO_CONCURRENCY: 4
@@ -50,12 +44,6 @@ jobs:
           node-version: 22
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
-      - uses: actions/cache@v4
-        with:
-          path: .turbo
-          key: turbo-typecheck-${{ runner.os }}-${{ github.sha }}
-          restore-keys: |
-            turbo-typecheck-${{ runner.os }}-
       - run: pnpm typecheck
         env:
           TURBO_CONCURRENCY: 4
@@ -71,11 +59,15 @@ jobs:
           toolchain: '1.77'
           target: wasm32-unknown-unknown
           components: clippy
-      - uses: mozilla-actions/sccache-action@v0.0.9
-      - name: Configure sccache
-        run: |
-          echo "SCCACHE_GHA_ENABLED=true" >> $GITHUB_ENV
-          echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            packages/contracts/target/
+          key: cargo-contracts-${{ runner.os }}-${{ hashFiles('packages/contracts/Cargo.lock') }}
+          restore-keys: |
+            cargo-contracts-${{ runner.os }}-
       - name: Clippy
         run: cargo clippy --manifest-path packages/contracts/Cargo.toml -- -D warnings
       - name: Test
@@ -120,12 +112,6 @@ jobs:
           node-version: 22
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
-      - uses: actions/cache@v4
-        with:
-          path: .turbo
-          key: turbo-test-${{ runner.os }}-${{ github.sha }}
-          restore-keys: |
-            turbo-test-${{ runner.os }}-
       - name: Run database migrations
         run: pnpm --filter @epay/database exec prisma migrate deploy
         env:

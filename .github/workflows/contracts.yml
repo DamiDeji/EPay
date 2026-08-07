@@ -39,11 +39,15 @@ jobs:
           toolchain: '1.77'
           target: wasm32-unknown-unknown
           components: clippy, rustfmt
-      - uses: mozilla-actions/sccache-action@v0.0.9
-      - name: Configure sccache
-        run: |
-          echo "SCCACHE_GHA_ENABLED=true" >> $GITHUB_ENV
-          echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            packages/contracts/target/
+          key: cargo-contracts-${{ runner.os }}-${{ hashFiles('packages/contracts/Cargo.lock') }}
+          restore-keys: |
+            cargo-contracts-${{ runner.os }}-
 
       - name: Format check
         working-directory: packages/contracts
@@ -72,11 +76,15 @@ jobs:
         with:
           toolchain: '1.77'
           target: wasm32-unknown-unknown
-      - uses: mozilla-actions/sccache-action@v0.0.9
-      - name: Configure sccache
-        run: |
-          echo "SCCACHE_GHA_ENABLED=true" >> $GITHUB_ENV
-          echo "RUSTC_WRAPPER=sccache" >> $GITHUB_ENV
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            packages/contracts/target/
+          key: cargo-contracts-${{ runner.os }}-${{ hashFiles('packages/contracts/Cargo.lock') }}
+          restore-keys: |
+            cargo-contracts-${{ runner.os }}-
 
       - name: Install soroban-cli
         run: cargo install soroban-cli
