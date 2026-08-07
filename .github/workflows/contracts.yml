@@ -103,7 +103,7 @@ jobs:
           mkdir -p optimized
           for wasm in target/wasm32-unknown-unknown/release/*.wasm; do
             name=$(basename "$wasm" .wasm)
-            soroban contract optimize "$wasm" "optimized/${name}.optimized.wasm"
+            soroban contract optimize --wasm "$wasm" > "optimized/${name}.optimized.wasm"
           done
 
       - uses: actions/upload-artifact@v4
