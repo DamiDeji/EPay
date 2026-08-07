@@ -22,4 +22,4 @@ soroban-token-sdk = "21.0.0"
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
-rust-version = "1.77"
+rust-version = "1.88"
