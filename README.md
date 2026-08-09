@@ -10,6 +10,12 @@
 
   <h3>Enterprise-Grade Decentralized Payment Gateway on Stellar</h3>
   <p>Seamless payments, invoices, escrow, subscriptions, and settlement — powered by Soroban smart contracts on the Stellar network.</p>
+
+  <p>
+    <a href="https://epay-web-teal.vercel.app"><strong>🖥️ Live Demo</strong></a> ·
+    <a href="https://epay-merchant.vercel.app">Merchant Dashboard</a> ·
+    <a href="https://epay-admin-two.vercel.app">Admin Panel</a>
+  </p>
 </div>
 
 ---
@@ -99,9 +105,14 @@ epay/
 
 | App | Pages | Key Features |
 |-----|-------|-------------|
-| **Web** (`:3000`) | Landing, Login, Register, Dashboard (Overview, Payments, Invoices, Wallet, Escrow, Settings) | Hero with gradient animation, dark mode, Framer Motion, responsive |
-| **Merchant** (`:3001`) | Login, Dashboard, Payments, Invoices, Analytics, Settlements, Refunds, Subscriptions, Payment Links, Settings | Recharts (bar/line/pie), stat cards, export, QR codes |
-| **Admin** (`:3002`) | Login, Overview, Merchants, Payments, Audit Log, Analytics, Settings | Merchant approve/suspend/verify, expandable audit log, platform health, emergency pause |
+| **Web** | Landing, Login, Register, Dashboard (Overview, Payments, Invoices, Wallet, Escrow, Settings) | Hero with gradient animation, dark mode, Framer Motion, responsive |
+| **Merchant** | Login, Dashboard, Payments, Invoices, Analytics, Settlements, Refunds, Subscriptions, Payment Links, Settings | Recharts (bar/line/pie), stat cards, export, QR codes |
+| **Admin** | Login, Overview, Merchants, Payments, Audit Log, Analytics, Settings | Merchant approve/suspend/verify, expandable audit log, platform health, emergency pause |
+
+**Live on Vercel:**
+- 🔗 **Web:** [epay-web-teal.vercel.app](https://epay-web-teal.vercel.app)
+- 🔗 **Merchant:** [epay-merchant.vercel.app](https://epay-merchant.vercel.app)
+- 🔗 **Admin:** [epay-admin-two.vercel.app](https://epay-admin-two.vercel.app)
 
 ### TypeScript SDK
 - **EPayClient**: JWT + API key auth, auto-retry with backoff, timeout handling, GET/POST/PATCH/PUT/DELETE
