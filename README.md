@@ -251,8 +251,8 @@ pnpm build
 | Package | Framework | Tests | Coverage |
 |---------|-----------|-------|----------|
 | `@epay/contracts` | Cargo test | 12 spec files | Run `cargo test` to generate |
-| `@epay/api` | Jest | 16 test suites, 105 tests | Run `pnpm --filter @epay/api test:coverage` |
-| `@epay/sdk` | Vitest | 4 test suites, 91+ tests | Run `pnpm --filter @epay/sdk test:coverage` |
+| `@epay/api` | Jest | 16 suites, 105 tests | 50% lines (services: ~76%, controllers: 0%) |
+| `@epay/sdk` | Vitest | 4 suites, 91 tests | 87% statements, 87% lines |
 
 ```bash
 # Run all tests
