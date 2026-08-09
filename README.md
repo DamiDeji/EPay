@@ -2,6 +2,8 @@
 
 <div align="center">
 
+<img src="public/logo.svg" alt="EPay" width="120" height="120" />
+
 [![CI](https://github.com/DamiDeji/EPay/actions/workflows/ci.yml/badge.svg)](https://github.com/DamiDeji/EPay/actions/workflows/ci.yml)
 [![Contracts](https://github.com/DamiDeji/EPay/actions/workflows/contracts.yml/badge.svg)](https://github.com/DamiDeji/EPay/actions/workflows/contracts.yml)
 [![Code Quality](https://github.com/DamiDeji/EPay/actions/workflows/codeql.yml/badge.svg)](https://github.com/DamiDeji/EPay/actions/workflows/codeql.yml)
