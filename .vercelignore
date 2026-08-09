@@ -1,0 +1,12 @@
+node_modules
+packages/contracts/target
+packages/contracts/optimized
+.cargo
+.github
+.git
+.next
+dist
+coverage
+.turbo
+*.wasm
+tmp
