@@ -1,14 +1,39 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 200" fill="none">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+    <linearGradient id="iconGrad" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#0098EA"/>
-      <stop offset="100%" stop-color="#0066CC"/>
+      <stop offset="100%" stop-color="#0060B0"/>
+    </linearGradient>
+    <linearGradient id="textGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#0098EA"/>
+      <stop offset="100%" stop-color="#0055A0"/>
     </linearGradient>
   </defs>
-  <!-- Background circle -->
-  <circle cx="256" cy="256" r="240" fill="url(#bg)"/>
-  <!-- Stylized "e" for ePay -->
-  <text x="256" y="340" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="340" font-weight="700" fill="white" letter-spacing="-8">e</text>
-  <!-- Small "P" accent -->
-  <text x="380" y="220" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="140" font-weight="800" fill="#7DD3FC" letter-spacing="-4">P</text>
+
+  <!-- Icon: overlapping rounded squares with payment arrow -->
+  <g transform="translate(40, 20)">
+    <!-- Outer rounded square -->
+    <rect x="0" y="0" width="160" height="160" rx="38" fill="url(#iconGrad)"/>
+    <!-- Inner lighter square -->
+    <rect x="22" y="22" width="116" height="116" rx="26" fill="#0078D4" opacity="0.5"/>
+    <!-- Payment arrow / stylized "e" -->
+    <g transform="translate(80, 80)">
+      <!-- Circle for "e" body -->
+      <circle cx="0" cy="8" r="34" fill="none" stroke="white" stroke-width="10" stroke-linecap="round"/>
+      <!-- Arrow head -->
+      <line x1="-14" y1="8" x2="14" y2="8" stroke="white" stroke-width="10" stroke-linecap="round"/>
+      <!-- Arrow tip -->
+      <polygon points="18,2 32,8 18,14" fill="white"/>
+    </g>
+  </g>
+
+  <!-- Wordmark: EPay -->
+  <g transform="translate(230, 55)">
+    <!-- E -->
+    <text x="0" y="85" font-family="'Inter','Segoe UI',system-ui,-apple-system,sans-serif" font-size="78" font-weight="800" fill="url(#textGrad)" letter-spacing="-3">E</text>
+    <!-- Pay -->
+    <text x="62" y="85" font-family="'Inter','Segoe UI',system-ui,-apple-system,sans-serif" font-size="78" font-weight="700" fill="#1E293B" letter-spacing="-1">Pay</text>
+    <!-- Tagline -->
+    <text x="2" y="108" font-family="'Inter','Segoe UI',system-ui,-apple-system,sans-serif" font-size="16" font-weight="500" fill="#64748B" letter-spacing="2">DECENTRALIZED PAYMENTS ON STELLAR</text>
+  </g>
 </svg>

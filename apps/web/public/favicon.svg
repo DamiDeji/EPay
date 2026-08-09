@@ -1,4 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
-  <circle cx="16" cy="16" r="15" fill="#0098EA"/>
-  <text x="16" y="22" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="22" font-weight="800" fill="white">e</text>
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0098EA"/>
+      <stop offset="100%" stop-color="#0060B0"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="32" height="32" rx="7" fill="url(#g)"/>
+  <rect x="4.5" y="4.5" width="23" height="23" rx="5" fill="#0078D4" opacity="0.5"/>
+  <g transform="translate(16, 16)">
+    <circle cx="0" cy="1.5" r="6.5" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"/>
+    <line x1="-2.5" y1="1.5" x2="2.5" y2="1.5" stroke="white" stroke-width="2" stroke-linecap="round"/>
+    <polygon points="3.5,0 6,1.5 3.5,3" fill="white"/>
+  </g>
 </svg>
