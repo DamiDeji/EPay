@@ -12,19 +12,19 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: 'EPay — Decentralized Payments on TON',
+    default: 'EPay — Decentralized Payments on Stellar',
     template: '%s | EPay',
   },
   description:
-    'Enterprise-grade decentralized payment gateway on The Open Network. Accept crypto payments, manage invoices, escrow, subscriptions, and more.',
-  keywords: ['TON', 'crypto payments', 'blockchain', 'payment gateway', 'Web3', 'decentralized'],
+    'Enterprise-grade decentralized payment gateway on Stellar. Accept crypto payments, manage invoices, escrow, subscriptions, and more.',
+  keywords: ['Stellar', 'crypto payments', 'blockchain', 'payment gateway', 'Web3', 'Soroban', 'decentralized'],
   authors: [{ name: 'EPay Contributors' }],
   openGraph: {
     type: 'website',
     siteName: 'EPay',
-    title: 'EPay — Decentralized Payments on TON',
+    title: 'EPay — Decentralized Payments on Stellar',
     description:
-      'Enterprise-grade decentralized payment gateway on The Open Network. Accept crypto payments, manage invoices, escrow, subscriptions, and more.',
+      'Enterprise-grade decentralized payment gateway on Stellar. Accept crypto payments, manage invoices, escrow, subscriptions, and more.',
   },
   metadataBase: new URL('https://epay.dev'),
 };

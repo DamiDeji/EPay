@@ -10,7 +10,7 @@ describe('SettlementService', () => {
 
   const mockSettlement = {
     id: 'set_1', settlementId: 'set_abc', merchantId: 'merch_1',
-    amount: BigInt(5000000000), currency: 'TON', feeAmount: BigInt(25000000),
+    amount: BigInt(5000000000), currency: 'XLM', feeAmount: BigInt(25000000),
     netAmount: BigInt(4975000000), status: 'PENDING',
     paymentIds: ['pay_1', 'pay_2'], txHash: null,
     settlementAddress: 'pending', periodStart: mockDate('2026-08-01'), periodEnd: mockDate(),
@@ -51,14 +51,14 @@ describe('SettlementService', () => {
         ...mockSettlement, status: 'COMPLETED', txHash: '0xabc', processedAt: mockDate(),
       });
 
-      const result = await service.process('set_1', '0xabc', 'EQD_wallet');
+      const result = await service.process('set_1', '0xabc', 'GAD_wallet');
       expect(result.status).toBe('COMPLETED');
       expect(result.txHash).toBe('0xabc');
     });
 
     it('should throw if not pending', async () => {
       prisma.settlement.findUnique.mockResolvedValue({ ...mockSettlement, status: 'COMPLETED' });
-      await expect(service.process('set_1', '0xabc', 'EQD_wallet')).rejects.toThrow(BadRequestException);
+      await expect(service.process('set_1', '0xabc', 'GAD_wallet')).rejects.toThrow(BadRequestException);
     });
   });
 });

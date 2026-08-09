@@ -4,10 +4,10 @@ import { Card, CardContent, Button, Badge } from '@epay/ui';
 import { LinkIcon, Plus, Copy, QrCode, ExternalLink, Trash2 } from 'lucide-react';
 
 const LINKS = [
-  { id: 'link_a1B2c', code: 'pay-demo-store', url: 'https://epay.dev/pay/pay-demo-store', amount: '50 TON', currency: 'TON', description: 'Demo Store Payment', maxPayments: null, current: 15, status: 'ACTIVE', createdAt: '2026-07-15' },
-  { id: 'link_d3E4f', code: 'summer-sale', url: 'https://epay.dev/pay/summer-sale', amount: '25 TON', currency: 'TON', description: 'Summer Sale 2026', maxPayments: 100, current: 42, status: 'ACTIVE', createdAt: '2026-07-01' },
-  { id: 'link_g5H6i', code: 'consulting', url: 'https://epay.dev/pay/consulting', amount: '200 TON', currency: 'TON', description: 'Consulting Services', maxPayments: null, current: 3, status: 'ACTIVE', createdAt: '2026-06-20' },
-  { id: 'link_j7K8l', code: 'old-campaign', url: 'https://epay.dev/pay/old-campaign', amount: '10 TON', currency: 'TON', description: 'Spring Campaign', maxPayments: 50, current: 50, status: 'EXPIRED', createdAt: '2026-03-01' },
+  { id: 'link_a1B2c', code: 'pay-demo-store', url: 'https://epay.dev/pay/pay-demo-store', amount: '50 XLM', currency: 'XLM', description: 'Demo Store Payment', maxPayments: null, current: 15, status: 'ACTIVE', createdAt: '2026-07-15' },
+  { id: 'link_d3E4f', code: 'summer-sale', url: 'https://epay.dev/pay/summer-sale', amount: '25 XLM', currency: 'XLM', description: 'Summer Sale 2026', maxPayments: 100, current: 42, status: 'ACTIVE', createdAt: '2026-07-01' },
+  { id: 'link_g5H6i', code: 'consulting', url: 'https://epay.dev/pay/consulting', amount: '200 XLM', currency: 'XLM', description: 'Consulting Services', maxPayments: null, current: 3, status: 'ACTIVE', createdAt: '2026-06-20' },
+  { id: 'link_j7K8l', code: 'old-campaign', url: 'https://epay.dev/pay/old-campaign', amount: '10 XLM', currency: 'XLM', description: 'Spring Campaign', maxPayments: 50, current: 50, status: 'EXPIRED', createdAt: '2026-03-01' },
 ];
 
 export default function PaymentLinksPage() {

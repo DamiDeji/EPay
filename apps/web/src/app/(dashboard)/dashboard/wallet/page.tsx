@@ -15,11 +15,11 @@ import {
 import { useState } from 'react';
 
 const TRANSACTIONS = [
-  { type: 'in', amount: '150.00 TON', from: 'EQD...x9m2', date: '2026-08-05 14:22', txHash: '0xabc...123' },
-  { type: 'out', amount: '45.00 TON', to: 'EQD...k4h7', date: '2026-08-05 10:15', txHash: '0xdef...456' },
-  { type: 'in', amount: '12.50 TON', from: 'EQD...v2f1', date: '2026-08-04 18:40', txHash: '0xghi...789' },
-  { type: 'in', amount: '89.99 TON', from: 'EQD...n6c3', date: '2026-08-04 09:10', txHash: '0xjkl...012' },
-  { type: 'out', amount: '250.00 TON', to: 'EQD...p8d9', date: '2026-08-03 22:05', txHash: '0xmno...345' },
+  { type: 'in', amount: '150.00 XLM', from: 'GAD...x9m2', date: '2026-08-05 14:22', txHash: '0xabc...123' },
+  { type: 'out', amount: '45.00 XLM', to: 'GBD...k4h7', date: '2026-08-05 10:15', txHash: '0xdef...456' },
+  { type: 'in', amount: '12.50 XLM', from: 'GCD...v2f1', date: '2026-08-04 18:40', txHash: '0xghi...789' },
+  { type: 'in', amount: '89.99 XLM', from: 'GDD...n6c3', date: '2026-08-04 09:10', txHash: '0xjkl...012' },
+  { type: 'out', amount: '250.00 XLM', to: 'GED...p8d9', date: '2026-08-03 22:05', txHash: '0xmno...345' },
 ];
 
 export default function WalletPage() {
@@ -43,11 +43,11 @@ export default function WalletPage() {
             </div>
             <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Connect Your Wallet</h2>
             <p className="text-slate-500 dark:text-slate-400 mb-6 max-w-sm mx-auto">
-              Link your TON wallet to send and receive payments directly on the blockchain.
+              Link your Stellar wallet to send and receive payments directly on the blockchain.
             </p>
             <Button size="lg" className="gap-2" onClick={() => { setIsConnected(true); }}>
               <Wallet className="w-4 h-4" />
-              Connect TON Wallet
+              Connect Stellar Wallet
             </Button>
           </CardContent>
         </Card>
@@ -75,7 +75,7 @@ export default function WalletPage() {
                   <Wallet className="w-5 h-5" />
                 </div>
                 <div>
-                  <div className="text-sm opacity-80">TON Wallet</div>
+                  <div className="text-sm opacity-80">Stellar Wallet</div>
                   <div className="text-xs font-mono opacity-60">Testnet</div>
                 </div>
               </div>
@@ -91,7 +91,7 @@ export default function WalletPage() {
                 {isRefreshing ? (
                   <Skeleton className="h-12 w-48 bg-white/20" />
                 ) : (
-                  '1,250.75 TON'
+                  '1,250.75 XLM'
                 )}
               </div>
               <div className="text-sm opacity-60 mt-1">≈ $3,126.88 USD</div>
@@ -104,7 +104,7 @@ export default function WalletPage() {
                 </div>
                 <div>
                   <div className="text-sm font-medium">Received</div>
-                  <div className="text-lg font-bold">890.25 TON</div>
+                  <div className="text-lg font-bold">890.25 XLM</div>
                 </div>
               </div>
               <div className="flex-1 p-3 rounded-xl bg-white/10 flex items-center gap-3">
@@ -113,7 +113,7 @@ export default function WalletPage() {
                 </div>
                 <div>
                   <div className="text-sm font-medium">Sent</div>
-                  <div className="text-lg font-bold">295.00 TON</div>
+                  <div className="text-lg font-bold">295.00 XLM</div>
                 </div>
               </div>
             </div>
@@ -122,7 +122,7 @@ export default function WalletPage() {
             <div className="mt-6 p-3 rounded-xl bg-white/10 flex items-center justify-between">
               <div className="flex items-center gap-2 min-w-0">
                 <div className="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0" />
-                <span className="font-mono text-sm truncate">EQD2kR...Bx9Yp8mQwL_fVn3</span>
+                <span className="font-mono text-sm truncate">GAD2kR...Bx9Yp8mQwL_fVn3</span>
               </div>
               <div className="flex items-center gap-1 flex-shrink-0">
                 <Button variant="ghost" size="icon" className="text-white hover:bg-white/10 h-8 w-8">
@@ -175,7 +175,7 @@ export default function WalletPage() {
                     {new Date(tx.date).toLocaleDateString()}
                   </div>
                   <a
-                    href={`https://tonscan.org/tx/${tx.txHash}`}
+                    href={`https://stellar.expert/explorer/public/tx/${tx.txHash}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-xs text-[#0098EA] hover:underline flex items-center gap-1 justify-end"

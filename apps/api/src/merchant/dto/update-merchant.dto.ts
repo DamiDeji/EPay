@@ -22,13 +22,13 @@ export class UpdateMerchantDto {
   @IsString()
   description?: string;
 
-  @ApiPropertyOptional({ example: ['TON', 'USDT', 'USDC'], type: [String] })
+  @ApiPropertyOptional({ example: ['XLM', 'USDT', 'USDC'], type: [String] })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
   supportedAssets?: string[];
 
-  @ApiPropertyOptional({ example: 'EQD...new_wallet' })
+  @ApiPropertyOptional({ example: 'GAD...new_wallet' })
   @IsOptional()
   @IsString()
   settlementPublicKey?: string;

@@ -16,7 +16,7 @@ export interface RealtimeSyncOptions {
 }
 
 /**
- * Real-time sync engine that continuously polls the TON blockchain
+ * Real-time sync engine that continuously polls the Stellar blockchain
  * for new blocks and processes relevant events.
  */
 export class RealtimeSync {

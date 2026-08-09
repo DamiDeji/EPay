@@ -10,7 +10,7 @@ describe('SubscriptionService', () => {
 
   const mockSub = {
     id: 'sub_1', subscriptionId: 'sub_abc', merchantId: 'merch_1', customerId: 'cust_1',
-    planName: 'Premium Plan', amount: BigInt(1000000000), currency: 'TON',
+    planName: 'Premium Plan', amount: BigInt(1000000000), currency: 'XLM',
     interval: 'MONTHLY', status: 'ACTIVE',
     trialEndDate: null, currentPeriodStart: mockDate(), currentPeriodEnd: new Date('2026-09-05'),
     nextBillingDate: new Date('2026-09-05'), maxPayments: 12, paymentsMade: 3,
@@ -31,7 +31,7 @@ describe('SubscriptionService', () => {
       prisma.subscription.create.mockResolvedValue(mockSub);
       const result = await service.create({
         merchantId: 'merch_1', customerId: 'cust_1', planName: 'Premium',
-        amount: '1000000000', currency: 'TON', interval: 'MONTHLY',
+        amount: '1000000000', currency: 'XLM', interval: 'MONTHLY',
       });
       expect(result.subscriptionId).toMatch(/^sub_/);
       expect(result.planName).toBe('Premium Plan');
@@ -41,7 +41,7 @@ describe('SubscriptionService', () => {
       prisma.subscription.create.mockResolvedValue({ ...mockSub, status: 'TRIAL' });
       const result = await service.create({
         merchantId: 'merch_1', customerId: 'cust_1', planName: 'Trial',
-        amount: '1000', currency: 'TON', interval: 'MONTHLY', trialDays: 7,
+        amount: '1000', currency: 'XLM', interval: 'MONTHLY', trialDays: 7,
       });
       expect(result.status).toBe('TRIAL');
     });

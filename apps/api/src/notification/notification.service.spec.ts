@@ -10,7 +10,7 @@ describe('NotificationService', () => {
 
   const mockNotif = {
     id: 'notif_1', userId: 'user_1', type: 'payment.received', title: 'Payment Received',
-    message: 'You received 100 TON', channel: 'IN_APP', isRead: false,
+    message: 'You received 100 XLM', channel: 'IN_APP', isRead: false,
     link: null, metadata: {}, createdAt: mockDate(),
   };
 
@@ -27,7 +27,7 @@ describe('NotificationService', () => {
       prisma.notification.create.mockResolvedValue(mockNotif);
       const result = await service.create({
         userId: 'user_1', type: 'payment.received',
-        title: 'Payment Received', message: 'You received 100 TON',
+        title: 'Payment Received', message: 'You received 100 XLM',
       });
       expect(result.id).toBe('notif_1');
       expect(result.isRead).toBe(false);

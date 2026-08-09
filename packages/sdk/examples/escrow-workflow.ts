@@ -32,8 +32,8 @@ async function main() {
   const escrow = await client.escrows.create({
     merchantId: 'merch_demo_001',
     customerId: 'cust_demo_789',
-    amount: '15000000000', // 15 TON
-    currency: 'TON',
+    amount: '15000000000', // 15 XLM
+    currency: 'XLM',
     milestones: [
       { index: 0, description: 'Design mockups & wireframes', amount: '5000000000' },
       { index: 1, description: 'Frontend implementation', amount: '5000000000' },
@@ -87,15 +87,14 @@ async function main() {
     merchantId: 'merch_demo_001',
     customerId: 'cust_demo_789',
     planName: 'Pro Plan',
-    amount: '2000000000', // 2 TON / month
-    currency: 'TON',
+    amount: '2000000000', // 2 XLM / month
+    currency: 'XLM',
     interval: SubscriptionBillingInterval.MONTHLY,
     trialDays: 7,
     maxPayments: 12,
   });
   console.log(`   ✅ Subscription created: ${sub.subscriptionId}`);
-  console.log(`      Plan: ${sub.planName}`);
-  console.log(`      Amount: ${sub.amount} nanoTON / ${sub.interval}`);
+  console.log(`      Plan: ${sub.planName}`);    console.log(`      Amount: ${sub.amount} stroops / ${sub.interval}`);
   console.log(`      Status: ${sub.status}\n`);
 
   // 2. Pause the subscription

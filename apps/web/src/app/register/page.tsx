@@ -157,7 +157,7 @@ export default function RegisterPage() {
               onClick={() => { router.push('/dashboard'); }}
             >
               <Zap className="w-4 h-4" />
-              Connect TON Wallet
+              Connect Stellar Wallet
             </Button>
           </CardContent>
 

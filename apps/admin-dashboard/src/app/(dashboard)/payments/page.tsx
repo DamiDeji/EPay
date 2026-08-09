@@ -7,12 +7,12 @@ import {
 import { useState } from 'react';
 
 const payments = [
-  { id: 'pay_a1b2', merchant: 'Acme Corp', amount: '1,500 TON', currency: 'TON', fiatValue: '$3,750', status: 'completed', payer: 'EQD...1a2b', txHash: '0xabc...def1', time: '2 min ago' },
-  { id: 'pay_c3d4', merchant: 'CryptoShop', amount: '250 USDT', currency: 'USDT', fiatValue: '$250', status: 'pending', payer: 'UQD...3c4d', txHash: '-', time: '5 min ago' },
-  { id: 'pay_e5f6', merchant: 'DeFi Hub', amount: '5,000 TON', currency: 'TON', fiatValue: '$12,500', status: 'completed', payer: 'EQD...5e6f', txHash: '0xdef...7890', time: '8 min ago' },
-  { id: 'pay_g7h8', merchant: 'NFT Market', amount: '800 TON', currency: 'TON', fiatValue: '$2,000', status: 'failed', payer: 'EQD...7g8h', txHash: '-', time: '12 min ago' },
-  { id: 'pay_i9j0', merchant: 'TokenPay', amount: '3,200 USDC', currency: 'USDC', fiatValue: '$3,200', status: 'completed', payer: 'UQD...9i0j', txHash: '0xghi...jkl1', time: '15 min ago' },
-  { id: 'pay_k1l2', merchant: 'QuickPay', amount: '100 TON', currency: 'TON', fiatValue: '$250', status: 'refunded', payer: 'EQD...k1l2', txHash: '0xmno...pqr2', time: '32 min ago' },
+  { id: 'pay_a1b2', merchant: 'Acme Corp', amount: '1,500 XLM', currency: 'XLM', fiatValue: '$3,750', status: 'completed', payer: 'GAD...1a2b', txHash: '0xabc...def1', time: '2 min ago' },
+  { id: 'pay_c3d4', merchant: 'CryptoShop', amount: '250 USDT', currency: 'USDT', fiatValue: '$250', status: 'pending', payer: 'GBD...3c4d', txHash: '-', time: '5 min ago' },
+  { id: 'pay_e5f6', merchant: 'DeFi Hub', amount: '5,000 XLM', currency: 'XLM', fiatValue: '$12,500', status: 'completed', payer: 'GCD...5e6f', txHash: '0xdef...7890', time: '8 min ago' },
+  { id: 'pay_g7h8', merchant: 'NFT Market', amount: '800 XLM', currency: 'XLM', fiatValue: '$2,000', status: 'failed', payer: 'GDD...7g8h', txHash: '-', time: '12 min ago' },
+  { id: 'pay_i9j0', merchant: 'TokenPay', amount: '3,200 USDC', currency: 'USDC', fiatValue: '$3,200', status: 'completed', payer: 'GED...9i0j', txHash: '0xghi...jkl1', time: '15 min ago' },
+  { id: 'pay_k1l2', merchant: 'QuickPay', amount: '100 XLM', currency: 'XLM', fiatValue: '$250', status: 'refunded', payer: 'GFD...k1l2', txHash: '0xmno...pqr2', time: '32 min ago' },
 ];
 
 const statusStyles: Record<string, { color: string; icon: React.ElementType }> = {

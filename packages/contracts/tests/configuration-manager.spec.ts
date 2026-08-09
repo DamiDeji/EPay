@@ -14,9 +14,9 @@ describe('ConfigurationManager', () => {
     it('deploys with defaultFeeBps=50 (0.5%)', () => { expect(true).toBe(true); });
     it('deploys with maxFeeBps=500', () => { expect(true).toBe(true); });
     it('deploys with treasuryAddress=owner', () => { expect(true).toBe(true); });
-    it('deploys with settlementMinAmount=1 TON', () => { expect(true).toBe(true); });
+    it('deploys with settlementMinAmount=1 XLM', () => { expect(true).toBe(true); });
     it('deploys with paymentExpiryTime=3600 (1 hour)', () => { expect(true).toBe(true); });
-    it('deploys with minPaymentAmount=0.01 TON', () => { expect(true).toBe(true); });
+    it('deploys with minPaymentAmount=0.01 XLM', () => { expect(true).toBe(true); });
     it('deploys with protocolVersion=1', () => { expect(true).toBe(true); });
     it('starts in unpaused state', () => { expect(true).toBe(true); });
   });

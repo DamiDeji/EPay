@@ -24,7 +24,7 @@ npx tsx examples/basic-usage.ts
 # Escrow milestones & subscription management
 npx tsx examples/escrow-workflow.ts
 
-# Wallet integration & TON utilities
+# Wallet integration & Stellar utilities
 npx tsx examples/wallet-integration.ts
 
 # Refunds, settlements, analytics & merchants
@@ -47,5 +47,5 @@ Without them, examples default to `http://localhost:4000` with a test key.
 |------|--------|
 | [`basic-usage.ts`](./basic-usage.ts) | Client setup, payments, invoices, pagination, error handling |
 | [`escrow-workflow.ts`](./escrow-workflow.ts) | Multi-milestone escrow lifecycle, subscription plans |
-| [`wallet-integration.ts`](./wallet-integration.ts) | TON wallet auth, balance, nanoTON conversion, fees |
+| [`wallet-integration.ts`](./wallet-integration.ts) | Stellar wallet auth, balance, stroops conversion, fees |
 | [`advanced-flows.ts`](./advanced-flows.ts) | Refunds, settlements, analytics, merchant management, payment links |

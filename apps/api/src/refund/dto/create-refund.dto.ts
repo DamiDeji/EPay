@@ -6,7 +6,7 @@ export class CreateRefundDto {
   @IsString()
   paymentId: string;
 
-  @ApiProperty({ example: '1000000000', description: 'Refund amount in nanoTON' })
+  @ApiProperty({ example: '1000000000', description: 'Refund amount in stroops' })
   @IsString()
   amount: string;
 

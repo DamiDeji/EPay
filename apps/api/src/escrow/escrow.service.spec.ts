@@ -10,7 +10,7 @@ describe('EscrowService', () => {
 
   const mockEscrow = {
     id: 'esc_1', escrowId: 'esc_abc', merchantId: 'merch_1', customerId: 'cust_1',
-    amount: BigInt(5000000000), currency: 'TON', status: 'CREATED',
+    amount: BigInt(5000000000), currency: 'XLM', status: 'CREATED',
     contractAddress: 'pending', txHash: null, currentMilestone: 0,
     disputedAt: null, resolvedAt: null, metadata: {}, createdAt: mockDate(), updatedAt: mockDate(),
     milestones: [
@@ -31,7 +31,7 @@ describe('EscrowService', () => {
     it('should create escrow with milestones', async () => {
       prisma.escrow.create.mockResolvedValue(mockEscrow);
       const result = await service.create({
-        merchantId: 'merch_1', customerId: 'cust_1', currency: 'TON',
+        merchantId: 'merch_1', customerId: 'cust_1', currency: 'XLM',
         milestones: [
           { description: 'Design', amount: '2500000000' },
           { description: 'Development', amount: '2500000000' },

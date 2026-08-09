@@ -14,7 +14,7 @@ const metrics = [
 ];
 
 const volumeBreakdown = [
-  { currency: 'TON', volume: '$14.2M', percentage: 57, color: 'bg-accent-500' },
+  { currency: 'XLM', volume: '$14.2M', percentage: 57, color: 'bg-accent-500' },
   { currency: 'USDT', volume: '$6.8M', percentage: 27, color: 'bg-emerald-500' },
   { currency: 'USDC', volume: '$3.1M', percentage: 13, color: 'bg-blue-500' },
   { currency: 'Other', volume: '$0.7M', percentage: 3, color: 'bg-slate-400' },

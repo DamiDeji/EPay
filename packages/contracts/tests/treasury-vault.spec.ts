@@ -11,13 +11,13 @@ describe('TreasuryVault', () => {
 
   describe('Deployment', () => {
     it('deploys with zero protocol, fee, and escrow balances', () => { expect(true).toBe(true); });
-    it('sets daily withdrawal limit to 10,000 TON', () => { expect(true).toBe(true); });
+    it('sets daily withdrawal limit to 10,000 XLM', () => { expect(true).toBe(true); });
     it('sets required signer approvals to 2', () => { expect(true).toBe(true); });
     it('owner is automatically a signer', () => { expect(true).toBe(true); });
   });
 
   describe('Deposits (receive)', () => {
-    it('accepts TON deposits and increments protocolBalance', () => { expect(true).toBe(true); });
+    it('accepts XLM deposits and increments protocolBalance', () => { expect(true).toBe(true); });
     it('records deposit transaction with txId', () => { expect(true).toBe(true); });
     it('emits Deposit event with sender and amount', () => { expect(true).toBe(true); });
   });

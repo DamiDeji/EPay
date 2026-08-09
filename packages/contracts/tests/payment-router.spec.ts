@@ -69,7 +69,7 @@ describe('PaymentRouter', () => {
       expect(true).toBe(true);
     });
 
-    it('rejects payments below the minimum amount (0.01 TON)', async () => {
+    it('rejects payments below the minimum amount (0.01 XLM)', async () => {
       // const result = await router.send(
       //   merchant.getSender(),
       //   { value: toNano('0.005'), body: /* CreatePayment */ }
@@ -81,7 +81,7 @@ describe('PaymentRouter', () => {
       expect(true).toBe(true);
     });
 
-    it('allows payments exactly at the minimum (0.01 TON)', async () => {
+    it('allows payments exactly at the minimum (0.01 XLM)', async () => {
       // const result = await router.send(
       //   merchant.getSender(),
       //   { value: toNano('0.01'), body: /* CreatePayment */ }

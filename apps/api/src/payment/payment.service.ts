@@ -1,3 +1,4 @@
+import { STELLAR_MIN_PAYMENT, STELLAR_MAX_PAYMENT } from '@epay/config';
 import { generateId, isExpired } from '@epay/shared';
 import type { Payment, PaymentLink, PaginatedResponse } from '@epay/types';
 import {
@@ -16,6 +17,8 @@ export class PaymentService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(dto: CreatePaymentDto): Promise<Payment> {
+    this.validatePaymentAmount(dto.amount);
+
     const paymentId = generateId('pay');
     const expiresIn = dto.expiresIn ?? 3600;
 
@@ -159,6 +162,8 @@ export class PaymentService {
 
   // Payment Links
   async createPaymentLink(dto: CreatePaymentLinkDto): Promise<PaymentLink> {
+    this.validatePaymentAmount(dto.amount);
+
     const code = generateId('link').slice(0, 12);
     const url = `${process.env.API_URL ?? 'http://localhost:4000'}/pay/${code}`;
 
@@ -191,6 +196,23 @@ export class PaymentService {
       orderBy: { createdAt: 'desc' },
     });
     return links.map((l) => this.sanitizePaymentLink(l));
+  }
+
+  private validatePaymentAmount(amount: string): void {
+    const amountBn = BigInt(amount);
+    const min = BigInt(STELLAR_MIN_PAYMENT);
+    const max = BigInt(STELLAR_MAX_PAYMENT);
+
+    if (amountBn < min) {
+      throw new BadRequestException(
+        `Amount ${amount} stroops is below the minimum of ${STELLAR_MIN_PAYMENT} stroops (0.1 XLM)`,
+      );
+    }
+    if (amountBn > max) {
+      throw new BadRequestException(
+        `Amount ${amount} stroops exceeds the maximum of ${STELLAR_MAX_PAYMENT} stroops (10,000,000 XLM)`,
+      );
+    }
   }
 
   private sanitizePayment(payment: any): Payment {

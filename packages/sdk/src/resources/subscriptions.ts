@@ -15,7 +15,7 @@ import { BaseResource } from './base';
  *   customerId: 'cust_456',
  *   planName: 'Premium Plan',
  *   amount: '1000000000',
- *   currency: 'TON',
+ *   currency: 'XLM',
  *   interval: 'MONTHLY',
  *   trialDays: 7,
  * });

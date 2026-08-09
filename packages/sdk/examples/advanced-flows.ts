@@ -76,7 +76,7 @@ async function main() {
 
   // 2. Process settlement
   console.log('2. Processing settlement on-chain...');
-  // await client.settlements.process(settlement.id, '0xsettlement_tx...', 'EQD_wallet...');
+  // await client.settlements.process(settlement.id, '0xsettlement_tx...', 'GAD_wallet...');
   console.log('   ✅ Settlement processed (status → COMPLETED)\n');
 
   // 3. List settlements
@@ -98,7 +98,7 @@ async function main() {
   // const link = await client.paymentLinks.create({
   //   merchantId: MERCHANT_ID,
   //   amount: '500000000',
-  //   currency: 'TON',
+  //   currency: 'XLM',
   //   description: 'Event ticket',
   //   maxPayments: 50,
   // });

@@ -6,11 +6,11 @@ export class CreatePaymentDto {
   @IsString()
   merchantId: string;
 
-  @ApiProperty({ example: '1000000000', description: 'Amount in nanoTON' })
+  @ApiProperty({ example: '1000000000', description: 'Amount in stroops' })
   @IsString()
   amount: string;
 
-  @ApiProperty({ example: 'TON' })
+  @ApiProperty({ example: 'XLM' })
   @IsString()
   assetCode: string;
 
@@ -23,12 +23,12 @@ export class CreatePaymentDto {
   @IsString()
   description?: string;
 
-  @ApiPropertyOptional({ example: 'EQD...payer_wallet' })
+  @ApiPropertyOptional({ example: 'GAD...payer_wallet' })
   @IsOptional()
   @IsString()
   payerPublicKey?: string;
 
-  @ApiProperty({ example: 'EQD...recipient_wallet' })
+  @ApiProperty({ example: 'GAD...recipient_wallet' })
   @IsString()
   recipientPublicKey: string;
 

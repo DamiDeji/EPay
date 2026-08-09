@@ -36,14 +36,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 #### SDK
 - `EPayClient` — JWT/API key auth, retry, timeout, 5 HTTP methods
-- `WalletClient` — TON auth messages, address validation, balance lookup
+- `WalletClient` — Stellar auth messages, address validation, balance lookup
 - 9 resource modules: Payments, PaymentLinks, Invoices, Escrows, Refunds, Subscriptions, Merchants, Settlements, Analytics
-- TON utilities: nanoTON/TON conversion, address formatting, fee calculation
+- Stellar utilities: stroops/XLM conversion, address formatting, fee calculation
 - **91 tests** across 4 test suites
 - README with 400+ lines of code examples + 4 runnable example scripts
 
 #### Blockchain Indexer
-- Block-by-block TON scanning with configurable batch size
+- Ledger-by-ledger Stellar scanning with configurable batch size
 - 5 event handler types (Payment, Escrow, Refund, Subscription, Treasury)
 - Historical + real-time sync engines with checkpoint recovery
 - BullMQ queue with worker and Redis error handling

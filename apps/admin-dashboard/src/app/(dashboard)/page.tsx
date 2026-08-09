@@ -27,10 +27,10 @@ const stats = [
 ];
 
 const recentPayments = [
-  { id: 'pay_001', merchant: 'Acme Corp', amount: '1,500 TON', status: 'completed', time: '2 min ago' },
+  { id: 'pay_001', merchant: 'Acme Corp', amount: '1,500 XLM', status: 'completed', time: '2 min ago' },
   { id: 'pay_002', merchant: 'CryptoShop', amount: '250 USDT', status: 'pending', time: '5 min ago' },
-  { id: 'pay_003', merchant: 'DeFi Hub', amount: '5,000 TON', status: 'completed', time: '8 min ago' },
-  { id: 'pay_004', merchant: 'NFT Market', amount: '800 TON', status: 'failed', time: '12 min ago' },
+  { id: 'pay_003', merchant: 'DeFi Hub', amount: '5,000 XLM', status: 'completed', time: '8 min ago' },
+  { id: 'pay_004', merchant: 'NFT Market', amount: '800 XLM', status: 'failed', time: '12 min ago' },
   { id: 'pay_005', merchant: 'TokenPay', amount: '3,200 USDC', status: 'completed', time: '15 min ago' },
 ];
 

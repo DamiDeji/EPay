@@ -14,7 +14,7 @@ describe('InvoiceService', () => {
     merchantId: 'merch_1',
     customerId: 'cust_1',
     amount: BigInt(5000000000),
-    currency: 'TON',
+    currency: 'XLM',
     status: 'DRAFT',
     dueDate: new Date('2026-09-05'),
     paidAmount: null,
@@ -40,7 +40,7 @@ describe('InvoiceService', () => {
       prisma.invoice.create.mockResolvedValue(mockInvoice);
       const result = await service.create({
         merchantId: 'merch_1',
-        currency: 'TON',
+        currency: 'XLM',
         items: [{ description: 'Item', quantity: 1, unitPrice: '5000000000' }],
       });
       expect(result.invoiceNumber).toMatch(/^INV-/);

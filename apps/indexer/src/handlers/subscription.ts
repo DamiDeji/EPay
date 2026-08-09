@@ -26,7 +26,7 @@ export async function handleSubscriptionEvent(
           customerId: d.customer,
           planName: d.planName,
           amount: BigInt(d.amount),
-          currency: 'TON',
+          currency: 'XLM',
           interval: 'MONTHLY',
           status: 'ACTIVE',
           currentPeriodStart: new Date(),

@@ -1,6 +1,11 @@
 # EPay
 
 <div align="center">
+
+[![CI](https://github.com/DamiDeji/EPay/actions/workflows/ci.yml/badge.svg)](https://github.com/DamiDeji/EPay/actions/workflows/ci.yml)
+[![Contracts](https://github.com/DamiDeji/EPay/actions/workflows/contracts.yml/badge.svg)](https://github.com/DamiDeji/EPay/actions/workflows/contracts.yml)
+[![Code Quality](https://github.com/DamiDeji/EPay/actions/workflows/codeql.yml/badge.svg)](https://github.com/DamiDeji/EPay/actions/workflows/codeql.yml)
+
   <h3>Enterprise-Grade Decentralized Payment Gateway on Stellar</h3>
   <p>Seamless payments, invoices, escrow, subscriptions, and settlement — powered by Soroban smart contracts on the Stellar network.</p>
 </div>
@@ -10,6 +15,25 @@
 ## 📖 Overview
 
 EPay is a decentralized Web3 payment gateway built on the [Stellar](https://stellar.org) network using [Soroban](https://soroban.stellar.org) smart contracts (Rust). It provides a complete payment infrastructure — smart contracts, REST API, SDK, blockchain indexer, and three dashboards — enabling merchants, businesses, and developers to send, receive, and manage digital payments without relying on centralized payment processors.
+
+---
+
+## 🌟 Why Stellar?
+
+EPay is built specifically for the Stellar network because Stellar offers an ideal foundation for a decentralized payment gateway:
+
+| Capability | Why It Matters for EPay |
+|-----------|------------------------|
+| **3–5 second settlement** | Payments confirm near-instantly — critical for merchant point-of-sale and e-commerce use cases |
+| **Sub-cent transaction fees** | Stellar transactions cost fractions of a cent, making micropayments and high-volume billing economically viable |
+| **Built-in DEX & orderbook** | Stellar's on-chain orderbook enables seamless asset conversion — merchants can accept any Stellar token and settle in their preferred asset |
+| **Soroban smart contracts** | Rust-based WASM contracts with predictable fees, resource metering, and a growing developer ecosystem |
+| **Wide wallet ecosystem** | Freighter, xBull, Albedo, Rabet, Lobstr — merchants and customers already have Stellar wallets |
+| **Real-world adoption** | Stellar powers remittance corridors, aid distribution (UNHCR, Red Cross), and real-world asset tokenization |
+| **Anchor network** | SEP-24 on/off-ramps enable fiat ↔ crypto conversion, bridging traditional finance with blockchain payments |
+| **Regulatory clarity** | Stellar's focus on compliance and real-world use cases aligns with EPay's goal of merchant-grade reliability |
+
+Other blockchains may offer smart contracts, but none combine Stellar's settlement speed, fee structure, built-in DEX, and real-world adoption in a way purpose-built for payment infrastructure. EPay leverages all of these to deliver a payment gateway that's fast, cheap, and ready for real businesses.
 
 ---
 
@@ -26,7 +50,7 @@ epay/
 ├── packages/
 │   ├── contracts/            # 12 Soroban (Rust) smart contracts
 │   ├── sdk/                  # TypeScript SDK (Stellar SDK + Soroban SDK)
-│   ├── database/             # Prisma ORM (22 models)
+│   ├── database/             # Prisma ORM (21 models)
 │   ├── types/                # Shared TypeScript type definitions
 │   ├── ui/                   # Shared React UI components (shadcn/ui style)
 │   ├── hooks/                # React hooks (useApi, useAuth, useWallet, etc.)
@@ -59,11 +83,11 @@ epay/
 - **15 modules**: Database, Health, Auth, Merchant, Payment, Invoice, Escrow, Refund, Subscription, Settlement, Treasury, Notification, Webhook, Analytics, Audit
 - **Auth**: JWT, API key, Stellar wallet authentication with role-based guards
 - **Swagger** documentation on all endpoints
-- **93 source files** — zero type errors
+- **70 source files** — zero type errors
 
 ### Blockchain Indexer
 - Ledger-by-ledger Stellar Horizon scanning with configurable batch size
-- Event handlers for 7 Soroban contract types
+- Event handlers for 5 Soroban contract types (Payment, Escrow, Refund, Subscription, Treasury)
 - Historical sync engine with consecutive failure abort (5 max)
 - Real-time sync engine with exponential backoff
 - BullMQ queue + worker with 5x concurrency and rate limiting
@@ -85,7 +109,7 @@ epay/
 - **Full README** with 400+ lines of code examples + 4 runnable example scripts
 
 ### Database (Prisma + PostgreSQL)
-- **22 models**: User, Merchant, Wallet, Trustline, Payment, Invoice, InvoiceItem, Escrow, Milestone, Refund, Subscription, Settlement, TreasuryTransaction, Notification, WebhookDelivery, ApiKey, AuditLog, PaymentLink, SubscriptionPayment, AnalyticsSnapshot, IdempotencyKey
+- **21 models**: User, Merchant, Wallet, Trustline, Payment, Invoice, InvoiceItem, Escrow, Milestone, Refund, Subscription, Settlement, TreasuryTransaction, Notification, WebhookDelivery, ApiKey, AuditLog, PaymentLink, SubscriptionPayment, AnalyticsSnapshot, IdempotencyKey
 - Normalized schema with proper relations, enums, and indexes
 - Seed script with Stellar testnet sample data
 
@@ -206,6 +230,37 @@ pnpm build
 | **Wallets** | Freighter, xBull, Albedo, Rabet, Lobstr |
 | **Testing** | Jest, Vitest, Cargo test |
 | **DevOps** | Turborepo, pnpm workspaces, GitHub Actions, Dependabot |
+
+---
+
+## 🧪 Testing
+
+| Package | Framework | Tests | Coverage |
+|---------|-----------|-------|----------|
+| `@epay/contracts` | Cargo test | 12 spec files | Run `cargo test` to generate |
+| `@epay/api` | Jest | 16 test suites, 105 tests | Run `pnpm --filter @epay/api test:coverage` |
+| `@epay/sdk` | Vitest | 4 test suites, 91+ tests | Run `pnpm --filter @epay/sdk test:coverage` |
+
+```bash
+# Run all tests
+pnpm test
+
+# Run with coverage
+pnpm test:coverage
+
+# Run contracts tests only
+cargo test --manifest-path packages/contracts/Cargo.toml
+```
+
+---
+
+## 📄 Documentation & Links
+
+- **[Team](./TEAM.md)** — Who's building EPay
+- **[Roadmap](./ROADMAP.md)** — Development milestones and grant funding plans
+- **[Security](./SECURITY.md)** — Vulnerability reporting and audit status
+- **[Contributing](./CONTRIBUTING.md)** — How to contribute
+- **[SDK Docs](./packages/sdk/README.md)** — TypeScript SDK documentation
 
 ---
 

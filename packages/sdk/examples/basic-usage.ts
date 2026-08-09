@@ -22,15 +22,15 @@ async function main() {
     console.log('Creating a payment...');
     const payment = await client.payments.create({
       merchantId: 'merch_demo_001',
-      amount: '1000000000', // 1 TON in nanoTON
-      currency: 'TON',
-      recipientAddress: 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMAU',
+      amount: '1000000000', // 1 XLM in stroops
+      currency: 'XLM',
+      recipientAddress: 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMAU',
       description: 'Demo payment for SDK example',
       memo: 'SDK example',
       expiresIn: 3600,
     });
     console.log(`  ✅ Payment created: ${payment.paymentId}`);
-    console.log(`     Amount: ${payment.amount} nanoTON`);
+    console.log(`     Amount: ${payment.amount} stroops`);
     console.log(`     Status: ${payment.status}\n`);
 
     // ── 3. Get payment by ID ──────────────────────────────────────────
@@ -54,7 +54,7 @@ async function main() {
     const invoice = await client.invoices.create({
       merchantId: 'merch_demo_001',
       amount: '5000000000',
-      currency: 'TON',
+      currency: 'XLM',
       items: [
         { description: 'Consulting hours (5h)', quantity: 5, unitPrice: '800000000', total: '4000000000' },
         { description: 'Project setup fee', quantity: 1, unitPrice: '1000000000', total: '1000000000' },
@@ -63,7 +63,7 @@ async function main() {
       notes: 'Invoice for Q3 consulting services',
     });
     console.log(`  ✅ Invoice created: ${invoice.invoiceNumber}`);
-    console.log(`     Total: ${invoice.amount} nanoTON`);
+    console.log(`     Total: ${invoice.amount} stroops`);
     console.log(`     Items: ${invoice.items.length}`);
     console.log(`     Status: ${invoice.status}\n`);
 

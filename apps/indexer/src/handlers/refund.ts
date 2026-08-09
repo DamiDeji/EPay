@@ -25,7 +25,7 @@ export async function handleRefundEvent(
           merchantId: '',
           amount: BigInt(d.amount),
           originalAmount: BigInt(d.amount),
-          currency: 'TON',
+          currency: 'XLM',
           status: 'REQUESTED',
           reason: d.reason,
           isPartial: false,

@@ -1,6 +1,6 @@
 # EPay TypeScript SDK
 
-Enterprise-grade TypeScript SDK for the EPay decentralized payment gateway on TON blockchain.
+Enterprise-grade TypeScript SDK for the EPay decentralized payment gateway on the Stellar network.
 
 [![npm version](https://img.shields.io/npm/v/@epay/sdk.svg)](https://www.npmjs.com/package/@epay/sdk)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -16,8 +16,8 @@ Enterprise-grade TypeScript SDK for the EPay decentralized payment gateway on TO
 - 🔗 **Payment Links** — Shareable payment links with QR support
 - 💰 **Settlements** — Periodic settlement processing
 - 📊 **Analytics** — Revenue, volume, and success rate insights
-- 👛 **Wallet** — TON wallet integration, auth, and balance lookups
-- 🔧 **Utilities** — nanoTON/TON conversion, address validation, fee calculation
+- 👛 **Wallet** — Stellar wallet integration, auth, and balance lookups
+- 🔧 **Utilities** — stroops/XLM conversion, address validation, fee calculation
 
 ---
 
@@ -44,9 +44,9 @@ const client = new EPayClient({
 // Create a payment
 const payment = await client.payments.create({
   merchantId: 'merch_abc123',
-  amount: '1000000000', // 1 TON in nanoTON
-  currency: 'TON',
-  recipientAddress: 'EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMAU',
+  amount: '1000000000', // 1 XLM in stroops
+  currency: 'XLM',
+  recipientAddress: 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMAU',
   description: 'Premium plan upgrade',
 });
 
@@ -127,9 +127,9 @@ const client = new EPayClient({ apiKey: 'ep_live_...' });
 // ── Create a payment ────────────────────────────────────────────
 const payment = await client.payments.create({
   merchantId: 'merch_abc123',
-  amount: '5000000000',     // 5 TON in nanoTON
-  currency: 'TON',
-  recipientAddress: 'EQD...',
+  amount: '5000000000',     // 5 XLM in stroops
+  currency: 'XLM',
+  recipientAddress: 'GAD...',
   description: 'Order #1234',
   memo: 'Thank you for your purchase',
   expiresIn: 3600,          // expires in 1 hour (seconds)
@@ -167,7 +167,7 @@ Create shareable payment links that customers can open and pay:
 const link = await client.paymentLinks.create({
   merchantId: 'merch_abc123',
   amount: '1000000000',
-  currency: 'TON',
+  currency: 'XLM',
   description: 'Community donation',
   maxPayments: 100,
   expiresIn: 86400 * 7,   // 7 days
@@ -193,7 +193,7 @@ const client = new EPayClient({ apiKey: 'ep_live_...' });
 const invoice = await client.invoices.create({
   merchantId: 'merch_abc123',
   amount: '7500000000',
-  currency: 'TON',
+  currency: 'XLM',
   items: [
     { description: 'Web Design', quantity: 1, unitPrice: '5000000000', total: '5000000000' },
     { description: 'Hosting (1 year)', quantity: 1, unitPrice: '2500000000', total: '2500000000' },
@@ -232,8 +232,8 @@ import { EPayClient, EscrowStatus, MilestoneStatus } from '@epay/sdk';
 const escrow = await client.escrows.create({
   merchantId: 'merch_abc123',
   customerId: 'cust_789',
-  amount: '10000000000',  // 10 TON
-  currency: 'TON',
+  amount: '10000000000',  // 10 XLM
+  currency: 'XLM',
   milestones: [
     { index: 0, description: 'Requirements phase', amount: '3000000000' },
     { index: 1, description: 'Development phase', amount: '4000000000' },
@@ -307,8 +307,8 @@ const sub = await client.subscriptions.create({
   merchantId: 'merch_abc123',
   customerId: 'cust_789',
   planName: 'Premium Plan',
-  amount: '1000000000',      // 1 TON / month
-  currency: 'TON',
+  amount: '1000000000',      // 1 XLM / month
+  currency: 'XLM',
   interval: SubscriptionBillingInterval.MONTHLY,
   trialDays: 7,
   maxPayments: 12,
@@ -337,8 +337,8 @@ const merchant = await client.merchants.register({
   businessEmail: 'payments@acme.dev',
   businessUrl: 'https://acme.dev',
   description: 'Decentralized widget store',
-  supportedCurrencies: ['TON', 'USDT'],
-  settlementAddress: 'EQD_settlement_wallet...',
+  supportedCurrencies: ['XLM', 'USDT'],
+  settlementAddress: 'GAD_settlement_wallet...',
 });
 
 // ── Get your own merchant account ───────────────────────────────
@@ -376,7 +376,7 @@ console.log(`Net:   ${settlement.netAmount}`);
 // ── Process the settlement on-chain ─────────────────────────────
 await client.settlements.process(settlement.id,
   '0xsettlement_tx_hash...',
-  'EQD_merchant_wallet...',
+  'GAD_merchant_wallet...',
 );
 
 // ── List settlements ────────────────────────────────────────────
@@ -417,67 +417,64 @@ console.log(`Total volume:     ${platform.totalVolume}`);
 ## Wallet Integration
 
 ```ts
-import { WalletClient, TONNetwork } from '@epay/sdk';
+import { WalletClient, StellarNetwork } from '@epay/sdk';
 
 const wallet = new WalletClient({
-  network: TONNetwork.MAINNET,
-  rpcEndpoint: 'https://toncenter.com/api/v2/jsonRPC',
+  network: StellarNetwork.TESTNET,
+  horizonUrl: 'https://horizon-testnet.stellar.org',
 });
 
-// ── Validate a TON address ─────────────────────────────────────
-wallet.validateAddress('EQD_valid_address...');      // true
+// ── Validate a Stellar address ──────────────────────────────────
+wallet.validateAddress('GAD_valid_address...');      // true
 wallet.validateAddress('bad_address');                 // false
 
 // ── Generate an auth message ────────────────────────────────────
 const message = wallet.generateAuthMessage(
-  'EQD_your_wallet_address...',
+  'GAD_your_wallet_address...',
 );
 // => "EPay Authentication: Sign this message to prove you own
-//     EQD_your_wallet_address...
+//     GAD_your_wallet_address...
 //     Nonce: lz8xkq3a
 //     Timestamp: 2026-08-05T12:00:00.000Z
-//     Network: mainnet"
+//     Network: testnet"
 
 // ── Build wallet auth from a signature ──────────────────────────
 const auth = wallet.buildWalletAuth({
-  address: 'EQD_your_wallet...',
-  publicKey: '0xpublic_key...',
-  signature: '0xwallet_signature...',
+  address: 'GAD_your_wallet...',
+  publicKey: 'GAD_public_key...',
+  signature: 'wallet_signature...',
   message: message,
 });
 
 // ── Get wallet balance ──────────────────────────────────────────
-const balanceNano = await wallet.getBalance('EQD_your_wallet...');
-console.log(`Balance: ${balanceNano}`); // in nanoTON
+const balanceStroops = await wallet.getBalance('GAD_your_wallet...');
+console.log(`Balance: ${balanceStroops}`); // in stroops
 ```
 
-### Using with TON Connect
+### Using with Stellar Wallets
 
-In a browser environment, integrate with [TON Connect](https://github.com/ton-connect/sdk):
+In a browser environment, integrate with Freighter or other Stellar wallets:
 
 ```ts
-import { TonConnectUI } from '@tonconnect/ui';
-import { WalletClient, TONNetwork } from '@epay/sdk';
+import { WalletClient, StellarNetwork } from '@epay/sdk';
 
-const tonConnect = new TonConnectUI({ manifestUrl: '...' });
-const wallet = new WalletClient({ network: TONNetwork.MAINNET });
+const wallet = new WalletClient({ network: StellarNetwork.TESTNET });
 
-// 1. Connect wallet
-await tonConnect.connectWallet();
-const account = tonConnect.wallet.account;
-if (!account) throw new Error('Wallet not connected');
+// 1. Connect wallet (e.g. via Freighter)
+const publicKey = await window.freighter?.getPublicKey();
+if (!publicKey) throw new Error('Wallet not connected');
 
 // 2. Generate auth message
-const message = wallet.generateAuthMessage(account.address);
+const message = wallet.generateAuthMessage(publicKey);
 
-// 3. Sign via TON Connect
-// (implementation depends on your TON Connect version)
+// 3. Sign via wallet
+// (implementation depends on wallet API)
 
 // 4. Build auth payload
 const auth = wallet.buildWalletAuth({
-  address: account.address,
-  publicKey: account.publicKey,
-  signature: '0x...',
+  address: publicKey,
+  publicKey: publicKey,
+  signature: '...',
   message,
 });
 
@@ -488,36 +485,36 @@ const client = new EPayClient({ apiUrl: 'https://api.epay.dev' });
 
 ---
 
-## TON Utilities
+## Stellar Utilities
 
 ```ts
 import {
-  nanoToTon, tonToNano, isValidTonAddress,
+  stroopsToXlm, xlmToStroops, isValidStellarPublicKey,
   formatAddress, getExplorerUrl, calculateFee,
-  calculateNetAmount, TONNetwork,
+  calculateNetAmount, StellarNetwork,
 } from '@epay/sdk';
 
-// ── nanoTON ↔ TON conversion ───────────────────────────────────
-nanoToTon('1000000000');      // "1"
-nanoToTon('1500000000');      // "1.5"
-nanoToTon('100');             // "0.0000001"
+// ── stroops ↔ XLM conversion ────────────────────────────────────
+stroopsToXlm('1000000000');    // "100"
+stroopsToXlm('1500000000');    // "150"
+stroopsToXlm('100');           // "0.00001"
 
-tonToNano('1');               // "1000000000"
-tonToNano('1.5');             // "1500000000"
-tonToNano('0.0000001');       // "100"
+xlmToStroops('100');           // "1000000000"
+xlmToStroops('150');           // "1500000000"
+xlmToStroops('0.00001');       // "100"
 
 // ── Address utilities ───────────────────────────────────────────
-isValidTonAddress('EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMAU');
+isValidStellarPublicKey('GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMAU');
 // => true
 
-formatAddress('EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMAU');
-// => "EQAAAA...AMAU"
+formatAddress('GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMAU');
+// => "GAAAAAAA...AMAU"
 
-getExplorerUrl('tx', '0xhash...', TONNetwork.MAINNET);
-// => "https://tonscan.org/tx/0xhash..."
+getExplorerUrl('tx', 'tx_hash...', 'mainnet');
+// => "https://stellar.expert/explorer/public/tx/tx_hash..."
 
-getExplorerUrl('address', 'EQD...', TONNetwork.TESTNET);
-// => "https://testnet.tonscan.org/address/EQD..."
+getExplorerUrl('account', 'GAD...', 'testnet');
+// => "https://stellar.expert/explorer/testnet/account/GAD..."
 
 // ── Fee calculation ─────────────────────────────────────────────
 calculateFee('1000000000', 50);   // "5000000"   (0.5% fee)
@@ -537,8 +534,8 @@ try {
   await client.payments.create({
     merchantId: 'invalid',
     amount: '1000000000',
-    currency: 'TON',
-    recipientAddress: 'EQD...',
+    currency: 'XLM',
+    recipientAddress: 'GAD...',
   });
 } catch (error) {
   if (error instanceof EPayError) {
@@ -623,7 +620,7 @@ import {
   PaymentStatus, InvoiceStatus, EscrowStatus,
   RefundStatus, SubscriptionStatus, MerchantStatus,
   SettlementStatus, SubscriptionBillingInterval,
-  TONNetwork, MilestoneStatus, ApiPermission,
+  StellarNetwork, MilestoneStatus, ApiPermission,
   NotificationChannel, TreasuryTxType, TreasuryTxStatus,
 } from '@epay/sdk';
 ```
@@ -746,18 +743,18 @@ import {
 |--------|-------------|
 | `generateAuthMessage(address)` | Generate auth message to sign |
 | `buildWalletAuth(signature)` | Build WalletAuth from signature |
-| `validateAddress(address)` | Validate TON address |
-| `getBalance(address)` | Get wallet balance (nanoTON) |
+| `validateAddress(address)` | Validate Stellar address |
+| `getBalance(address)` | Get wallet balance (stroops) |
 
 ### Utilities
 
 | Function | Description |
 |----------|-------------|
-| `nanoToTon(nano)` | Convert nanoTON → human TON |
-| `tonToNano(ton)` | Convert human TON → nanoTON |
-| `isValidTonAddress(addr)` | Validate TON address format |
+| `stroopsToXlm(stroops)` | Convert stroops → human XLM |
+| `xlmToStroops(xlm)` | Convert human XLM → stroops |
+| `isValidStellarPublicKey(addr)` | Validate Stellar address format |
 | `formatAddress(addr, prefix?, suffix?)` | Truncate address for display |
-| `getExplorerUrl(type, value, network?)` | Get TONscan URL |
+| `getExplorerUrl(type, value, network?)` | Get Stellar Expert URL |
 | `calculateFee(amount, feeBps?)` | Calculate EPay fee |
 | `calculateNetAmount(amount, feeBps?)` | Calculate net after fee |
 

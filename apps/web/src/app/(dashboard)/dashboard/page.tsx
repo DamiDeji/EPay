@@ -15,7 +15,7 @@ import {
 const STATS = [
   {
     label: 'Total Volume',
-    value: '1,234.56 TON',
+    value: '1,234.56 XLM',
     change: '+12.3%',
     trend: 'up' as const,
     icon: DollarSign,
@@ -56,11 +56,11 @@ const STATS = [
 ];
 
 const RECENT_PAYMENTS = [
-  { id: 'pay_001', amount: '12.5 TON', customer: '0x1234...abcd', status: 'COMPLETED', date: '2 min ago' },
-  { id: 'pay_002', amount: '45.0 TON', customer: '0x5678...efgh', status: 'COMPLETED', date: '15 min ago' },
-  { id: 'pay_003', amount: '8.2 TON', customer: '0x9012...ijkl', status: 'PENDING', date: '1 hour ago' },
-  { id: 'pay_004', amount: '100.0 TON', customer: '0x3456...mnop', status: 'FAILED', date: '2 hours ago' },
-  { id: 'pay_005', amount: '3.7 TON', customer: '0x7890...qrst', status: 'COMPLETED', date: '3 hours ago' },
+  { id: 'pay_001', amount: '12.5 XLM', customer: '0x1234...abcd', status: 'COMPLETED', date: '2 min ago' },
+  { id: 'pay_002', amount: '45.0 XLM', customer: '0x5678...efgh', status: 'COMPLETED', date: '15 min ago' },
+  { id: 'pay_003', amount: '8.2 XLM', customer: '0x9012...ijkl', status: 'PENDING', date: '1 hour ago' },
+  { id: 'pay_004', amount: '100.0 XLM', customer: '0x3456...mnop', status: 'FAILED', date: '2 hours ago' },
+  { id: 'pay_005', amount: '3.7 XLM', customer: '0x7890...qrst', status: 'COMPLETED', date: '3 hours ago' },
 ];
 
 const statusColors: Record<string, 'success' | 'warning' | 'destructive' | 'slate'> = {

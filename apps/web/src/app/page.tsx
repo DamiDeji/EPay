@@ -29,7 +29,7 @@ const FEATURES = [
   {
     icon: Wallet,
     title: 'Accept Crypto Payments',
-    description: 'Receive TON and other TON-based tokens. Instant settlement, no chargebacks.',
+    description: 'Receive XLM and other Stellar-based tokens. Instant settlement, no chargebacks.',
     color: 'from-blue-500/20 to-blue-600/10',
     iconColor: 'text-blue-500',
   },
@@ -74,7 +74,7 @@ const HOW_IT_WORKS = [
   {
     step: '01',
     title: 'Connect Wallet',
-    description: 'Link your TON wallet in one click. No KYC required for basic usage.',
+    description: 'Link your Stellar wallet in one click. No KYC required for basic usage.',
     icon: Wallet,
   },
   {
@@ -92,7 +92,7 @@ const HOW_IT_WORKS = [
   {
     step: '04',
     title: 'Get Settled',
-    description: 'Funds settle directly to your TON wallet — no middlemen, no delays.',
+    description: 'Funds settle directly to your Stellar wallet — no middlemen, no delays.',
     icon: Zap,
   },
 ];
@@ -100,7 +100,7 @@ const HOW_IT_WORKS = [
 const TRUST_SIGNALS = [
   { icon: Lock, label: 'Non-Custodial' },
   { icon: ShieldCheck, label: 'Audited Contracts' },
-  { icon: Zap, label: 'TON Native' },
+  { icon: Zap, label: 'Stellar Native' },
   { icon: Smartphone, label: 'Mobile Ready' },
 ];
 
@@ -123,9 +123,8 @@ export default function HomePage() {
             animate="visible"
             variants={fadeUp}
             transition={{ duration: 0.6 }}
-          >
-            <Badge variant="primary" className="mb-6 px-4 py-1.5 text-sm">
-              Built on The Open Network
+          >              <Badge variant="primary" className="mb-6 px-4 py-1.5 text-sm">
+              Built on Stellar
             </Badge>
           </motion.div>
 
@@ -147,7 +146,7 @@ export default function HomePage() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="mt-6 text-lg sm:text-xl text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed"
           >
-            Enterprise-grade payment gateway on TON. Accept crypto, manage invoices, automate
+            Enterprise-grade payment gateway on Stellar. Accept crypto, manage invoices, automate
             subscriptions, and settle instantly — all without intermediaries.
           </motion.p>
 
@@ -207,7 +206,7 @@ export default function HomePage() {
               {/* Mock Dashboard Content */}
               <div className="p-6 grid grid-cols-4 gap-4">
                 <div className="col-span-4 grid grid-cols-1 sm:grid-cols-4 gap-4">
-                  {['1,234 TON', '$2,891', '156', '98.5%'].map((val, i) => (
+                  {['1,234 XLM', '$2,891', '156', '98.5%'].map((val, i) => (
                     <div key={i} className="rounded-xl bg-slate-50 dark:bg-slate-700/50 p-4">
                       <div className="text-xs text-slate-400 mb-1">
                         {['Volume', 'Revenue', 'Transactions', 'Success Rate'][i]}

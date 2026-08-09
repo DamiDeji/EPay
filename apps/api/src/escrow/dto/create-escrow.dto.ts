@@ -7,7 +7,7 @@ class MilestoneDto {
   @IsString()
   description: string;
 
-  @ApiProperty({ example: '5000000000', description: 'Amount in nanoTON' })
+  @ApiProperty({ example: '5000000000', description: 'Amount in stroops' })
   @IsString()
   amount: string;
 }
@@ -21,12 +21,12 @@ export class CreateEscrowDto {
   @IsString()
   customerId: string;
 
-  @ApiPropertyOptional({ example: '15000000000', description: 'Total amount in nanoTON' })
+  @ApiPropertyOptional({ example: '15000000000', description: 'Total amount in stroops' })
   @IsOptional()
   @IsString()
   amount?: string;
 
-  @ApiProperty({ example: 'TON' })
+  @ApiProperty({ example: 'XLM' })
   @IsString()
   assetCode: string;
 

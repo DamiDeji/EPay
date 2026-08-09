@@ -12,7 +12,7 @@ class InvoiceItemDto {
   @Min(1)
   quantity: number;
 
-  @ApiProperty({ example: '1000000000', description: 'Unit price in nanoTON' })
+  @ApiProperty({ example: '1000000000', description: 'Unit price in stroops' })
   @IsString()
   unitPrice: string;
 }
@@ -22,12 +22,12 @@ export class CreateInvoiceDto {
   @IsString()
   merchantId: string;
 
-  @ApiPropertyOptional({ example: '1000000000', description: 'Total amount in nanoTON' })
+  @ApiPropertyOptional({ example: '1000000000', description: 'Total amount in stroops' })
   @IsOptional()
   @IsString()
   amount?: string;
 
-  @ApiProperty({ example: 'TON' })
+  @ApiProperty({ example: 'XLM' })
   @IsString()
   assetCode: string;
 

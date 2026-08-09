@@ -10,7 +10,7 @@ describe('AnalyticsService', () => {
   const mockPayment = (status: string, amount: string, daysAgo = 0) => ({
     id: `pay_${Math.random().toString(36).slice(2)}`,
     amount: BigInt(amount),
-    currency: 'TON',
+    currency: 'XLM',
     status,
     createdAt: new Date(Date.now() - daysAgo * 86400000),
   });

@@ -14,11 +14,11 @@ describe('PaymentService', () => {
     merchantId: 'merch_1',
     customerId: 'cust_1',
     amount: BigInt(1000000000),
-    currency: 'TON',
+    currency: 'XLM',
     status: 'PENDING',
     description: 'Test payment',
-    payerAddress: 'EQD_payer',
-    recipientAddress: 'EQD_recipient',
+    payerAddress: 'GAD_payer',
+    recipientAddress: 'GAD_recipient',
     memo: 'Order #123',
     txHash: null,
     blockHeight: null,
@@ -46,11 +46,55 @@ describe('PaymentService', () => {
       const result = await service.create({
         merchantId: 'merch_1',
         amount: '1000000000',
-        currency: 'TON',
-        recipientAddress: 'EQD_recipient',
+        currency: 'XLM',
+        recipientAddress: 'GAD_recipient',
       });
       expect(result.paymentId).toMatch(/^pay_/);
       expect(prisma.payment.create).toHaveBeenCalled();
+    });
+
+    it('should reject amount below minimum', async () => {
+      await expect(
+        service.create({
+          merchantId: 'merch_1',
+          amount: '1000',
+          currency: 'XLM',
+          recipientAddress: 'GAD_recipient',
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject amount above maximum', async () => {
+      await expect(
+        service.create({
+          merchantId: 'merch_1',
+          amount: '100000000000001',
+          currency: 'XLM',
+          recipientAddress: 'GAD_recipient',
+        }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should accept amount at minimum boundary', async () => {
+      prisma.payment.create.mockResolvedValue(mockPayment);
+      const result = await service.create({
+        merchantId: 'merch_1',
+        amount: '1000000',
+        currency: 'XLM',
+        recipientAddress: 'GAD_recipient',
+      });
+      expect(result.paymentId).toMatch(/^pay_/);
+    });
+
+    it('should accept amount at maximum boundary', async () => {
+      prisma.payment.create.mockResolvedValue(mockPayment);
+      const result = await service.create({
+        merchantId: 'merch_1',
+        amount: '100000000000000',
+        currency: 'XLM',
+        recipientAddress: 'GAD_recipient',
+      });
+      expect(result.paymentId).toMatch(/^pay_/);
     });
   });
 
@@ -125,14 +169,14 @@ describe('PaymentService', () => {
     it('should create a payment link', async () => {
       prisma.paymentLink.create.mockResolvedValue({
         id: 'link_1', code: 'test_code', url: 'https://epay.dev/pay/test_code',
-        amount: BigInt(1000), currency: 'TON', description: null,
+        amount: BigInt(1000), currency: 'XLM', description: null,
         maxPayments: null, currentPayments: 0, expiresAt: null,
         isActive: true, merchantId: 'merch_1', metadata: {},
         createdAt: mockDate(), updatedAt: mockDate(),
       });
 
       const result = await service.createPaymentLink({
-        merchantId: 'merch_1', amount: '1000', currency: 'TON',
+        merchantId: 'merch_1', amount: '1000000000', currency: 'XLM',
       });
 
       expect(result.code).toBeDefined();

@@ -32,7 +32,7 @@ export class MerchantService {
         businessEmail: dto.businessEmail,
         businessUrl: dto.businessUrl ?? null,
         description: dto.description ?? null,
-        supportedAssets: dto.supportedAssets ?? ['TON'],
+        supportedAssets: dto.supportedAssets ?? ['XLM'],
         settlementPublicKey: dto.settlementPublicKey ?? null,
         webhookUrl: dto.webhookUrl ?? null,
       },

@@ -15,11 +15,11 @@ export class CreateSubscriptionDto {
   @IsString()
   planName: string;
 
-  @ApiProperty({ example: '1000000000', description: 'Amount per period in nanoTON' })
+  @ApiProperty({ example: '1000000000', description: 'Amount per period in stroops' })
   @IsString()
   amount: string;
 
-  @ApiProperty({ example: 'TON' })
+  @ApiProperty({ example: 'XLM' })
   @IsString()
   assetCode: string;
 

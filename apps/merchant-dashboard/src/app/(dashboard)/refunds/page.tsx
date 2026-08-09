@@ -4,10 +4,10 @@ import { Card, CardHeader, CardTitle, CardContent, Badge } from '@epay/ui';
 import { CheckCircle2, Clock, XCircle, AlertCircle } from 'lucide-react';
 
 const REFUNDS = [
-  { id: 'ref_a1B2c', paymentId: 'pay_8kL6u', amount: '250.00 TON', original: '250.00 TON', reason: 'Customer requested', status: 'COMPLETED', partial: false, date: '2026-08-04', txHash: '0xREF...001' },
-  { id: 'ref_d3E4f', paymentId: 'pay_4nH9v', amount: '50.00 TON', original: '500.00 TON', reason: 'Partial refund - wrong item', status: 'COMPLETED', partial: true, date: '2026-08-03', txHash: '0xREF...002' },
-  { id: 'ref_g5H6i', paymentId: 'pay_9yN3p', amount: '45.00 TON', original: '45.00 TON', reason: 'Service not delivered', status: 'REQUESTED', partial: false, date: '2026-08-05', txHash: null },
-  { id: 'ref_j7K8l', paymentId: 'pay_3zQ8r', amount: '10.25 TON', original: '10.25 TON', reason: 'Duplicate charge', status: 'REJECTED', partial: false, date: '2026-08-02', txHash: null },
+  { id: 'ref_a1B2c', paymentId: 'pay_8kL6u', amount: '250.00 XLM', original: '250.00 XLM', reason: 'Customer requested', status: 'COMPLETED', partial: false, date: '2026-08-04', txHash: '0xREF...001' },
+  { id: 'ref_d3E4f', paymentId: 'pay_4nH9v', amount: '50.00 XLM', original: '500.00 XLM', reason: 'Partial refund - wrong item', status: 'COMPLETED', partial: true, date: '2026-08-03', txHash: '0xREF...002' },
+  { id: 'ref_g5H6i', paymentId: 'pay_9yN3p', amount: '45.00 XLM', original: '45.00 XLM', reason: 'Service not delivered', status: 'REQUESTED', partial: false, date: '2026-08-05', txHash: null },
+  { id: 'ref_j7K8l', paymentId: 'pay_3zQ8r', amount: '10.25 XLM', original: '10.25 XLM', reason: 'Duplicate charge', status: 'REJECTED', partial: false, date: '2026-08-02', txHash: null },
 ];
 
 const statusConfig: Record<string, { badge: 'success' | 'warning' | 'destructive' | 'slate'; icon: React.ElementType }> = {

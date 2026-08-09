@@ -20,13 +20,13 @@ export class CreateMerchantDto {
   @IsString()
   description?: string;
 
-  @ApiPropertyOptional({ example: ['TON', 'USDT'], type: [String] })
+  @ApiPropertyOptional({ example: ['XLM', 'USDT'], type: [String] })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
   supportedAssets?: string[];
 
-  @ApiPropertyOptional({ example: 'EQD...merchant_wallet' })
+  @ApiPropertyOptional({ example: 'GAD...merchant_wallet' })
   @IsOptional()
   @IsString()
   settlementPublicKey?: string;

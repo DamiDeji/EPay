@@ -11,7 +11,7 @@ import { BaseResource } from './base';
  * ```ts
  * const invoice = await client.invoices.create({
  *   merchantId: 'merch_123',
- *   currency: 'TON',
+ *   currency: 'XLM',
  *   items: [{ description: 'Service', quantity: 1, unitPrice: '5000000000' }],
  * });
  * await client.invoices.issue(invoice.id);

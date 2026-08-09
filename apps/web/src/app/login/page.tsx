@@ -135,7 +135,7 @@ export default function LoginPage() {
               onClick={() => { router.push('/dashboard'); }}
             >
               <Wallet className="w-4 h-4" />
-              Connect TON Wallet
+              Connect Stellar Wallet
             </Button>
           </CardContent>
 

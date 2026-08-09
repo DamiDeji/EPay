@@ -29,7 +29,7 @@ describe('SettlementManager', () => {
     it('calculates netAmount = amount - fee', () => { expect(true).toBe(true); });
     it('resets merchant balance to 0 after settlement', () => { expect(true).toBe(true); });
     it('rejects settlement when balance is 0', () => { expect(true).toBe(true); });
-    it('rejects settlement below minimum (1 TON)', () => { expect(true).toBe(true); });
+    it('rejects settlement below minimum (1 XLM)', () => { expect(true).toBe(true); });
     it('transitions to PROCESSING then COMPLETED', () => { expect(true).toBe(true); });
     it('emits SettlementCreated event', () => { expect(true).toBe(true); });
     it('emits SettlementProcessed event with tx hash', () => { expect(true).toBe(true); });

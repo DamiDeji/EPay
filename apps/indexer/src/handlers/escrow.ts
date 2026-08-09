@@ -29,7 +29,7 @@ export async function handleEscrowEvent(
           merchantId: d.merchant,
           customerId: d.customer,
           amount: BigInt(d.amount),
-          currency: 'TON',
+          currency: 'XLM',
           status: 'CREATED',
           contractAddress: event.data.contractAddress as string,
           txHash: event.txHash,

@@ -47,13 +47,13 @@ export default function SettingsPage() {
         <CardHeader>
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/30"><Wallet className="w-5 h-5 text-emerald-600 dark:text-emerald-400" /></div>
-            <div><CardTitle>Settlement Address</CardTitle><CardDescription>The TON wallet where funds are settled.</CardDescription></div>
+            <div><CardTitle>Settlement Address</CardTitle><CardDescription>The Stellar wallet where funds are settled.</CardDescription></div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">TON Wallet Address</label>
-            <Input defaultValue="EQD2kR...Bx9Yp8mQwL_fVn3" />
+            <label className="text-sm font-medium">Stellar Wallet Address</label>
+            <Input defaultValue="GAD2kR...Bx9Yp8mQwL_fVn3" />
           </div>
           <Button variant="outline" size="sm" className="gap-2 text-red-600 hover:text-red-700">
             <Trash2 className="w-4 h-4" />Disconnect Wallet

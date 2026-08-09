@@ -12,7 +12,7 @@ import { BaseResource } from './base';
  * const escrow = await client.escrows.create({
  *   merchantId: 'merch_123',
  *   customerId: 'cust_456',
- *   currency: 'TON',
+ *   currency: 'XLM',
  *   milestones: [
  *     { description: 'Design phase', amount: '2500000000' },
  *     { description: 'Development', amount: '2500000000' },

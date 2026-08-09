@@ -12,8 +12,8 @@ import { BaseResource } from './base';
  * const payment = await client.payments.create({
  *   merchantId: 'merch_123',
  *   amount: '1000000000',
- *   currency: 'TON',
- *   recipientAddress: 'EQD...',
+ *   currency: 'XLM',
+ *   recipientAddress: 'GAD...',
  * });
  * ```
  */

@@ -10,7 +10,7 @@ export class CreatePaymentLinkDto {
   @IsString()
   amount: string;
 
-  @ApiProperty({ example: 'TON' })
+  @ApiProperty({ example: 'XLM' })
   @IsString()
   assetCode: string;
 

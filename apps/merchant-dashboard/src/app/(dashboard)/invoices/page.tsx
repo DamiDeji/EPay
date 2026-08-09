@@ -5,12 +5,12 @@ import { FileText, Plus, Download, Eye, Clock, CheckCircle2, AlertCircle, Send }
 
 
 const INVOICES = [
-  { id: 'INV-LZ8XK2M', amount: '500.00 TON', customer: 'Acme Corp', status: 'PAID', dueDate: '2026-08-15', paidAt: '2026-08-05', items: 3 },
-  { id: 'INV-M9YNP3Q', amount: '150.00 TON', customer: 'Globex Inc', status: 'SENT', dueDate: '2026-09-01', paidAt: null, items: 1 },
-  { id: 'INV-K4ZQ8R7', amount: '75.50 TON', customer: 'Initech LLC', status: 'OVERDUE', dueDate: '2026-07-20', paidAt: null, items: 2 },
-  { id: 'INV-J3XB4S5', amount: '1,200.00 TON', customer: 'Umbrella Co', status: 'PAID', dueDate: '2026-08-30', paidAt: '2026-08-01', items: 5 },
-  { id: 'INV-H2VM1T6', amount: '320.00 TON', customer: 'Wayne Ent.', status: 'DRAFT', dueDate: '2026-09-15', paidAt: null, items: 4 },
-  { id: 'INV-G1KL7U8', amount: '45.00 TON', customer: 'Stark Ind.', status: 'ISSUED', dueDate: '2026-08-20', paidAt: null, items: 1 },
+  { id: 'INV-LZ8XK2M', amount: '500.00 XLM', customer: 'Acme Corp', status: 'PAID', dueDate: '2026-08-15', paidAt: '2026-08-05', items: 3 },
+  { id: 'INV-M9YNP3Q', amount: '150.00 XLM', customer: 'Globex Inc', status: 'SENT', dueDate: '2026-09-01', paidAt: null, items: 1 },
+  { id: 'INV-K4ZQ8R7', amount: '75.50 XLM', customer: 'Initech LLC', status: 'OVERDUE', dueDate: '2026-07-20', paidAt: null, items: 2 },
+  { id: 'INV-J3XB4S5', amount: '1,200.00 XLM', customer: 'Umbrella Co', status: 'PAID', dueDate: '2026-08-30', paidAt: '2026-08-01', items: 5 },
+  { id: 'INV-H2VM1T6', amount: '320.00 XLM', customer: 'Wayne Ent.', status: 'DRAFT', dueDate: '2026-09-15', paidAt: null, items: 4 },
+  { id: 'INV-G1KL7U8', amount: '45.00 XLM', customer: 'Stark Ind.', status: 'ISSUED', dueDate: '2026-08-20', paidAt: null, items: 1 },
 ];
 
 const statusConfig: Record<string, { badge: 'success' | 'warning' | 'destructive' | 'slate'; icon: React.ElementType }> = {
@@ -35,7 +35,7 @@ export default function InvoicesPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { label: 'Total', value: '24', sub: '6 drafts pending' },
-          { label: 'Total Value', value: '3,450 TON', sub: '$8,970 USD' },
+          { label: 'Total Value', value: '3,450 XLM', sub: '$8,970 USD' },
           { label: 'Paid', value: '18', sub: '75% paid rate' },
           { label: 'Overdue', value: '2', sub: '8.3% overdue' },
         ].map((s) => (

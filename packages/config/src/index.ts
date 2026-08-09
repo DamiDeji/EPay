@@ -111,7 +111,8 @@ export const MAX_FEE_BPS = 500; // 5%
 // Stellar constants
 export const STELLAR_DECIMALS = 7; // 1 XLM = 10^7 stroops
 export const STELLAR_MIN_PAYMENT = '1000000'; // 0.1 XLM in stroops
-export const STELLAR_BASE_RESERVE = '10000000'; // 1 XLM (base reserve)
+export const STELLAR_MAX_PAYMENT = '100000000000000'; // 10,000,000 XLM in stroops
+export const STELLAR_BASE_RESERVE = '5000000'; // 0.5 XLM (base reserve)
 export const STELLAR_BASE_FEE = '100'; // 100 stroops = 0.00001 XLM
 
 export const RATE_LIMIT_WINDOW_MS = 60_000;

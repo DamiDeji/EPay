@@ -14,7 +14,7 @@ import { StatCard } from '@/components/stat-card';
 
 
 const PIE_DATA = [
-  { name: 'TON', value: 65, color: '#0098EA' },
+  { name: 'XLM', value: 65, color: '#0098EA' },
   { name: 'USDT', value: 20, color: '#10B981' },
   { name: 'USDC', value: 10, color: '#1E3A8A' },
   { name: 'Other', value: 5, color: '#94a3b8' },
@@ -44,8 +44,8 @@ export default function AnalyticsPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total Revenue', value: '3,450 TON', change: '+12.3%', trend: 'up' as const, icon: DollarSign, iconBg: 'bg-blue-100 dark:bg-blue-900/30', iconColor: 'text-blue-600' },
-          { label: 'Avg. Ticket Size', value: '2.69 TON', change: '+5.7%', trend: 'up' as const, icon: Wallet, iconBg: 'bg-emerald-100 dark:bg-emerald-900/30', iconColor: 'text-emerald-600' },
+          { label: 'Total Revenue', value: '3,450 XLM', change: '+12.3%', trend: 'up' as const, icon: DollarSign, iconBg: 'bg-blue-100 dark:bg-blue-900/30', iconColor: 'text-blue-600' },
+          { label: 'Avg. Ticket Size', value: '2.69 XLM', change: '+5.7%', trend: 'up' as const, icon: Wallet, iconBg: 'bg-emerald-100 dark:bg-emerald-900/30', iconColor: 'text-emerald-600' },
           { label: 'Success Rate', value: '98.5%', change: '-0.3%', trend: 'down' as const, icon: Percent, iconBg: 'bg-purple-100 dark:bg-purple-900/30', iconColor: 'text-purple-600' },
           { label: 'Conversion', value: '24.8%', change: '+3.2%', trend: 'up' as const, icon: TrendingUp, iconBg: 'bg-amber-100 dark:bg-amber-900/30', iconColor: 'text-amber-600' },
         ].map((stat, i) => (

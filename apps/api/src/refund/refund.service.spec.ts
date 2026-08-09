@@ -8,10 +8,10 @@ describe('RefundService', () => {
   let service: RefundService;
   let prisma: ReturnType<typeof createMockPrismaService>;
 
-  const mockPayment = { id: 'pay_1', merchantId: 'merch_1', amount: BigInt(1000000000), currency: 'TON', status: 'COMPLETED' };
+  const mockPayment = { id: 'pay_1', merchantId: 'merch_1', amount: BigInt(1000000000), currency: 'XLM', status: 'COMPLETED' };
   const mockRefund = {
     id: 'ref_1', refundId: 'ref_abc', paymentId: 'pay_1', merchantId: 'merch_1',
-    amount: BigInt(1000000000), originalAmount: BigInt(1000000000), currency: 'TON',
+    amount: BigInt(1000000000), originalAmount: BigInt(1000000000), currency: 'XLM',
     status: 'REQUESTED', reason: 'Customer request', isPartial: false,
     txHash: null, processedAt: null, metadata: {}, createdAt: mockDate(), updatedAt: mockDate(),
   };

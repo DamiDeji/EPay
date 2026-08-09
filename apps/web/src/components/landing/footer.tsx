@@ -24,7 +24,7 @@ export function Footer() {
               </span>
             </Link>
             <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-              Decentralized payment infrastructure on The Open Network.
+              Decentralized payment infrastructure on Stellar.
             </p>
             <p className="text-xs text-slate-400 dark:text-slate-500">
               &copy; {new Date().getFullYear()} EPay. All rights reserved.
@@ -57,12 +57,12 @@ export function Footer() {
           <p className="text-xs text-slate-400 dark:text-slate-500">
             Built on{' '}
             <a
-              href="https://ton.org"
+              href="https://stellar.org"
               target="_blank"
               rel="noopener noreferrer"
               className="text-[#0098EA] hover:underline"
             >
-              The Open Network
+              Stellar
             </a>
           </p>
           <p className="text-xs text-slate-400 dark:text-slate-500">

@@ -35,7 +35,7 @@ export async function handlePaymentEvent(
           paymentId: `pay_${paymentData.paymentId}`,
           merchantId: paymentData.merchant,
           amount: BigInt(paymentData.amount),
-          currency: 'TON',
+          currency: 'XLM',
           status: 'PENDING',
           payerPublicKey: paymentData.payer,
           recipientPublicKey: paymentData.merchant,

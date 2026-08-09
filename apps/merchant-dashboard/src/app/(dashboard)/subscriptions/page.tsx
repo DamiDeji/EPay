@@ -4,11 +4,11 @@ import { Card, CardContent, Button, Badge } from '@epay/ui';
 import { CalendarClock, Plus, CheckCircle2, Clock, XCircle, Pause, AlertCircle } from 'lucide-react';
 
 const SUBS = [
-  { id: 'sub_a1B2c', plan: 'Premium Plan', customer: 'Acme Corp', amount: '100 TON/mo', interval: 'MONTHLY', status: 'ACTIVE', nextBilling: '2026-09-05', payments: 8, maxPayments: 12 },
-  { id: 'sub_d3E4f', plan: 'Basic Plan', customer: 'Globex Inc', amount: '25 TON/mo', interval: 'MONTHLY', status: 'ACTIVE', nextBilling: '2026-09-01', payments: 3, maxPayments: null },
-  { id: 'sub_g5H6i', plan: 'Enterprise', customer: 'Initech LLC', amount: '500 TON/mo', interval: 'MONTHLY', status: 'PAUSED', nextBilling: null, payments: 12, maxPayments: 24 },
-  { id: 'sub_j7K8l', plan: 'Trial User', customer: 'Wayne Ent.', amount: '50 TON/mo', interval: 'WEEKLY', status: 'TRIAL', nextBilling: '2026-08-12', payments: 0, maxPayments: null },
-  { id: 'sub_m9N0p', plan: 'Starter', customer: 'Stark Ind.', amount: '10 TON/mo', interval: 'DAILY', status: 'CANCELLED', nextBilling: null, payments: 30, maxPayments: 30 },
+  { id: 'sub_a1B2c', plan: 'Premium Plan', customer: 'Acme Corp', amount: '100 XLM/mo', interval: 'MONTHLY', status: 'ACTIVE', nextBilling: '2026-09-05', payments: 8, maxPayments: 12 },
+  { id: 'sub_d3E4f', plan: 'Basic Plan', customer: 'Globex Inc', amount: '25 XLM/mo', interval: 'MONTHLY', status: 'ACTIVE', nextBilling: '2026-09-01', payments: 3, maxPayments: null },
+  { id: 'sub_g5H6i', plan: 'Enterprise', customer: 'Initech LLC', amount: '500 XLM/mo', interval: 'MONTHLY', status: 'PAUSED', nextBilling: null, payments: 12, maxPayments: 24 },
+  { id: 'sub_j7K8l', plan: 'Trial User', customer: 'Wayne Ent.', amount: '50 XLM/mo', interval: 'WEEKLY', status: 'TRIAL', nextBilling: '2026-08-12', payments: 0, maxPayments: null },
+  { id: 'sub_m9N0p', plan: 'Starter', customer: 'Stark Ind.', amount: '10 XLM/mo', interval: 'DAILY', status: 'CANCELLED', nextBilling: null, payments: 30, maxPayments: 30 },
 ];
 
 const statusConfig: Record<string, { badge: 'success' | 'warning' | 'destructive' | 'slate'; icon: React.ElementType }> = {

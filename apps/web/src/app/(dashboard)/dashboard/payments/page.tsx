@@ -14,14 +14,14 @@ import {
 import { useState } from 'react';
 
 const PAYMENTS = [
-  { id: 'pay_7xK2m', amount: '125.50 TON', currency: 'TON', status: 'COMPLETED', payer: 'EQD...x9m2', date: '2026-08-05 14:22', txHash: '0xabc...123' },
-  { id: 'pay_9yN3p', amount: '45.00 TON', currency: 'TON', status: 'PENDING', payer: 'EQD...k4h7', date: '2026-08-05 13:15', txHash: null },
-  { id: 'pay_3zQ8r', amount: '10.25 TON', currency: 'TON', status: 'COMPLETED', payer: 'EQD...v2f1', date: '2026-08-05 11:40', txHash: '0xdef...456' },
-  { id: 'pay_5wB4s', amount: '89.99 TON', currency: 'TON', status: 'FAILED', payer: 'EQD...n6c3', date: '2026-08-05 09:10', txHash: null },
-  { id: 'pay_2vM1t', amount: '250.00 TON', currency: 'TON', status: 'PROCESSING', payer: 'EQD...p8d9', date: '2026-08-04 22:05', txHash: '0xghi...789' },
-  { id: 'pay_8kL6u', amount: '7.50 TON', currency: 'TON', status: 'COMPLETED', payer: 'EQD...r5j2', date: '2026-08-04 18:30', txHash: '0xjkl...012' },
-  { id: 'pay_4nH9v', amount: '500.00 TON', currency: 'TON', status: 'COMPLETED', payer: 'EQD...t8w4', date: '2026-08-04 15:45', txHash: '0xmno...345' },
-  { id: 'pay_6jR0w', amount: '1.25 TON', currency: 'TON', status: 'REFUNDED', payer: 'EQD...u3x6', date: '2026-08-04 12:00', txHash: '0xpqr...678' },
+  { id: 'pay_7xK2m', amount: '125.50 XLM', currency: 'XLM', status: 'COMPLETED', payer: 'GAD...x9m2', date: '2026-08-05 14:22', txHash: '0xabc...123' },
+  { id: 'pay_9yN3p', amount: '45.00 XLM', currency: 'XLM', status: 'PENDING', payer: 'GBD...k4h7', date: '2026-08-05 13:15', txHash: null },
+  { id: 'pay_3zQ8r', amount: '10.25 XLM', currency: 'XLM', status: 'COMPLETED', payer: 'GCD...v2f1', date: '2026-08-05 11:40', txHash: '0xdef...456' },
+  { id: 'pay_5wB4s', amount: '89.99 XLM', currency: 'XLM', status: 'FAILED', payer: 'GDD...n6c3', date: '2026-08-05 09:10', txHash: null },
+  { id: 'pay_2vM1t', amount: '250.00 XLM', currency: 'XLM', status: 'PROCESSING', payer: 'GED...p8d9', date: '2026-08-04 22:05', txHash: '0xghi...789' },
+  { id: 'pay_8kL6u', amount: '7.50 XLM', currency: 'XLM', status: 'COMPLETED', payer: 'GFD...r5j2', date: '2026-08-04 18:30', txHash: '0xjkl...012' },
+  { id: 'pay_4nH9v', amount: '500.00 XLM', currency: 'XLM', status: 'COMPLETED', payer: 'GGD...t8w4', date: '2026-08-04 15:45', txHash: '0xmno...345' },
+  { id: 'pay_6jR0w', amount: '1.25 XLM', currency: 'XLM', status: 'REFUNDED', payer: 'GHD...u3x6', date: '2026-08-04 12:00', txHash: '0xpqr...678' },
 ];
 
 const statusStyles: Record<string, { badge: 'success' | 'warning' | 'destructive' | 'slate'; icon: React.ElementType }> = {

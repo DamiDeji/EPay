@@ -18,7 +18,7 @@ export async function handleTreasuryEvent(
         data: {
           txType: 'DEPOSIT',
           amount: BigInt(d.amount),
-          currency: 'TON',
+          currency: 'XLM',
           fromAddress: d.address,
           txHash: event.txHash,
           status: 'COMPLETED',
@@ -35,7 +35,7 @@ export async function handleTreasuryEvent(
         data: {
           txType: 'WITHDRAWAL',
           amount: BigInt(d.amount),
-          currency: 'TON',
+          currency: 'XLM',
           toAddress: d.address,
           txHash: event.txHash,
           status: 'COMPLETED',
@@ -51,7 +51,7 @@ export async function handleTreasuryEvent(
         data: {
           txType: 'FEE_COLLECTION',
           amount: BigInt(d.amount),
-          currency: 'TON',
+          currency: 'XLM',
           txHash: event.txHash,
           status: 'COMPLETED',
           completedAt: new Date(),
@@ -68,7 +68,7 @@ export async function handleTreasuryEvent(
         data: {
           txType: 'ESCROW_HOLD',
           amount: BigInt(d.amount),
-          currency: 'TON',
+          currency: 'XLM',
           fromAddress: d.address,
           txHash: event.txHash,
           status: 'COMPLETED',
@@ -86,7 +86,7 @@ export async function handleTreasuryEvent(
         data: {
           txType: 'ESCROW_RELEASE',
           amount: BigInt(d.amount),
-          currency: 'TON',
+          currency: 'XLM',
           toAddress: d.address,
           txHash: event.txHash,
           status: 'COMPLETED',

@@ -11,11 +11,11 @@ import { SuccessRateChart } from '@/components/charts/success-rate-chart';
 import { StatCard } from '@/components/stat-card';
 
 const RECENT = [
-  { id: 'pay_7xK2m', amount: '125.50 TON', payer: 'EQD...x9m2', status: 'COMPLETED', date: '2 min ago' },
-  { id: 'pay_9yN3p', amount: '45.00 TON', payer: 'EQD...k4h7', status: 'PENDING', date: '15 min ago' },
-  { id: 'pay_3zQ8r', amount: '10.25 TON', payer: 'EQD...v2f1', status: 'COMPLETED', date: '1 hour ago' },
-  { id: 'pay_5wB4s', amount: '89.99 TON', payer: 'EQD...n6c3', status: 'FAILED', date: '2 hours ago' },
-  { id: 'pay_8kL6u', amount: '250.00 TON', payer: 'EQD...p8d9', status: 'COMPLETED', date: '3 hours ago' },
+  { id: 'pay_7xK2m', amount: '125.50 XLM', payer: 'GAD...x9m2', status: 'COMPLETED', date: '2 min ago' },
+  { id: 'pay_9yN3p', amount: '45.00 XLM', payer: 'GBD...k4h7', status: 'PENDING', date: '15 min ago' },
+  { id: 'pay_3zQ8r', amount: '10.25 XLM', payer: 'GCD...v2f1', status: 'COMPLETED', date: '1 hour ago' },
+  { id: 'pay_5wB4s', amount: '89.99 XLM', payer: 'GDD...n6c3', status: 'FAILED', date: '2 hours ago' },
+  { id: 'pay_8kL6u', amount: '250.00 XLM', payer: 'GED...p8d9', status: 'COMPLETED', date: '3 hours ago' },
 ];
 
 const statusColors: Record<string, 'success' | 'warning' | 'destructive' | 'slate'> = {
@@ -35,7 +35,7 @@ export default function MerchantDashboardPage() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Total Revenue', value: '3,450.25 TON', change: '+12.3%', trend: 'up' as const, icon: DollarSign, iconBg: 'bg-blue-100 dark:bg-blue-900/30', iconColor: 'text-blue-600 dark:text-blue-400', sub: '≈ $8,625.63 USD' },
+          { label: 'Total Revenue', value: '3,450.25 XLM', change: '+12.3%', trend: 'up' as const, icon: DollarSign, iconBg: 'bg-blue-100 dark:bg-blue-900/30', iconColor: 'text-blue-600 dark:text-blue-400', sub: '≈ $8,625.63 USD' },
           { label: 'Transactions', value: '1,284', change: '+8.1%', trend: 'up' as const, icon: CreditCard, iconBg: 'bg-emerald-100 dark:bg-emerald-900/30', iconColor: 'text-emerald-600 dark:text-emerald-400', sub: '156 this week' },
           { label: 'Success Rate', value: '98.5%', change: '-0.3%', trend: 'down' as const, icon: TrendingUp, iconBg: 'bg-purple-100 dark:bg-purple-900/30', iconColor: 'text-purple-600 dark:text-purple-400', sub: 'Last 30 days' },
           { label: 'Active Customers', value: '247', change: '+18.2%', trend: 'up' as const, icon: Users, iconBg: 'bg-amber-100 dark:bg-amber-900/30', iconColor: 'text-amber-600 dark:text-amber-400', sub: '42 new this month' },
