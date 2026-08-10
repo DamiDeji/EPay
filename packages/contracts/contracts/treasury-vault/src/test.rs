@@ -1,8 +1,9 @@
 //! TreasuryVault tests — Stellar/Soroban
 
-#![cfg(test)]
-
-use soroban_sdk::{testutils::Address as _, token, Address, Env, String};
+use soroban_sdk::{
+    testutils::{Address as _, Ledger},
+    token, Address, Env, String,
+};
 
 use super::*;
 
@@ -17,7 +18,9 @@ fn setup_test() -> (Env, TreasuryVaultClient<'static>, Address, Address) {
 
     let owner = Address::generate(&env);
     let token_admin = Address::generate(&env);
-    let token_address = env.register_stellar_asset_contract(token_admin.clone());
+    let token_address = env
+        .register_stellar_asset_contract_v2(token_admin.clone())
+        .address();
 
     let contract_id = env.register_contract(None, TreasuryVault);
     let client = TreasuryVaultClient::new(&env, &contract_id);
@@ -33,14 +36,14 @@ fn fund_address(env: &Env, token_address: &Address, recipient: &Address, amount:
 
 #[test]
 fn test_initialize() {
-    let (env, client, _owner, _token_admin) = setup_test();
+    let (_env, client, _owner, _token_admin) = setup_test();
     let _ = client.get_token_address();
     assert_eq!(client.get_tx_count(), 0);
 }
 
 #[test]
 fn test_deposit() {
-    let (env, client, owner, token_admin) = setup_test();
+    let (env, client, owner, _token_admin) = setup_test();
 
     let from = Address::generate(&env);
     let token_address = client.get_token_address();
@@ -58,7 +61,7 @@ fn test_deposit() {
 
 #[test]
 fn test_withdraw() {
-    let (env, client, owner, token_admin) = setup_test();
+    let (env, client, owner, _token_admin) = setup_test();
 
     let from = Address::generate(&env);
     let to = Address::generate(&env);

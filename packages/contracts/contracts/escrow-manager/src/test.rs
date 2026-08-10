@@ -1,11 +1,9 @@
 //! EscrowManager tests — Stellar/Soroban
-//!
-//! Tests cover: initialization, escrow creation, funding, completion,
-//! disputes, resolution, cancellation, and refunds with token transfers.
 
-#![cfg(test)]
-
-use soroban_sdk::{testutils::Address as _, token, Address, Env, String};
+use soroban_sdk::{
+    testutils::{Address as _, Ledger},
+    token, Address, Env, String,
+};
 
 use super::*;
 
@@ -20,7 +18,9 @@ fn setup_test() -> (Env, EscrowManagerClient<'static>, Address, Address) {
 
     let owner = Address::generate(&env);
     let token_admin = Address::generate(&env);
-    let token_address = env.register_stellar_asset_contract(token_admin.clone());
+    let token_address = env
+        .register_stellar_asset_contract_v2(token_admin.clone())
+        .address();
 
     let contract_id = env.register_contract(None, EscrowManager);
     let client = EscrowManagerClient::new(&env, &contract_id);
@@ -36,9 +36,8 @@ fn fund_address(env: &Env, token_address: &Address, recipient: &Address, amount:
 
 #[test]
 fn test_initialize() {
-    let (env, client, _owner, _token_admin) = setup_test();
+    let (_env, client, _owner, _token_admin) = setup_test();
     let _ = client.get_token_address();
-    assert!(true);
 }
 
 #[test]
@@ -60,7 +59,7 @@ fn test_create_escrow() {
 
 #[test]
 fn test_fund_escrow() {
-    let (env, client, _owner, token_admin) = setup_test();
+    let (env, client, _owner, _token_admin) = setup_test();
 
     let merchant = Address::generate(&env);
     let customer = Address::generate(&env);
@@ -80,7 +79,7 @@ fn test_fund_escrow() {
 
 #[test]
 fn test_dispute_escrow() {
-    let (env, client, _owner, token_admin) = setup_test();
+    let (env, client, _owner, _token_admin) = setup_test();
 
     let merchant = Address::generate(&env);
     let customer = Address::generate(&env);
@@ -104,7 +103,7 @@ fn test_dispute_escrow() {
 
 #[test]
 fn test_complete_escrow() {
-    let (env, client, owner, token_admin) = setup_test();
+    let (env, client, owner, _token_admin) = setup_test();
 
     let merchant = Address::generate(&env);
     let customer = Address::generate(&env);
@@ -126,7 +125,7 @@ fn test_complete_escrow() {
 
 #[test]
 fn test_cancel_and_refund_escrow() {
-    let (env, client, owner, token_admin) = setup_test();
+    let (env, client, owner, _token_admin) = setup_test();
 
     let merchant = Address::generate(&env);
     let customer = Address::generate(&env);
@@ -139,7 +138,11 @@ fn test_cancel_and_refund_escrow() {
     fund_address(&env, &token_address, &customer, 10_000_000);
     client.fund_escrow(&customer, &escrow_id);
 
-    // Cancel by owner
+    // Dispute (required before cancellation of funded escrow)
+    let reason = String::from_str(&env, "Dispute before cancel");
+    client.dispute_escrow(&customer, &escrow_id, &reason);
+
+    // Cancel by owner while disputed
     client.cancel_escrow(&owner, &escrow_id);
 
     let escrow = client.get_escrow(&escrow_id).unwrap();

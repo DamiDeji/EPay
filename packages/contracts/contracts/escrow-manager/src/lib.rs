@@ -66,7 +66,7 @@ pub struct EscrowData {
 pub struct EscrowManager;
 
 /// Internal helper to get the token client for the stored token address.
-fn get_token_client(env: &Env) -> token::Client {
+fn get_token_client(env: &Env) -> token::Client<'_> {
     let token_address: Address = env
         .storage()
         .instance()
@@ -99,14 +99,8 @@ impl EscrowManager {
         total_amount: i128,
         asset_code: String,
     ) -> u64 {
-        let escrow_id: u64 = env
-            .storage()
-            .instance()
-            .get(&NEXT_ID_KEY)
-            .unwrap_or(1);
-        env.storage()
-            .instance()
-            .set(&NEXT_ID_KEY, &(escrow_id + 1));
+        let escrow_id: u64 = env.storage().instance().get(&NEXT_ID_KEY).unwrap_or(1);
+        env.storage().instance().set(&NEXT_ID_KEY, &(escrow_id + 1));
         let now = env.ledger().timestamp();
 
         let escrow = EscrowData {

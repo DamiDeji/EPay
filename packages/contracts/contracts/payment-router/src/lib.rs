@@ -58,7 +58,7 @@ pub struct PaymentData {
 pub struct PaymentRouter;
 
 /// Internal helper to get the token client for the stored token address.
-fn get_token_client(env: &Env) -> token::Client {
+fn get_token_client(env: &Env) -> token::Client<'_> {
     let token_address: Address = env
         .storage()
         .instance()
@@ -106,11 +106,7 @@ impl PaymentRouter {
         memo: Option<String>,
         expires_in: Option<u64>,
     ) -> u64 {
-        let payment_id: u64 = env
-            .storage()
-            .instance()
-            .get(&NEXT_ID_KEY)
-            .unwrap_or(1);
+        let payment_id: u64 = env.storage().instance().get(&NEXT_ID_KEY).unwrap_or(1);
         env.storage()
             .instance()
             .set(&NEXT_ID_KEY, &(payment_id + 1));
@@ -235,9 +231,7 @@ impl PaymentRouter {
 
         Self::require_merchant_or_owner(&env, &caller, &payment.merchant);
 
-        if payment.status != PaymentStatus::Pending
-            && payment.status != PaymentStatus::Processing
-        {
+        if payment.status != PaymentStatus::Pending && payment.status != PaymentStatus::Processing {
             panic!("Cannot fail in current state");
         }
 
