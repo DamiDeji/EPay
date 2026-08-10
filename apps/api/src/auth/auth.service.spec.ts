@@ -1,13 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import * as crypto from 'crypto';
+import { Keypair } from '@stellar/stellar-sdk';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../database/prisma.service';
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { createMockPrismaService, mockDate } from '../../test/mocks/prisma.mock';
 
 const TEST_PASSWORD = 'password123';
-const TEST_HASH = crypto.scryptSync(TEST_PASSWORD, 'epay_salt', 64).toString('hex');
+const TEST_SALT = crypto.randomBytes(16).toString('hex');
+const TEST_HASH = crypto.scryptSync(TEST_PASSWORD, TEST_SALT, 64).toString('hex');
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -24,6 +26,7 @@ describe('AuthService', () => {
     twoFactorEnabled: false,
     twoFactorSecret: null,
     passwordHash: TEST_HASH,
+    passwordSalt: TEST_SALT,
     refreshToken: 'old_refresh_token',
     createdAt: mockDate(),
     updatedAt: mockDate(),
@@ -84,7 +87,7 @@ describe('AuthService', () => {
 
   describe('login', () => {
     it('should login with email and password', async () => {
-      const userWithHash = { ...mockUser, passwordHash: TEST_HASH };
+      const userWithHash = { ...mockUser, passwordHash: TEST_HASH, passwordSalt: TEST_SALT };
       prisma.user.findUnique.mockResolvedValue(userWithHash);
       prisma.user.update.mockResolvedValue(userWithHash);
       (jwt.signAsync as jest.Mock).mockResolvedValueOnce('access_token');
@@ -102,6 +105,7 @@ describe('AuthService', () => {
       prisma.user.findUnique.mockResolvedValue({
         ...mockUser,
         passwordHash: TEST_HASH,
+        passwordSalt: TEST_SALT,
       });
 
       await expect(
@@ -113,25 +117,45 @@ describe('AuthService', () => {
       await expect(service.login({})).rejects.toThrow(UnauthorizedException);
     });
 
-    it('should auto-register wallet user on first login', async () => {
+    it('should auto-register wallet user on first login with valid signature', async () => {
+      // Generate a real Stellar keypair for testing
+      const testKeypair = Keypair.random();
+      const testPublicKey = testKeypair.publicKey();
+      const testMessage = 'Login to EPay';
+      const testSignature = testKeypair.sign(Buffer.from(testMessage, 'utf-8')).toString('base64');
+
       prisma.user.findUnique.mockResolvedValue(null);
       prisma.user.create.mockResolvedValue({
         ...mockUser,
-        email: 'wallet_EQD2kR_ab@epay.internal',
-        stellarPublicKey: 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+        email: `stellar_${testPublicKey.slice(0, 8)}@epay.internal`,
+        stellarPublicKey: testPublicKey,
       });
       prisma.user.update.mockResolvedValue(mockUser);
       (jwt.signAsync as jest.Mock).mockResolvedValueOnce('access_token');
       (jwt.signAsync as jest.Mock).mockResolvedValueOnce('refresh_token');
 
       const result = await service.login({
-        stellarPublicKey: 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
-        signature: '0xsig',
-        message: 'hello',
+        stellarPublicKey: testPublicKey,
+        signature: testSignature,
+        message: testMessage,
       });
 
       expect(result.tokens.accessToken).toBe('access_token');
       expect(prisma.user.create).toHaveBeenCalled();
+    });
+
+    it('should reject login with invalid wallet signature', async () => {
+      const testKeypair = Keypair.random();
+      const testPublicKey = testKeypair.publicKey();
+      const fakeSignature = Buffer.from('not_a_real_signature').toString('base64');
+
+      await expect(
+        service.login({
+          stellarPublicKey: testPublicKey,
+          signature: fakeSignature,
+          message: 'Login to EPay',
+        }),
+      ).rejects.toThrow(UnauthorizedException);
     });
   });
 

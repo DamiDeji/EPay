@@ -20,6 +20,7 @@ model User {
   twoFactorEnabled  Boolean   @default(false)
   twoFactorSecret   String?
   passwordHash      String?
+  passwordSalt      String?
   refreshToken      String?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt

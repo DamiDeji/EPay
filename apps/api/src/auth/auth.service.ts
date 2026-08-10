@@ -8,12 +8,21 @@ import {
   Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { Keypair } from '@stellar/stellar-sdk';
 
 import { PrismaService } from '../database/prisma.service';
 
 import type { LoginDto } from './dto/login.dto';
 import type { RegisterDto } from './dto/register.dto';
 
+/** Stellar public key format: G + 55 base32 chars (56 total) */
+const STELLAR_PUBLIC_KEY_REGEX = /^G[A-Z2-7]{55}$/;
+
+/** Number of random salt bytes for password hashing */
+const PASSWORD_SALT_BYTES = 16;
+
+/** scrypt key length for password hashing */
+const PASSWORD_KEY_LENGTH = 64;
 
 @Injectable()
 export class AuthService {
@@ -32,9 +41,13 @@ export class AuthService {
       throw new ConflictException('Email already registered');
     }
 
-    const passwordHash = dto.password
-      ? this.hashPassword(dto.password)
-      : null;
+    let passwordHash: string | null = null;
+    let passwordSalt: string | null = null;
+
+    if (dto.password) {
+      passwordSalt = crypto.randomBytes(PASSWORD_SALT_BYTES).toString('hex');
+      passwordHash = this.hashPassword(dto.password, passwordSalt);
+    }
 
     const user = await this.prisma.user.create({
       data: {
@@ -43,6 +56,7 @@ export class AuthService {
         role: dto.role ?? 'CUSTOMER',
         stellarPublicKey: dto.stellarPublicKey,
         passwordHash,
+        passwordSalt,
       },
     });
 
@@ -74,11 +88,12 @@ export class AuthService {
     password: string,
   ): Promise<{ user: User; tokens: AuthTokens }> {
     const user = await this.prisma.user.findUnique({ where: { email } });
-    if (!user?.passwordHash) {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (!user?.passwordHash || !user?.passwordSalt) {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    const isValid = this.verifyPassword(password, user.passwordHash);
+    const isValid = this.verifyPassword(password, user.passwordHash, user.passwordSalt);
     if (!isValid) {
       throw new UnauthorizedException('Invalid email or password');
     }
@@ -97,12 +112,27 @@ export class AuthService {
 
   private async loginWithWallet(
     stellarPublicKey: string,
-    _signature: string,
-    _message?: string,
+    signature: string,
+    message?: string,
   ): Promise<{ user: User; tokens: AuthTokens }> {
     // Validate Stellar public key format
-    if (!/^G[A-Z2-7]{55}$/.test(stellarPublicKey)) {
+    if (!STELLAR_PUBLIC_KEY_REGEX.test(stellarPublicKey)) {
       throw new UnauthorizedException('Invalid Stellar public key');
+    }
+
+    // Verify the Ed25519 signature against the public key
+    const authMessage = message ?? 'Login to EPay';
+    const isSignatureValid = this.verifyStellarSignature(
+      stellarPublicKey,
+      authMessage,
+      signature,
+    );
+
+    if (!isSignatureValid) {
+      this.logger.warn(
+        `Invalid wallet signature for public key: ${stellarPublicKey.slice(0, 8)}...`,
+      );
+      throw new UnauthorizedException('Invalid wallet signature');
     }
 
     let user = await this.prisma.user.findUnique({
@@ -110,7 +140,7 @@ export class AuthService {
     });
 
     if (!user) {
-      // Auto-register wallet user
+      // Auto-register wallet user after successful signature verification
       user = await this.prisma.user.create({
         data: {
           email: `stellar_${stellarPublicKey.slice(0, 8)}@epay.internal`,
@@ -235,17 +265,55 @@ export class AuthService {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private sanitizeUser(user: any): User {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { passwordHash, refreshToken, twoFactorSecret, ...safe } = user;
+    const { passwordHash, passwordSalt, refreshToken, twoFactorSecret, ...safe } = user;
     return safe as User;
   }
 
-  private hashPassword(password: string): string {
-    return crypto.scryptSync(password, 'epay_salt', 64).toString('hex');
+  /**
+   * Hash a password using scrypt with a per-user random salt.
+   * @returns hex-encoded derived key (not a combined format; salt is stored separately)
+   */
+  private hashPassword(password: string, salt: string): string {
+    return crypto
+      .scryptSync(password, salt, PASSWORD_KEY_LENGTH)
+      .toString('hex');
   }
 
-  private verifyPassword(password: string, hash: string): boolean {
-    const computed = crypto.scryptSync(password, 'epay_salt', 64).toString('hex');
-    return crypto.timingSafeEqual(Buffer.from(computed), Buffer.from(hash));
+  /**
+   * Verify a password against a stored hash using the user's unique salt.
+   * Uses timing-safe comparison to prevent timing attacks.
+   */
+  private verifyPassword(password: string, storedHash: string, salt: string): boolean {
+    const computed = crypto
+      .scryptSync(password, salt, PASSWORD_KEY_LENGTH)
+      .toString('hex');
+    return crypto.timingSafeEqual(Buffer.from(computed), Buffer.from(storedHash));
+  }
+
+  /**
+   * Verify an Ed25519 signature against a Stellar public key.
+   * Uses the Stellar SDK's Keypair for cryptographic verification.
+   *
+   * @param publicKey - Stellar G-address (56 chars, base32 encoded Ed25519 key)
+   * @param message   - The original message that was signed
+   * @param signature - Base64-encoded Ed25519 signature from the wallet
+   */
+  private verifyStellarSignature(
+    publicKey: string,
+    message: string,
+    signature: string,
+  ): boolean {
+    try {
+      const keypair = Keypair.fromPublicKey(publicKey);
+      const dataBuffer = Buffer.from(message, 'utf-8');
+      const signatureBuffer = Buffer.from(signature, 'base64');
+      return keypair.verify(dataBuffer, signatureBuffer);
+    } catch (error: unknown) {
+      this.logger.warn(
+        `Stellar signature verification error: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return false;
+    }
   }
 
   private hashApiKey(key: string): string {
