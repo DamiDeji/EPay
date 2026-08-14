@@ -35,7 +35,7 @@ jobs:
           - configuration-manager
           - emergency-pause
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: '1.89'
@@ -73,7 +73,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: '1.89'
@@ -106,7 +106,7 @@ jobs:
             soroban contract optimize --wasm "$wasm" > "optimized/${name}.optimized.wasm"
           done
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: soroban-wasm
           path: packages/contracts/optimized/

@@ -52,7 +52,7 @@ pub struct TreasuryTx {
 pub struct TreasuryVault;
 
 /// Internal helper to get the token client for the stored token address.
-fn get_token_client(env: &Env) -> token::Client {
+fn get_token_client(env: &Env) -> token::Client<'_> {
     let token_address: Address = env
         .storage()
         .instance()
@@ -90,14 +90,8 @@ impl TreasuryVault {
         from.require_auth();
         Self::require_owner(&env, &admin);
 
-        let tx_id: u64 = env
-            .storage()
-            .instance()
-            .get(&NEXT_ID_KEY)
-            .unwrap_or(1);
-        env.storage()
-            .instance()
-            .set(&NEXT_ID_KEY, &(tx_id + 1));
+        let tx_id: u64 = env.storage().instance().get(&NEXT_ID_KEY).unwrap_or(1);
+        env.storage().instance().set(&NEXT_ID_KEY, &(tx_id + 1));
 
         let now = env.ledger().timestamp();
         let contract_address = env.current_contract_address();
@@ -140,14 +134,8 @@ impl TreasuryVault {
         admin.require_auth();
         Self::require_owner(&env, &admin);
 
-        let tx_id: u64 = env
-            .storage()
-            .instance()
-            .get(&NEXT_ID_KEY)
-            .unwrap_or(1);
-        env.storage()
-            .instance()
-            .set(&NEXT_ID_KEY, &(tx_id + 1));
+        let tx_id: u64 = env.storage().instance().get(&NEXT_ID_KEY).unwrap_or(1);
+        env.storage().instance().set(&NEXT_ID_KEY, &(tx_id + 1));
 
         let now = env.ledger().timestamp();
         let contract_address = env.current_contract_address();
@@ -188,14 +176,8 @@ impl TreasuryVault {
         asset_code: String,
         reference_id: Option<String>,
     ) -> u64 {
-        let tx_id: u64 = env
-            .storage()
-            .instance()
-            .get(&NEXT_ID_KEY)
-            .unwrap_or(1);
-        env.storage()
-            .instance()
-            .set(&NEXT_ID_KEY, &(tx_id + 1));
+        let tx_id: u64 = env.storage().instance().get(&NEXT_ID_KEY).unwrap_or(1);
+        env.storage().instance().set(&NEXT_ID_KEY, &(tx_id + 1));
 
         let now = env.ledger().timestamp();
         let tx = TreasuryTx {
@@ -212,10 +194,8 @@ impl TreasuryVault {
         };
 
         env.storage().persistent().set(&tx_id, &tx);
-        env.events().publish(
-            (Symbol::new(&env, "treasury_tx_recorded"),),
-            (tx_id,),
-        );
+        env.events()
+            .publish((Symbol::new(&env, "treasury_tx_recorded"),), (tx_id,));
         tx_id
     }
 

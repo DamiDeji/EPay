@@ -1,12 +1,13 @@
 //! RefundManager tests — Stellar/Soroban
 
-#![cfg(test)]
-
-use soroban_sdk::{testutils::Address as _, token, Address, Env, String};
+use soroban_sdk::{
+    testutils::{Address as _, Ledger},
+    token, Address, Env, String,
+};
 
 use super::*;
 
-fn setup_test() -> (Env, RefundManagerClient<'static>, Address, Address) {
+fn setup_test() -> (Env, RefundManagerClient<'static>, Address, Address, Address) {
     let env = Env::default();
     env.mock_all_auths();
 
@@ -17,13 +18,15 @@ fn setup_test() -> (Env, RefundManagerClient<'static>, Address, Address) {
 
     let owner = Address::generate(&env);
     let token_admin = Address::generate(&env);
-    let token_address = env.register_stellar_asset_contract(token_admin.clone());
+    let token_address = env
+        .register_stellar_asset_contract_v2(token_admin.clone())
+        .address();
 
     let contract_id = env.register_contract(None, RefundManager);
     let client = RefundManagerClient::new(&env, &contract_id);
     client.init(&owner, &token_address);
 
-    (env, client, owner, token_admin)
+    (env, client, contract_id, owner, token_admin)
 }
 
 fn fund_address(env: &Env, token_address: &Address, recipient: &Address, amount: i128) {
@@ -33,14 +36,13 @@ fn fund_address(env: &Env, token_address: &Address, recipient: &Address, amount:
 
 #[test]
 fn test_initialize() {
-    let (env, client, _owner, _token_admin) = setup_test();
+    let (_env, client, _contract_id, _owner, _token_admin) = setup_test();
     let _ = client.get_token_address();
-    assert!(true);
 }
 
 #[test]
 fn test_request_refund() {
-    let (env, client, _owner, _token_admin) = setup_test();
+    let (env, client, _contract_id, _owner, _token_admin) = setup_test();
 
     let merchant = Address::generate(&env);
     let payer = Address::generate(&env);
@@ -50,8 +52,8 @@ fn test_request_refund() {
     let refund_id = client.request_refund(
         &merchant,
         &payer,
-        &1, // payment_id
-        &5_000_000_i128, // refund amount
+        &1,               // payment_id
+        &5_000_000_i128,  // refund amount
         &10_000_000_i128, // original amount
         &asset_code,
         &reason,
@@ -65,7 +67,7 @@ fn test_request_refund() {
 
 #[test]
 fn test_full_refund_not_partial() {
-    let (env, client, _owner, _token_admin) = setup_test();
+    let (env, client, _contract_id, _owner, _token_admin) = setup_test();
 
     let merchant = Address::generate(&env);
     let payer = Address::generate(&env);
@@ -73,8 +75,13 @@ fn test_full_refund_not_partial() {
     let reason = String::from_str(&env, "Full refund");
 
     let refund_id = client.request_refund(
-        &merchant, &payer, &1,
-        &10_000_000_i128, &10_000_000_i128, &asset_code, &reason,
+        &merchant,
+        &payer,
+        &1,
+        &10_000_000_i128,
+        &10_000_000_i128,
+        &asset_code,
+        &reason,
     );
 
     let refund = client.get_refund(&refund_id).unwrap();
@@ -83,7 +90,7 @@ fn test_full_refund_not_partial() {
 
 #[test]
 fn test_approve_refund() {
-    let (env, client, owner, _token_admin) = setup_test();
+    let (env, client, _contract_id, owner, _token_admin) = setup_test();
 
     let merchant = Address::generate(&env);
     let payer = Address::generate(&env);
@@ -91,8 +98,13 @@ fn test_approve_refund() {
     let reason = String::from_str(&env, "Refund request");
 
     let refund_id = client.request_refund(
-        &merchant, &payer, &1,
-        &5_000_000_i128, &10_000_000_i128, &asset_code, &reason,
+        &merchant,
+        &payer,
+        &1,
+        &5_000_000_i128,
+        &10_000_000_i128,
+        &asset_code,
+        &reason,
     );
 
     client.approve_refund(&owner, &refund_id);
@@ -103,7 +115,7 @@ fn test_approve_refund() {
 
 #[test]
 fn test_complete_refund() {
-    let (env, client, owner, token_admin) = setup_test();
+    let (env, client, contract_id, owner, _token_admin) = setup_test();
 
     let merchant = Address::generate(&env);
     let payer = Address::generate(&env);
@@ -111,16 +123,20 @@ fn test_complete_refund() {
     let reason = String::from_str(&env, "Refund");
 
     let refund_id = client.request_refund(
-        &merchant, &payer, &1,
-        &5_000_000_i128, &10_000_000_i128, &asset_code, &reason,
+        &merchant,
+        &payer,
+        &1,
+        &5_000_000_i128,
+        &10_000_000_i128,
+        &asset_code,
+        &reason,
     );
 
     client.approve_refund(&owner, &refund_id);
 
     // Fund the contract so it can transfer to payer
     let token_address = client.get_token_address();
-    let contract_address = env.current_contract_address();
-    fund_address(&env, &token_address, &contract_address, 5_000_000);
+    fund_address(&env, &token_address, &contract_id, 5_000_000);
 
     client.complete_refund(&owner, &refund_id);
 
@@ -130,7 +146,7 @@ fn test_complete_refund() {
 
 #[test]
 fn test_reject_refund() {
-    let (env, client, owner, _token_admin) = setup_test();
+    let (env, client, _contract_id, owner, _token_admin) = setup_test();
 
     let merchant = Address::generate(&env);
     let payer = Address::generate(&env);
@@ -138,8 +154,13 @@ fn test_reject_refund() {
     let reason = String::from_str(&env, "Invalid reason");
 
     let refund_id = client.request_refund(
-        &merchant, &payer, &1,
-        &5_000_000_i128, &10_000_000_i128, &asset_code, &reason,
+        &merchant,
+        &payer,
+        &1,
+        &5_000_000_i128,
+        &10_000_000_i128,
+        &asset_code,
+        &reason,
     );
 
     client.reject_refund(&owner, &refund_id);
@@ -150,7 +171,7 @@ fn test_reject_refund() {
 
 #[test]
 fn test_refund_exists() {
-    let (env, client, _owner, _token_admin) = setup_test();
+    let (env, client, _contract_id, _owner, _token_admin) = setup_test();
 
     assert!(!client.refund_exists(&1));
 
@@ -160,8 +181,13 @@ fn test_refund_exists() {
     let reason = String::from_str(&env, "Test");
 
     client.request_refund(
-        &merchant, &payer, &1,
-        &1_000_000_i128, &2_000_000_i128, &asset_code, &reason,
+        &merchant,
+        &payer,
+        &1,
+        &1_000_000_i128,
+        &2_000_000_i128,
+        &asset_code,
+        &reason,
     );
 
     assert!(client.refund_exists(&1));
