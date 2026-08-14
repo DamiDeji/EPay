@@ -18,9 +18,9 @@
     "@epay/config": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^26.2.0",
-    "typescript": "^7.0.2",
-    "vitest": "^4.1.10",
-    "@vitest/coverage-v8": "^4.1.10"
+    "@types/node": "^22.0.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0",
+    "@vitest/coverage-v8": "^2.0.0"
   }
 }

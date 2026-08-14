@@ -13,6 +13,6 @@
   },
   "devDependencies": {
     "@epay/config": "workspace:*",
-    "typescript": "^7.0.2"
+    "typescript": "^5.5.0"
   }
 }
