@@ -41,7 +41,7 @@ export function Footer() {
                 {links.map((link) => (
                   <li key={link}>
                     <a
-                      href="#"
+                      href={link === 'Terms of Service' ? '/terms' : '#'}
                       className="text-sm text-slate-500 dark:text-slate-400 hover:text-[#0098EA] dark:hover:text-[#0098EA] transition-colors"
                     >
                       {link}
