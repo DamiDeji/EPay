@@ -269,6 +269,7 @@ cargo test --manifest-path packages/contracts/Cargo.toml
 
 ## 📄 Documentation & Links
 
+- **[Architecture](./docs/ARCHITECTURE.md)** — System architecture and data flow
 - **[Team](./TEAM.md)** — Who's building EPay
 - **[Roadmap](./ROADMAP.md)** — Development milestones and grant funding plans
 - **[Security](./SECURITY.md)** — Vulnerability reporting and audit status
