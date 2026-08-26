@@ -21,9 +21,6 @@ export {
   calculateNetAmount,
   EPayError,
   // Backward compatibility aliases
-  nanoToTon,
-  tonToNano,
-  isValidTonAddress,
   formatAddress,
 } from './utils';
 
