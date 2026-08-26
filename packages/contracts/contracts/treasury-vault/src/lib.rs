@@ -169,13 +169,21 @@ impl TreasuryVault {
     /// Record a treasury transaction for accounting without moving tokens.
     /// Used for fee collection tracking, escrow holds/releases, settlements, and refunds
     /// where the token transfer is handled by the calling contract (e.g., PaymentRouter or EscrowManager).
+    ///
+    /// Only the owner may record transactions. If other EPay contracts need to
+    /// record on behalf of the protocol, extend this with a caller allowlist
+    /// (see the contributor backlog) rather than removing the check.
     pub fn record_tx(
         env: Env,
+        caller: Address,
         tx_type: TxType,
         amount: i128,
         asset_code: String,
         reference_id: Option<String>,
     ) -> u64 {
+        caller.require_auth();
+        Self::require_owner(&env, &caller);
+
         let tx_id: u64 = env.storage().instance().get(&NEXT_ID_KEY).unwrap_or(1);
         env.storage().instance().set(&NEXT_ID_KEY, &(tx_id + 1));
 

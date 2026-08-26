@@ -76,9 +76,6 @@ export function getExplorerUrl(
 
 // ── Aliases for backward compatibility with shared package ──────────────────
 
-export const nanoToTon = stroopsToXlm;
-export const tonToNano = xlmToStroops;
-export const isValidTonAddress = isValidStellarPublicKey;
 export const formatAddress = formatStellarAddress;
 
 /**

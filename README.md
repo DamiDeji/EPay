@@ -250,7 +250,7 @@ pnpm build
 
 | Package | Framework | Tests | Coverage |
 |---------|-----------|-------|----------|
-| `@epay/contracts` | Cargo test | 12 spec files | Run `cargo test` to generate |
+| `@epay/contracts` | Cargo test | 4 contract suites (PaymentRouter, EscrowManager, TreasuryVault, RefundManager) | Run `cargo test` — 8 contracts still have empty test stubs |
 | `@epay/api` | Jest | 16 suites, 105 tests | 50% lines (services: ~76%, controllers: 0%) |
 | `@epay/sdk` | Vitest | 4 suites, 91 tests | 87% statements, 87% lines |
 
@@ -274,6 +274,9 @@ cargo test --manifest-path packages/contracts/Cargo.toml
 - **[Roadmap](./ROADMAP.md)** — Development milestones and grant funding plans
 - **[Security](./SECURITY.md)** — Vulnerability reporting and audit status
 - **[Contributing](./CONTRIBUTING.md)** — How to contribute
+- **[Contributor Backlog](./docs/CONTRIBUTOR_ISSUES.md)** — Scoped issues for external contributors
+- **[Demo Runbook](./docs/DEMO_RUNBOOK.md)** — Deploy the live testnet demo
+- **[Deployments](./DEPLOYMENTS.md)** — Live testnet contract addresses
 - **[SDK Docs](./packages/sdk/README.md)** — TypeScript SDK documentation
 
 ---

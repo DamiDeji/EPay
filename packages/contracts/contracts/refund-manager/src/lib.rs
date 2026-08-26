@@ -80,6 +80,16 @@ impl RefundManager {
     ) -> u64 {
         merchant.require_auth();
 
+        // Validate the refund amount: must be positive and never exceed the
+        // original payment, otherwise an admin could be asked to approve a
+        // refund larger than what was paid.
+        if amount <= 0 {
+            panic!("Refund amount must be positive");
+        }
+        if amount > original_amount {
+            panic!("Refund amount exceeds original amount");
+        }
+
         let refund_id: u64 = env.storage().instance().get(&NEXT_ID_KEY).unwrap_or(1);
         env.storage().instance().set(&NEXT_ID_KEY, &(refund_id + 1));
 
