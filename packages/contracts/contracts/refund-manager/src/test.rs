@@ -270,10 +270,7 @@ fn test_complete_refund_moves_tokens() {
         get_balance(&env, &token_address, &payer),
         payer_before + 5_000_000
     );
-    assert_eq!(
-        get_balance(&env, &token_address, &contract_id),
-        0
-    );
+    assert_eq!(get_balance(&env, &token_address, &contract_id), 0);
 }
 
 #[test]

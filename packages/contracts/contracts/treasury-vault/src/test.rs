@@ -215,7 +215,13 @@ fn test_record_tx_not_owner() {
     let asset_code = String::from_str(&env, "native");
 
     // Non-owner must not be able to fabricate treasury accounting entries
-    client.record_tx(&attacker, &TxType::FeeCollection, &500_i128, &asset_code, &None);
+    client.record_tx(
+        &attacker,
+        &TxType::FeeCollection,
+        &500_i128,
+        &asset_code,
+        &None,
+    );
 }
 
 #[test]
@@ -239,9 +245,21 @@ fn test_get_tx_count() {
 
     assert_eq!(client.get_tx_count(), 0);
 
-    client.record_tx(&owner, &TxType::FeeCollection, &100_i128, &asset_code, &None);
+    client.record_tx(
+        &owner,
+        &TxType::FeeCollection,
+        &100_i128,
+        &asset_code,
+        &None,
+    );
     assert_eq!(client.get_tx_count(), 1);
 
-    client.record_tx(&owner, &TxType::FeeCollection, &200_i128, &asset_code, &None);
+    client.record_tx(
+        &owner,
+        &TxType::FeeCollection,
+        &200_i128,
+        &asset_code,
+        &None,
+    );
     assert_eq!(client.get_tx_count(), 2);
 }
