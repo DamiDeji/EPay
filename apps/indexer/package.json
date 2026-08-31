@@ -18,7 +18,7 @@
     "@epay/config": "workspace:*",
     "@epay/database": "workspace:*",
     "@epay/types": "workspace:*",
-    "bullmq": "^6.2.0",
+    "bullmq": "^6.3.1",
     "ioredis": "^6.0.0",
     "pino": "^10.3.1",
     "pino-pretty": "^13.1.3"
