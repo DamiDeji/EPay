@@ -24,6 +24,12 @@ const PASSWORD_SALT_BYTES = 16;
 /** scrypt key length for password hashing */
 const PASSWORD_KEY_LENGTH = 64;
 
+/** Number of random salt bytes for API key hashing */
+const API_KEY_SALT_BYTES = 16;
+
+/** scrypt key length for API key hashing */
+const API_KEY_KEY_LENGTH = 64;
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
@@ -183,12 +189,10 @@ export class AuthService {
   }
 
   async validateApiKey(apiKey: string): Promise<User | null> {
-    const keyHash = this.hashApiKey(apiKey);
     const prefix = apiKey.slice(0, 8);
 
-    const key = await this.prisma.apiKey.findFirst({
+    const keys = await this.prisma.apiKey.findMany({
       where: {
-        keyHash,
         prefix,
         isActive: true,
         OR: [
@@ -202,14 +206,22 @@ export class AuthService {
       },
     });
 
-    if (!key) return null;
+    let matchedKey: (typeof keys)[number] | null = null;
+    for (const candidate of keys) {
+      if (await this.verifyApiKey(apiKey, candidate.keyHash)) {
+        matchedKey = candidate;
+        break;
+      }
+    }
+
+    if (!matchedKey) return null;
 
     await this.prisma.apiKey.update({
-      where: { id: key.id },
+      where: { id: matchedKey.id },
       data: { lastUsedAt: new Date() },
     });
 
-    return key.user ? this.sanitizeUser(key.user) : null;
+    return matchedKey.user ? this.sanitizeUser(matchedKey.user) : null;
   }
 
   async generateApiKey(
@@ -318,7 +330,40 @@ export class AuthService {
     }
   }
 
-  private hashApiKey(key: string): string {
-    return crypto.createHash('sha256').update(key).digest('hex');
+  private async hashApiKey(key: string): Promise<string> {
+    const salt = crypto.randomBytes(API_KEY_SALT_BYTES).toString('hex');
+    const derivedKey = await new Promise<Buffer>((resolve, reject) => {
+      crypto.scrypt(key, salt, API_KEY_KEY_LENGTH, (err, result) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        resolve(result as Buffer);
+      });
+    });
+    return `${salt}:${derivedKey.toString('hex')}`;
+  }
+
+  private async verifyApiKey(
+    key: string,
+    storedHash: string,
+  ): Promise<boolean> {
+    const [salt, storedDerivedKeyHex] = storedHash.split(':');
+    if (!salt || !storedDerivedKeyHex) return false;
+
+    const derivedKey = await new Promise<Buffer>((resolve, reject) => {
+      crypto.scrypt(key, salt, API_KEY_KEY_LENGTH, (err, result) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        resolve(result as Buffer);
+      });
+    });
+
+    const storedDerivedKey = Buffer.from(storedDerivedKeyHex, 'hex');
+    if (storedDerivedKey.length !== derivedKey.length) return false;
+
+    return crypto.timingSafeEqual(storedDerivedKey, derivedKey);
   }
 }
