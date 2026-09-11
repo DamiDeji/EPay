@@ -6,14 +6,41 @@ EPay takes security seriously. We appreciate responsible disclosure of security 
 
 **Please do NOT report security vulnerabilities through public GitHub issues.**
 
-Instead, send an email to **security@epay.dev** with:
+### Preferred channel: GitHub Security Advisories
+
+Open a private report at
+**[github.com/DamiDeji/EPay/security/advisories/new](https://github.com/DamiDeji/EPay/security/advisories/new)**.
+This keeps the report private until a fix ships, gives us a shared workspace, and
+lets us issue a CVE directly from the advisory.
+
+### Alternative channel
+
+Email **security@epay.dev** with:
 
 - A detailed description of the vulnerability
 - Steps to reproduce the issue
 - Affected versions / components
 - Any potential mitigations you've identified
 
-We will respond within **48 hours** and work with you on a coordinated disclosure timeline.
+Please do not send a report through both channels — it creates duplicate work.
+
+## Response SLA
+
+These are commitments, not aspirations. If we miss one, escalate by replying
+again on the same advisory thread.
+
+| Stage | Target |
+| --- | --- |
+| Acknowledge receipt | **48 hours** |
+| Initial triage and severity assignment | **5 business days** |
+| Fix deployed — **Critical** (funds at risk, data exposure, auth bypass) | **30 days** |
+| Fix deployed — **High** (privilege escalation, significant DoS) | **60 days** |
+| Fix deployed — **Medium / Low** | **90 days** |
+| Public disclosure | After the fix is deployed, coordinated with the reporter |
+
+Critical findings in `EscrowManager`, `RefundManager`, `TreasuryVault`, and
+`FeeManager` are treated as fund-at-risk and start the 30-day clock immediately.
+We will credit reporters in the advisory unless they ask us not to.
 
 ## Scope
 
