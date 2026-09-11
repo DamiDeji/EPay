@@ -1,0 +1,56 @@
+{
+  "expo": {
+    "name": "EPay",
+    "slug": "epay",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "epay",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "dev.epay.mobile",
+      "infoPlist": {
+        "NSCameraUsageDescription": "EPay uses the camera to scan payment QR codes.",
+        "NSFaceIDUsageDescription": "EPay uses Face ID to authorize payments and unlock your wallet."
+      }
+    },
+    "android": {
+      "package": "dev.epay.mobile",
+      "permissions": ["CAMERA", "USE_BIOMETRIC", "USE_FINGERPRINT", "POST_NOTIFICATIONS"]
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "EPay uses the camera to scan payment QR codes."
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "EPay uses Face ID to authorize payments and unlock your wallet."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#0F172A"
+        }
+      ],
+      "expo-secure-store"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "00000000-0000-0000-0000-000000000000"
+      }
+    }
+  }
+}
