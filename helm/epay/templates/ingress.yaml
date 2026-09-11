@@ -1,0 +1,43 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "epay.fullname" . }}
+  labels:
+    {{- include "epay.labels" . | nindent 4 }}
+  annotations:
+    {{- toYaml .Values.ingress.annotations | nindent 4 }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- with .Values.ingress.tls }}
+  tls:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  rules:
+    {{- if .Values.api.enabled }}
+    - host: {{ (index .Values.frontends 0).host }}
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "epay.fullname" . }}-api
+                port:
+                  number: 80
+    {{- end }}
+    {{- range .Values.frontends }}
+    {{- if .enabled }}
+    - host: {{ .host }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "epay.fullname" $ }}-{{ .name }}
+                port:
+                  number: 80
+    {{- end }}
+    {{- end }}
+{{- end }}

@@ -1,0 +1,244 @@
+# Default values for the EPay chart.
+#
+# Image policy: every image is referenced by repository + tag, and *optionally* by
+# digest. `global.requireDigest` is false here so the chart lints and templates
+# without external input; it is true in values.production.yaml, where the
+# template refuses to render unless a digest is pinned. That is deliberate — a
+# mutable tag is not a deployable artifact.
+
+global:
+  # Registry prefix applied to every image repository below.
+  registry: ghcr.io/damideji
+  imagePullPolicy: IfNotPresent
+  # Fail rendering when an image digest is missing. Enabled in production.
+  requireDigest: false
+  # Node LTS line the images are built from (see apps/*/Dockerfile).
+  nodeVersion: '24'
+
+nameOverride: ''
+fullnameOverride: ''
+
+namespace:
+  # The chart deploys into the release namespace by default; set create=true to
+  # have the chart own the Namespace object (useful for a fresh cluster).
+  create: false
+  name: ''
+
+# Optional values consumed only when secrets.create=true (development).
+# In production these come from .Values.secrets.existingSecret instead.
+jwtSecret: ''
+webhookSecret: ''
+metricsToken: ''
+anthropicApiKey: ''
+
+# ── API ───────────────────────────────────────────────────────────────────────
+api:
+  enabled: true
+  image:
+    repository: epay-api
+    tag: '0.1.0'
+    # sha256:... — required when global.requireDigest is true.
+    digest: ''
+  replicas: 2
+  port: 4000
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: '1'
+      memory: 1Gi
+  probes:
+    liveness:
+      path: /health/live
+      initialDelaySeconds: 15
+      periodSeconds: 20
+    readiness:
+      path: /health/ready
+      initialDelaySeconds: 5
+      periodSeconds: 10
+  # Injected from the Secret named below; keys must exist.
+  env:
+    NODE_ENV: production
+    LOG_LEVEL: info
+    PORT: '4000'
+    STELLAR_NETWORK: testnet
+    STELLAR_HORIZON_URL: https://horizon-testnet.stellar.org
+    STELLAR_SOROBAN_RPC_URL: https://soroban-testnet.stellar.org
+
+# ── Indexer ───────────────────────────────────────────────────────────────────
+indexer:
+  enabled: true
+  image:
+    repository: epay-indexer
+    tag: '0.1.0'
+    digest: ''
+  replicas: 1
+  # The indexer is a singleton per network: only one process should hold the
+  # checkpoint lease.
+  strategy: Recreate
+  metricsPort: 4100
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: '1'
+      memory: 1Gi
+
+# ── Frontends ─────────────────────────────────────────────────────────────────
+# Rendered from a list so web/merchant/admin stay in lockstep instead of drifting
+# across three near-identical templates.
+frontends:
+  - name: web
+    enabled: true
+    image:
+      repository: epay-web
+      tag: '0.1.0'
+      digest: ''
+    replicas: 2
+    port: 3000
+    host: epay.example.com
+  - name: merchant-dashboard
+    enabled: true
+    image:
+      repository: epay-merchant-dashboard
+      tag: '0.1.0'
+      digest: ''
+    replicas: 2
+    port: 3000
+    host: merchant.epay.example.com
+  - name: admin-dashboard
+    enabled: true
+    image:
+      repository: epay-admin-dashboard
+      tag: '0.1.0'
+      digest: ''
+    replicas: 2
+    port: 3000
+    host: admin.epay.example.com
+
+# ── Configuration & secrets ───────────────────────────────────────────────────
+config:
+  # Non-secret values rendered into the ConfigMap.
+  REDIS_URL: redis://redis:6379
+  CORS_ORIGINS: https://epay.example.com,https://merchant.epay.example.com,https://admin.epay.example.com
+  RATE_LIMIT_TTL: '60'
+  RATE_LIMIT_MAX: '100'
+  INDEXER_BATCH_SIZE: '100'
+  WEBHOOK_MAX_RETRIES: '5'
+
+secrets:
+  # Name of a Secret managed outside the chart (Sealed Secrets / External
+  # Secrets). The chart never renders secret values from values.yaml.
+  existingSecret: epay-secrets
+  # Create a placeholder Secret for local/dev use only. Never enable in prod.
+  create: false
+
+# ── PostgreSQL ────────────────────────────────────────────────────────────────
+postgres:
+  enabled: true
+  image:
+    repository: postgres
+    tag: '16-alpine'
+    digest: ''
+  auth:
+    username: epay
+    database: epay
+    existingSecret: epay-postgres
+    secretKey: password
+    # Used only when secrets.create=true (development).
+    password: ''
+  storage:
+    size: 20Gi
+    storageClass: ''
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: '2'
+      memory: 2Gi
+
+# ── Ingress ───────────────────────────────────────────────────────────────────
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/proxy-body-size: 1m
+    nginx.ingress.kubernetes.io/ssl-redirect: 'true'
+  tls:
+    - secretName: epay-tls
+      hosts:
+        - epay.example.com
+        - merchant.epay.example.com
+        - admin.epay.example.com
+
+# ── Scaling & disruption (Phase 5) ────────────────────────────────────────────
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# ── Network policy (Phase 5) ──────────────────────────────────────────────────
+networkPolicy:
+  enabled: true
+  # Default-deny ingress/egress with explicit allows; adjust to your cluster's
+  # DNS and egress-gateway setup.
+  dnsPort: 53
+  postgresPort: 5432
+  redisPort: 6379
+  httpsEgressPort: 443
+
+# ── Observability (Phase 4) ───────────────────────────────────────────────────
+monitoring:
+  enabled: false
+  # Creates Prometheus Operator ServiceMonitors (requires the CRDs). The
+  # canonical scrape config, alert rules, and dashboards live in `monitoring/`.
+  serviceMonitor:
+    create: true
+    interval: 30s
+  prometheus:
+    image:
+      repository: prom/prometheus
+      tag: v3.1.0
+      digest: ''
+    retention: 30d
+  grafana:
+    image:
+      repository: grafana/grafana
+      tag: 11.5.0
+      digest: ''
+  alertmanager:
+    image:
+      repository: prom/alertmanager
+      tag: v0.28.0
+      digest: ''
+  existingSecret: epay-monitoring-secrets
+
+# ── Pod defaults ──────────────────────────────────────────────────────────────
+podAnnotations: {}
+podLabels: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+imagePullSecrets: []
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL

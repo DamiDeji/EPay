@@ -1,0 +1,19 @@
+apiVersion: v2
+name: epay
+description: EPay — decentralized payment gateway on Stellar/Soroban (API, indexer, dashboards)
+type: application
+version: 0.1.0
+appVersion: '0.1.0'
+kubeVersion: '>=1.29.0-0'
+keywords:
+  - stellar
+  - soroban
+  - payments
+  - nestjs
+home: https://github.com/DamiDeji/EPay
+sources:
+  - https://github.com/DamiDeji/EPay
+maintainers:
+  - name: EPay Contributors
+annotations:
+  category: Payment

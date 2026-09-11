@@ -1,0 +1,135 @@
+# EPay alert rules.
+#
+# Every rule below maps to a concrete failure mode that matters to a payments
+# product: users cannot pay, payers are waiting, the database is saturated, a
+# deployment is unhealthy, or we have lost the ability to recover from disaster.
+groups:
+  - name: epay-availability
+    interval: 30s
+    rules:
+      - alert: EpayApiHigh5xxRate
+        expr: |
+          (
+            sum(rate(epay_http_requests_total{status=~"5..",job="epay-api"}[5m]))
+            /
+            clamp_min(sum(rate(epay_http_requests_total{job="epay-api"}[5m])), 0.001)
+          ) > 0.02
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: 'EPay API 5xx rate above 2%'
+          description: '{{ $value | humanizePercentage }} of API requests are failing with 5xx over the last 5 minutes.'
+          runbook_url: 'https://github.com/DamiDeji/EPay/blob/main/docs/runbooks/api-5xx.md'
+
+      - alert: EpayApiP99LatencyHigh
+        expr: |
+          histogram_quantile(
+            0.99,
+            sum(rate(epay_http_request_duration_seconds_bucket{job="epay-api"}[5m])) by (le)
+          ) > 2
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: 'EPay API p99 latency above 2s'
+          description: 'p99 request latency is {{ $value }}s over the last 10 minutes.'
+
+      - alert: EpayReadinessProbeFailing
+        expr: |
+          kube_deployment_status_replicas_unavailable{namespace="epay"} > 0
+          and on(deployment) kube_deployment_spec_replicas{namespace="epay"} > 0
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: 'EPay deployment {{ $labels.deployment }} has unavailable replicas'
+          description: 'The readiness probe has been failing for at least 5 minutes, so Kubernetes is not routing traffic to every replica.'
+
+  - name: epay-database
+    interval: 30s
+    rules:
+      - alert: EpayDbPoolWaitHigh
+        expr: |
+          histogram_quantile(
+            0.99,
+            sum(rate(epay_db_pool_wait_seconds_bucket{job="epay-api"}[5m])) by (le)
+          ) > 0.5
+        for: 10m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: 'EPay DB connection pool p99 wait above 500ms'
+          description: 'Requests are queueing for a database connection. p99 wait is {{ $value }}s. Raise the pool size or reduce query cost.'
+
+      - alert: EpaySlowQueryP99High
+        expr: |
+          histogram_quantile(
+            0.99,
+            sum(rate(epay_db_query_duration_seconds_bucket{job="epay-api"}[5m])) by (le, query)
+          ) > 1
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: 'Slow query p99 above 1s ({{ $labels.query }})'
+          description: 'The query {{ $labels.query }} has a p99 above 1s. Check indexes and query plans.'
+
+  - name: epay-queue
+    interval: 30s
+    rules:
+      - alert: EpayQueueLagHigh
+        expr: epay_queue_waiting_jobs > 1000
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: 'BullMQ queue {{ $labels.queue }} has a large backlog'
+          description: '{{ $value }} jobs are waiting on queue {{ $labels.queue }}; indexer lag will follow.'
+
+  - name: epay-disaster-recovery
+    interval: 1m
+    rules:
+      # Emitted by the nightly backup workflow (see .github/workflows/backup.yml).
+      - alert: EpayBackupMissed
+        expr: (time() - epay_backup_last_success_timestamp_seconds) > 129600
+        for: 15m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: 'EPay nightly backup has not succeeded in 36 hours'
+          description: 'The last successful pg_dump was {{ $value | humanizeDuration }} ago; the RPO target is 24h.'
+          runbook_url: 'https://github.com/DamiDeji/EPay/blob/main/docs/restore-runbook.md'
+
+      # Emitted by the monthly restore-drill workflow.
+      - alert: EpayRestoreDrillFailed
+        expr: epay_restore_drill_last_status != 1
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: 'EPay restore drill failed or is overdue'
+          description: 'The most recent restore drill did not report success. A backup that has never been restored is not a backup.'
+          runbook_url: 'https://github.com/DamiDeji/EPay/blob/main/docs/restore-runbook.md'
+
+  - name: epay-cost
+    interval: 5m
+    rules:
+      - alert: EpayAiSpendAnomaly
+        expr: |
+          sum(increase(epay_ai_tokens_total{job="epay-api",direction="input"}[1h])) * 0.000003 > 5
+        for: 30m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: 'AI summary spend is running hot'
+          description: 'Input-token spend exceeded $5 in the last hour, which usually means the server-side cache is missing.'

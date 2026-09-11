@@ -1,0 +1,71 @@
+{
+  "uid": "epay-ai-cost",
+  "title": "EPay — AI Summary Cost & Cache",
+  "tags": ["epay", "ai", "cost"],
+  "timezone": "utc",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "1m",
+  "time": { "from": "now-7d", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Estimated spend (7d)",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "epay-prometheus" },
+      "targets": [
+        {
+          "expr": "sum(increase(epay_ai_tokens_total{direction=\"input\"}[7d])) * 0.000003 + sum(increase(epay_ai_tokens_total{direction=\"output\"}[7d])) * 0.000015",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "currencyUSD", "decimals": 2 } }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Server-side cache hit rate",
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "epay-prometheus" },
+      "targets": [
+        {
+          "expr": "sum(rate(epay_ai_summary_requests_total{cache=\"hit\"}[1h])) / clamp_min(sum(rate(epay_ai_summary_requests_total[1h])), 0.001)",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percentunit", "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 0.8 }] } } }
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Tokens per hour by direction",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "epay-prometheus" },
+      "targets": [
+        { "expr": "sum by (direction) (increase(epay_ai_tokens_total[1h]))", "legendFormat": "{{direction}}", "refId": "A" }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Summary generation latency p95 by resource",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "datasource": { "type": "prometheus", "uid": "epay-prometheus" },
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum(rate(epay_ai_summary_duration_seconds_bucket[5m])) by (le, resource))", "legendFormat": "{{resource}}", "refId": "A" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "s" } }
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Anthropic API errors",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "datasource": { "type": "prometheus", "uid": "epay-prometheus" },
+      "targets": [
+        { "expr": "sum by (status) (rate(epay_ai_summary_errors_total[5m]))", "legendFormat": "{{status}}", "refId": "A" }
+      ]
+    }
+  ]
+}

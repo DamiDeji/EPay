@@ -1,0 +1,1320 @@
+---
+# Source: epay/templates/networkpolicy.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: epay-epay-default-deny
+  labels:
+    helm.sh/chart: epay-0.1.0
+    app.kubernetes.io/name: epay
+    app.kubernetes.io/instance: epay
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: epay
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+
+---
+# Source: epay/templates/networkpolicy.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: epay-epay-dns-egress
+  labels:
+    helm.sh/chart: epay-0.1.0
+    app.kubernetes.io/name: epay
+    app.kubernetes.io/instance: epay
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: epay
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+
+---
+# Source: epay/templates/networkpolicy.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: epay-epay-api
+  labels:
+    helm.sh/chart: epay-0.1.0
+    app.kubernetes.io/name: epay
+    app.kubernetes.io/instance: epay
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: epay
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: epay
+      app.kubernetes.io/instance: epay
+      app.kubernetes.io/component: api
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Traffic from the ingress controller only.
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 4000
+    # Prometheus scraping.
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 4000
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: epay
+              app.kubernetes.io/instance: epay
+              app.kubernetes.io/component: database
+      ports:
+        - protocol: TCP
+          port: 5432
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: epay
+              app.kubernetes.io/instance: epay
+              app.kubernetes.io/component: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    # Stellar Horizon / Soroban RPC / SEP endpoints and the Anthropic API.
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 443
+
+---
+# Source: epay/templates/networkpolicy.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: epay-epay-indexer
+  labels:
+    helm.sh/chart: epay-0.1.0
+    app.kubernetes.io/name: epay
+    app.kubernetes.io/instance: epay
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: epay
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: epay
+      app.kubernetes.io/instance: epay
+      app.kubernetes.io/component: indexer
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 4100
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: epay
+              app.kubernetes.io/instance: epay
+              app.kubernetes.io/component: database
+      ports:
+        - protocol: TCP
+          port: 5432
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: epay
+              app.kubernetes.io/instance: epay
+              app.kubernetes.io/component: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 443
+
+---
+# Source: epay/templates/networkpolicy.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: epay-epay-web
+  labels:
+    helm.sh/chart: epay-0.1.0
+    app.kubernetes.io/name: epay
+    app.kubernetes.io/instance: epay
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: epay
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: epay
+      app.kubernetes.io/instance: epay
+      app.kubernetes.io/component: web
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 3000
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: epay
+              app.kubernetes.io/instance: epay
+              app.kubernetes.io/component: api
+      ports:
+        - protocol: TCP
+          port: 4000
+
+---
+# Source: epay/templates/networkpolicy.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: epay-epay-merchant-dashboard
+  labels:
+    helm.sh/chart: epay-0.1.0
+    app.kubernetes.io/name: epay
+    app.kubernetes.io/instance: epay
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: epay
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: epay
+      app.kubernetes.io/instance: epay
+      app.kubernetes.io/component: merchant-dashboard
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 3000
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: epay
+              app.kubernetes.io/instance: epay
+              app.kubernetes.io/component: api
+      ports:
+        - protocol: TCP
+          port: 4000
+
+---
+# Source: epay/templates/networkpolicy.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: epay-epay-admin-dashboard
+  labels:
+    helm.sh/chart: epay-0.1.0
+    app.kubernetes.io/name: epay
+    app.kubernetes.io/instance: epay
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: epay
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: epay
+      app.kubernetes.io/instance: epay
+      app.kubernetes.io/component: admin-dashboard
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 3000
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: epay
+              app.kubernetes.io/instance: epay
+              app.kubernetes.io/component: api
+      ports:
+        - protocol: TCP
+          port: 4000
+
+---
+# Source: epay/templates/pdb.yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: epay-epay-api
+  labels:
+    helm.sh/chart: epay-0.1.0
+    app.kubernetes.io/name: epay
+    app.kubernetes.io/instance: epay
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: epay
+    app.kubernetes.io/component: api
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: epay
+      app.kubernetes.io/instance: epay
+      app.kubernetes.io/component: api
+
+---
+# Source: epay/templates/pdb.yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: epay-epay-web
+  labels:
+    helm.sh/chart: epay-0.1.0
+    app.kubernetes.io/name: epay
+    app.kubernetes.io/instance: epay
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: epay
+    app.kubernetes.io/component: web
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: epay
+      app.kubernetes.io/instance: epay
+      app.kubernetes.io/component: web
+
+---
+# Source: epay/templates/pdb.yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: epay-epay-merchant-dashboard
+  labels:
+    helm.sh/chart: epay-0.1.0
+    app.kubernetes.io/name: epay
+    app.kubernetes.io/instance: epay
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: epay
+    app.kubernetes.io/component: merchant-dashboard
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: epay
+      app.kubernetes.io/instance: epay
+      app.kubernetes.io/component: merchant-dashboard
+
+---
+# Source: epay/templates/pdb.yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: epay-epay-admin-dashboard
+  labels:
+    helm.sh/chart: epay-0.1.0
+    app.kubernetes.io/name: epay
+    app.kubernetes.io/instance: epay
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: epay
+    app.kubernetes.io/component: admin-dashboard
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: epay
+      app.kubernetes.io/instance: epay
+      app.kubernetes.io/component: admin-dashboard
+
+---
+# Source: epay/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: epay-epay-config
+  labels:
+    helm.sh/chart: epay-0.1.0
+    app.kubernetes.io/name: epay
+    app.kubernetes.io/instance: epay
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: epay
+data:
+  CORS_ORIGINS: "https://epay.example.com,https://merchant.epay.example.com,https://admin.epay.example.com"
+  INDEXER_BATCH_SIZE: "100"
+  RATE_LIMIT_MAX: "100"
+  RATE_LIMIT_TTL: "60"
+  REDIS_URL: "redis://redis:6379"
+  WEBHOOK_MAX_RETRIES: "5"
+  LOG_LEVEL: "info"
+  NODE_ENV: "production"
+  PORT: "4000"
+  STELLAR_HORIZON_URL: "https://horizon-testnet.stellar.org"
+  STELLAR_NETWORK: "testnet"
+  STELLAR_SOROBAN_RPC_URL: "https://soroban-testnet.stellar.org"
+  METRICS_PORT: "4100"
+
+---
+# Source: epay/templates/api.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: epay-epay-api
+  labels:
+    helm.sh/chart: epay-0.1.0
+    app.kubernetes.io/name: epay
+    app.kubernetes.io/instance: epay
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: epay
+    app.kubernetes.io/component: api
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+  selector:
+    app.kubernetes.io/name: epay
+    app.kubernetes.io/instance: epay
+    app.kubernetes.io/component: api
+
+---
+# Source: epay/templates/frontends.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: epay-epay-web
+  labels:
+    helm.sh/chart: epay-0.1.0
+    app.kubernetes.io/name: epay
+    app.kubernetes.io/instance: epay
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: epay
+    app.kubernetes.io/component: web
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+  selector:
+    app.kubernetes.io/name: epay
+    app.kubernetes.io/instance: epay
+    app.kubernetes.io/component: web
+
+---
+# Source: epay/templates/frontends.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: epay-epay-merchant-dashboard
+  labels:
+    helm.sh/chart: epay-0.1.0
+    app.kubernetes.io/name: epay
+    app.kubernetes.io/instance: epay
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: epay
+    app.kubernetes.io/component: merchant-dashboard
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+  selector:
+    app.kubernetes.io/name: epay
+    app.kubernetes.io/instance: epay
+    app.kubernetes.io/component: merchant-dashboard
+
+---
+# Source: epay/templates/frontends.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: epay-epay-admin-dashboard
+  labels:
+    helm.sh/chart: epay-0.1.0
+    app.kubernetes.io/name: epay
+    app.kubernetes.io/instance: epay
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: epay
+    app.kubernetes.io/component: admin-dashboard
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+  selector:
+    app.kubernetes.io/name: epay
+    app.kubernetes.io/instance: epay
+    app.kubernetes.io/component: admin-dashboard
+
+---
+# Source: epay/templates/indexer.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: epay-epay-indexer
+  labels:
+    helm.sh/chart: epay-0.1.0
+    app.kubernetes.io/name: epay
+    app.kubernetes.io/instance: epay
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: epay
+    app.kubernetes.io/component: indexer
+spec:
+  type: ClusterIP
+  ports:
+    - name: metrics
+      port: 4100
+      targetPort: metrics
+  selector:
+    app.kubernetes.io/name: epay
+    app.kubernetes.io/instance: epay
+    app.kubernetes.io/component: indexer
+
+---
+# Source: epay/templates/postgres.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: epay-epay-postgres
+  labels:
+    helm.sh/chart: epay-0.1.0
+    app.kubernetes.io/name: epay
+    app.kubernetes.io/instance: epay
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: epay
+    app.kubernetes.io/component: database
+spec:
+  clusterIP: None
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: postgres
+  selector:
+    app.kubernetes.io/name: epay
+    app.kubernetes.io/instance: epay
+    app.kubernetes.io/component: database
+
+---
+# Source: epay/templates/api.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: epay-epay-api
+  labels:
+    helm.sh/chart: epay-0.1.0
+    app.kubernetes.io/name: epay
+    app.kubernetes.io/instance: epay
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: epay
+    app.kubernetes.io/component: api
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: epay
+      app.kubernetes.io/instance: epay
+      app.kubernetes.io/component: api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: epay
+        app.kubernetes.io/instance: epay
+        app.kubernetes.io/component: api
+      annotations:
+        checksum/config: a9081c70eae58b071b0d4d9d78b05178b0cc6c6d0e8a8e3538b2e1fc33df0eef
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: api
+          image: ghcr.io/damideji/epay-api:0.1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 4000
+          envFrom:
+            - configMapRef:
+                name: epay-epay-config
+            - secretRef:
+                name: epay-secrets
+                optional: true
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: epay-postgres
+                  key: password
+            - name: DATABASE_URL
+              value: postgresql://epay:$(POSTGRES_PASSWORD)@epay-epay-postgres:5432/epay
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            limits:
+              cpu: "1"
+              memory: 1Gi
+            requests:
+              cpu: 250m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+
+---
+# Source: epay/templates/frontends.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: epay-epay-web
+  labels:
+    helm.sh/chart: epay-0.1.0
+    app.kubernetes.io/name: epay
+    app.kubernetes.io/instance: epay
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: epay
+    app.kubernetes.io/component: web
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: epay
+      app.kubernetes.io/instance: epay
+      app.kubernetes.io/component: web
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: epay
+        app.kubernetes.io/instance: epay
+        app.kubernetes.io/component: web
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: web
+          image: ghcr.io/damideji/epay-web:0.1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3000
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: NEXT_PUBLIC_API_URL
+              value: https://epay.example.com
+            - name: PORT
+              value: "3000"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: cache
+              mountPath: /app/.next/cache
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: cache
+          emptyDir: {}
+
+---
+# Source: epay/templates/frontends.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: epay-epay-merchant-dashboard
+  labels:
+    helm.sh/chart: epay-0.1.0
+    app.kubernetes.io/name: epay
+    app.kubernetes.io/instance: epay
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: epay
+    app.kubernetes.io/component: merchant-dashboard
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: epay
+      app.kubernetes.io/instance: epay
+      app.kubernetes.io/component: merchant-dashboard
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: epay
+        app.kubernetes.io/instance: epay
+        app.kubernetes.io/component: merchant-dashboard
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: merchant-dashboard
+          image: ghcr.io/damideji/epay-merchant-dashboard:0.1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3000
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: NEXT_PUBLIC_API_URL
+              value: https://epay.example.com
+            - name: PORT
+              value: "3000"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: cache
+              mountPath: /app/.next/cache
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: cache
+          emptyDir: {}
+
+---
+# Source: epay/templates/frontends.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: epay-epay-admin-dashboard
+  labels:
+    helm.sh/chart: epay-0.1.0
+    app.kubernetes.io/name: epay
+    app.kubernetes.io/instance: epay
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: epay
+    app.kubernetes.io/component: admin-dashboard
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: epay
+      app.kubernetes.io/instance: epay
+      app.kubernetes.io/component: admin-dashboard
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: epay
+        app.kubernetes.io/instance: epay
+        app.kubernetes.io/component: admin-dashboard
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: admin-dashboard
+          image: ghcr.io/damideji/epay-admin-dashboard:0.1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3000
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: NEXT_PUBLIC_API_URL
+              value: https://epay.example.com
+            - name: PORT
+              value: "3000"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: cache
+              mountPath: /app/.next/cache
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: cache
+          emptyDir: {}
+
+---
+# Source: epay/templates/indexer.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: epay-epay-indexer
+  labels:
+    helm.sh/chart: epay-0.1.0
+    app.kubernetes.io/name: epay
+    app.kubernetes.io/instance: epay
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: epay
+    app.kubernetes.io/component: indexer
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: epay
+      app.kubernetes.io/instance: epay
+      app.kubernetes.io/component: indexer
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: epay
+        app.kubernetes.io/instance: epay
+        app.kubernetes.io/component: indexer
+      annotations:
+        checksum/config: a9081c70eae58b071b0d4d9d78b05178b0cc6c6d0e8a8e3538b2e1fc33df0eef
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: indexer
+          image: ghcr.io/damideji/epay-indexer:0.1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: metrics
+              containerPort: 4100
+          envFrom:
+            - configMapRef:
+                name: epay-epay-config
+            - secretRef:
+                name: epay-secrets
+                optional: true
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: epay-postgres
+                  key: password
+            - name: DATABASE_URL
+              value: postgresql://epay:$(POSTGRES_PASSWORD)@epay-epay-postgres:5432/epay
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: metrics
+            initialDelaySeconds: 20
+            periodSeconds: 30
+          resources:
+            limits:
+              cpu: "1"
+              memory: 1Gi
+            requests:
+              cpu: 200m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+
+---
+# Source: epay/templates/hpa.yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: epay-epay-api
+  labels:
+    helm.sh/chart: epay-0.1.0
+    app.kubernetes.io/name: epay
+    app.kubernetes.io/instance: epay
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: epay
+    app.kubernetes.io/component: api
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: epay-epay-api
+  minReplicas: 2
+  maxReplicas: 10
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+
+---
+# Source: epay/templates/hpa.yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: epay-epay-web
+  labels:
+    helm.sh/chart: epay-0.1.0
+    app.kubernetes.io/name: epay
+    app.kubernetes.io/instance: epay
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: epay
+    app.kubernetes.io/component: web
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: epay-epay-web
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+
+---
+# Source: epay/templates/hpa.yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: epay-epay-merchant-dashboard
+  labels:
+    helm.sh/chart: epay-0.1.0
+    app.kubernetes.io/name: epay
+    app.kubernetes.io/instance: epay
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: epay
+    app.kubernetes.io/component: merchant-dashboard
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: epay-epay-merchant-dashboard
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+
+---
+# Source: epay/templates/hpa.yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: epay-epay-admin-dashboard
+  labels:
+    helm.sh/chart: epay-0.1.0
+    app.kubernetes.io/name: epay
+    app.kubernetes.io/instance: epay
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: epay
+    app.kubernetes.io/component: admin-dashboard
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: epay-epay-admin-dashboard
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+
+---
+# Source: epay/templates/postgres.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: epay-epay-postgres
+  labels:
+    helm.sh/chart: epay-0.1.0
+    app.kubernetes.io/name: epay
+    app.kubernetes.io/instance: epay
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: epay
+    app.kubernetes.io/component: database
+spec:
+  serviceName: epay-epay-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: epay
+      app.kubernetes.io/instance: epay
+      app.kubernetes.io/component: database
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: epay
+        app.kubernetes.io/instance: epay
+        app.kubernetes.io/component: database
+    spec:
+      securityContext:
+        fsGroup: 999
+      containers:
+        - name: postgres
+          image: ghcr.io/damideji/postgres:16-alpine
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: postgres
+              containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              value: "epay"
+            - name: POSTGRES_DB
+              value: "epay"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: epay-postgres
+                  key: password
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          readinessProbe:
+            exec:
+              command: ['pg_isready', '-U', "epay", '-d', "epay"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            exec:
+              command: ['pg_isready', '-U', "epay"]
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 5
+          resources:
+            limits:
+              cpu: "2"
+              memory: 2Gi
+            requests:
+              cpu: 250m
+              memory: 512Mi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ['ReadWriteOnce']
+        resources:
+          requests:
+            storage: 20Gi
+
+---
+# Source: epay/templates/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: epay-epay
+  labels:
+    helm.sh/chart: epay-0.1.0
+    app.kubernetes.io/name: epay
+    app.kubernetes.io/instance: epay
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: epay
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/proxy-body-size: 1m
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+      - epay.example.com
+      - merchant.epay.example.com
+      - admin.epay.example.com
+      secretName: epay-tls
+  rules:
+    - host: epay.example.com
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: epay-epay-api
+                port:
+                  number: 80
+    - host: epay.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: epay-epay-web
+                port:
+                  number: 80
+    - host: merchant.epay.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: epay-epay-merchant-dashboard
+                port:
+                  number: 80
+    - host: admin.epay.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: epay-epay-admin-dashboard
+                port:
+                  number: 80
+---
+# Source: epay/templates/api.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: epay-epay-migrate-1
+  labels:
+    helm.sh/chart: epay-0.1.0
+    app.kubernetes.io/name: epay
+    app.kubernetes.io/instance: epay
+    app.kubernetes.io/version: "0.1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: epay
+    app.kubernetes.io/component: migration
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: '-5'
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 2
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: epay
+        app.kubernetes.io/instance: epay
+        app.kubernetes.io/component: migration
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: migrate
+          image: ghcr.io/damideji/epay-api:0.1.0
+          imagePullPolicy: IfNotPresent
+          command: ['pnpm', '--filter', '@epay/database', 'exec', 'prisma', 'migrate', 'deploy']
+          envFrom:
+            - configMapRef:
+                name: epay-epay-config
+            - secretRef:
+                name: epay-secrets
+                optional: true
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: epay-postgres
+                  key: password
+            - name: DATABASE_URL
+              value: postgresql://epay:$(POSTGRES_PASSWORD)@epay-epay-postgres:5432/epay
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+

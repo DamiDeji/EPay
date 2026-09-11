@@ -1,0 +1,184 @@
+{{- if .Values.networkPolicy.enabled }}
+{{/*
+  Default-deny, then allow exactly what the platform needs.
+
+  Note: allowing egress to the `kube-system` DNS pods is intentionally scoped by
+  namespace rather than opening UDP/53 to the whole cluster, and outbound HTTPS is
+  limited to the Stellar Horizon/Soroban RPC ranges plus the Anthropic API.
+*/}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "epay.fullname" . }}-default-deny
+  labels:
+    {{- include "epay.labels" . | nindent 4 }}
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "epay.fullname" . }}-dns-egress
+  labels:
+    {{- include "epay.labels" . | nindent 4 }}
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: {{ .Values.networkPolicy.dnsPort }}
+        - protocol: TCP
+          port: {{ .Values.networkPolicy.dnsPort }}
+---
+{{- if .Values.api.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "epay.fullname" . }}-api
+  labels:
+    {{- include "epay.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "epay.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: api
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Traffic from the ingress controller only.
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: {{ .Values.api.port }}
+    # Prometheus scraping.
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: {{ .Values.api.port }}
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "epay.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: database
+      ports:
+        - protocol: TCP
+          port: {{ .Values.networkPolicy.postgresPort }}
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "epay.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: redis
+      ports:
+        - protocol: TCP
+          port: {{ .Values.networkPolicy.redisPort }}
+    # Stellar Horizon / Soroban RPC / SEP endpoints and the Anthropic API.
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: {{ .Values.networkPolicy.httpsEgressPort }}
+---
+{{- end }}
+{{- if .Values.indexer.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "epay.fullname" . }}-indexer
+  labels:
+    {{- include "epay.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "epay.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: indexer
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: {{ .Values.indexer.metricsPort }}
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "epay.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: database
+      ports:
+        - protocol: TCP
+          port: {{ .Values.networkPolicy.postgresPort }}
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "epay.selectorLabels" . | nindent 14 }}
+              app.kubernetes.io/component: redis
+      ports:
+        - protocol: TCP
+          port: {{ .Values.networkPolicy.redisPort }}
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: {{ .Values.networkPolicy.httpsEgressPort }}
+---
+{{- end }}
+{{- range .Values.frontends }}
+{{- if .enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "epay.fullname" $ }}-{{ .name }}
+  labels:
+    {{- include "epay.labels" $ | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "epay.selectorLabels" $ | nindent 6 }}
+      app.kubernetes.io/component: {{ .name }}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: {{ .port }}
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- include "epay.selectorLabels" $ | nindent 14 }}
+              app.kubernetes.io/component: api
+      ports:
+        - protocol: TCP
+          port: {{ $.Values.api.port }}
+---
+{{- end }}
+{{- end }}
+{{- end }}

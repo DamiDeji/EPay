@@ -1,0 +1,40 @@
+{{ .Chart.Name }} {{ .Chart.Version }} installed as release {{ .Release.Name }} in namespace {{ .Release.Namespace }}.
+
+{{- if .Values.ingress.enabled }}
+Endpoints:
+{{- range .Values.frontends }}
+{{- if .enabled }}
+  https://{{ .host }}
+{{- end }}
+{{- end }}
+  https://{{ (index .Values.frontends 0).host }}/api   (API)
+{{- else }}
+Ingress is disabled. Port-forward to reach a service:
+
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "epay.fullname" . }}-api 4000:80
+{{- end }}
+
+{{- if not .Values.secrets.existingSecret }}
+WARNING: no secrets.existingSecret is configured. The API will start without
+DATABASE_URL/JWT_SECRET injection and will fail readiness. Create the Secret and
+set secrets.existingSecret before rolling out:
+
+  kubectl -n {{ .Release.Namespace }} create secret generic epay-secrets \
+    --from-literal=JWT_SECRET="$(openssl rand -hex 32)" \
+    --from-literal=WEBHOOK_SECRET="$(openssl rand -hex 32)"
+{{- end }}
+
+{{- if not .Values.global.requireDigest }}
+NOTE: global.requireDigest is false, so images are referenced by tag. Deploying
+production with `-f helm/epay/values.production.yaml` forces every image to be
+pinned to a sha256 digest.
+{{- end }}
+
+{{- if .Values.monitoring.enabled }}
+Monitoring is enabled: ServiceMonitors were created for the API and indexer.
+Dashboards and alert rules live in `monitoring/`.
+{{- end }}
+
+Check rollout status:
+
+  kubectl -n {{ .Release.Namespace }} rollout status deploy/{{ include "epay.fullname" . }}-api

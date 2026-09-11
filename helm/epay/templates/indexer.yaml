@@ -1,0 +1,81 @@
+{{- if .Values.indexer.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "epay.fullname" . }}-indexer
+  labels:
+    {{- include "epay.labels" . | nindent 4 }}
+    app.kubernetes.io/component: indexer
+spec:
+  type: ClusterIP
+  ports:
+    - name: metrics
+      port: {{ .Values.indexer.metricsPort }}
+      targetPort: metrics
+  selector:
+    {{- include "epay.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: indexer
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "epay.fullname" . }}-indexer
+  labels:
+    {{- include "epay.labels" . | nindent 4 }}
+    app.kubernetes.io/component: indexer
+spec:
+  replicas: {{ .Values.indexer.replicas }}
+  strategy:
+    type: {{ .Values.indexer.strategy }}
+  selector:
+    matchLabels:
+      {{- include "epay.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: indexer
+  template:
+    metadata:
+      labels:
+        {{- include "epay.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: indexer
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    spec:
+      securityContext:
+        {{- include "epay.podSecurityContext" . | nindent 8 }}
+      containers:
+        - name: indexer
+          image: {{ include "epay.image" (dict "root" . "image" .Values.indexer.image) }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          ports:
+            - name: metrics
+              containerPort: {{ .Values.indexer.metricsPort }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "epay.fullname" . }}-config
+            - secretRef:
+                name: {{ include "epay.appSecretName" . }}
+                optional: true
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "epay.postgresSecretName" . }}
+                  key: {{ .Values.postgres.auth.secretKey }}
+            - name: DATABASE_URL
+              value: postgresql://{{ .Values.postgres.auth.username }}:$(POSTGRES_PASSWORD)@{{ include "epay.postgresHost" . }}:5432/{{ .Values.postgres.auth.database }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: metrics
+            initialDelaySeconds: 20
+            periodSeconds: 30
+          resources:
+            {{- toYaml .Values.indexer.resources | nindent 12 }}
+          securityContext:
+            {{- include "epay.containerSecurityContext" . | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+{{- end }}

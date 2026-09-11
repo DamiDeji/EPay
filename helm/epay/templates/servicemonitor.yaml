@@ -1,0 +1,59 @@
+{{- if and .Values.monitoring.enabled .Values.monitoring.serviceMonitor.create }}
+{{/*
+  Hook into the observability stack from Phase 4. This assumes the Prometheus
+  Operator CRDs are installed; the canonical scrape config, alert rules, and
+  Grafana dashboards live in `monitoring/` and are the single source of truth.
+
+  `bearerTokenSecret` points at the Secret key that holds METRICS_TOKEN, because
+  /metrics is token-gated in production.
+*/}}
+{{- if .Values.api.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "epay.fullname" . }}-api
+  labels:
+    {{- include "epay.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api
+spec:
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      {{- include "epay.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: api
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: {{ .Values.monitoring.serviceMonitor.interval }}
+      bearerTokenSecret:
+        name: {{ .Values.monitoring.existingSecret }}
+        key: METRICS_TOKEN
+---
+{{- end }}
+{{- if .Values.indexer.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "epay.fullname" . }}-indexer
+  labels:
+    {{- include "epay.labels" . | nindent 4 }}
+    app.kubernetes.io/component: indexer
+spec:
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      {{- include "epay.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: indexer
+  endpoints:
+    - port: metrics
+      path: /metrics
+      interval: {{ .Values.monitoring.serviceMonitor.interval }}
+      bearerTokenSecret:
+        name: {{ .Values.monitoring.existingSecret }}
+        key: METRICS_TOKEN
+{{- end }}
+{{- end }}

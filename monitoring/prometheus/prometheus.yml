@@ -1,0 +1,60 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    environment: ${EPAY_ENV:-local}
+    service: epay
+
+rule_files:
+  - /etc/prometheus/rules/*.yml
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['alertmanager:9093']
+
+scrape_configs:
+  # ── EPay API ───────────────────────────────────────────────────────────────
+  # `/metrics` is bearer-token gated in production, so the scraper must send the
+  # same METRICS_TOKEN the API validates.
+  - job_name: epay-api
+    metrics_path: /metrics
+    scheme: http
+    authorization:
+      type: Bearer
+      credentials_file: /etc/prometheus/secrets/metrics_token
+    static_configs:
+      - targets: ['api:4000']
+        labels:
+          component: api
+
+  # ── Indexer ────────────────────────────────────────────────────────────────
+  - job_name: epay-indexer
+    metrics_path: /metrics
+    scheme: http
+    authorization:
+      type: Bearer
+      credentials_file: /etc/prometheus/secrets/metrics_token
+    static_configs:
+      - targets: ['indexer:4100']
+        labels:
+          component: indexer
+
+  # ── BullMQ queue exporter ──────────────────────────────────────────────────
+  - job_name: bullmq-exporter
+    static_configs:
+      - targets: ['bullmq-exporter:9538']
+        labels:
+          component: queue
+
+  # ── Postgres exporter ──────────────────────────────────────────────────────
+  - job_name: postgres-exporter
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+        labels:
+          component: database
+
+  # ── Prometheus itself ──────────────────────────────────────────────────────
+  - job_name: prometheus
+    static_configs:
+      - targets: ['localhost:9090']

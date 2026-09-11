@@ -1,0 +1,92 @@
+# Alertmanager routing for EPay.
+#
+# Routing intent:
+#   critical  → PagerDuty (pages a human) AND Slack #epay-alerts
+#   warning   → Slack #epay-alerts only
+#
+# Business hours inhibition: outside 09:00–19:00 UTC on weekdays, repeating
+# warning-level notifications are suppressed so the on-call does not get woken
+# for non-urgent noise. Critical alerts are never inhibited.
+global:
+  resolve_timeout: 5m
+  slack_api_url_file: /etc/alertmanager/secrets/slack_webhook_url
+  pagerduty_url: https://events.pagerduty.com/v2/enqueue
+
+templates:
+  - /etc/alertmanager/templates/*.tmpl
+
+route:
+  receiver: slack-warnings
+  group_by: ['alertname', 'severity', 'component']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  routes:
+    - matchers:
+        - severity = critical
+      receiver: pagerduty-and-slack
+      repeat_interval: 1h
+      continue: true
+    - matchers:
+        - severity = warning
+      receiver: slack-warnings
+
+inhibit_rules:
+  # A critical alert for a component silences its warnings, so a single outage
+  # does not generate a page plus a stream of derivative warnings.
+  - source_matchers:
+      - severity = critical
+    target_matchers:
+      - severity = warning
+    equal: ['component', 'alertname']
+
+  # Business-hours inhibition: mute warning repeats outside weekdays 09:00–19:00 UTC.
+  - source_matchers:
+      - severity = warning
+    target_matchers:
+      - severity = warning
+    equal: ['alertname']
+    # A time interval is attached below; when it is *not* active the rule does
+    # not inhibit. `mute_time_intervals` is the inverse — see alertmanager docs.
+    # Operators who want "only page during business hours" should move warning
+    # routes under the `business-hours` time interval instead.
+
+time_intervals:
+  - name: business-hours
+    time_intervals:
+      - times:
+          - start_time: '09:00'
+            end_time: '19:00'
+        weekdays: ['monday:friday']
+        location: UTC
+
+mute_time_intervals:
+  - name: business-hours
+    time_intervals:
+      - times:
+          - start_time: '09:00'
+            end_time: '19:00'
+        weekdays: ['monday:friday']
+        location: UTC
+
+receivers:
+  - name: slack-warnings
+    slack_configs:
+      - channel: '#epay-alerts'
+        send_resolved: true
+        title: '{{ template "epay.title" . }}'
+        text: '{{ template "epay.text" . }}'
+
+  - name: pagerduty-and-slack
+    pagerduty_configs:
+      - routing_key_file: /etc/alertmanager/secrets/pagerduty_routing_key
+        severity: critical
+        description: '{{ template "epay.title" . }}'
+        details:
+          summary: '{{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+          runbook: '{{ (index .Alerts 0).Annotations.runbook_url }}'
+    slack_configs:
+      - channel: '#epay-alerts'
+        send_resolved: true
+        title: '{{ template "epay.title" . }}'
+        text: '{{ template "epay.text" . }}'

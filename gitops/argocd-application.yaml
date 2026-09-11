@@ -1,0 +1,178 @@
+# ArgoCD Application for EPay.
+#
+#   kubectl apply -f gitops/argocd-application.yaml
+#
+# Sync policy is automated with self-heal, but *rollouts* are progressive: the
+# Application points at a Rollout (argo-rollouts) rather than a Deployment, and
+# the canary advances only while the payment success-rate analysis stays within
+# its threshold. That analysis reads the same metric the Phase 4
+# `epay-payment-flow` dashboard and the SLO burn-rate alerts use, so a bad deploy
+# is caught by the same signal that pages a human.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: epay
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    # Slack notification on sync failure (argocd-notifications controller).
+    notifications.argoproj.io/subscribe.on-sync-failed.slack: epay-alerts
+    notifications.argoproj.io/subscribe.on-health-degraded.slack: epay-alerts
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/DamiDeji/EPay.git
+    targetRevision: main
+    path: helm/epay
+    helm:
+      releaseName: epay
+      valueFiles:
+        - values.yaml
+        - values.production.yaml
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: epay
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - ApplyOutOfSyncOnly=true
+      - RespectIgnoreDifferences=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 5m
+
+  ignoreDifferences:
+    # HPA writes spec.replicas on its target; without this the Application flaps
+    # between Synced and OutOfSync on every scale event.
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+    # cert-manager owns the Ingress TLS secret, not Git.
+    - group: networking.k8s.io
+      kind: Ingress
+      jsonPointers:
+        - /metadata/annotations/cert-manager.io~1cluster-issuer
+
+  revisionHistoryLimit: 10
+---
+# The Rollout that replaces the plain Deployment for the API. The Helm chart
+# renders the baseline Deployment; adopting Argo Rollouts is a one-time migration:
+#
+#   kubectl argo rollouts migrate deployment/epay-epay-api --dry-run | kubectl apply -f -
+#
+# and then this Rollout takes ownership of the same ReplicaSets.
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: epay-epay-api
+  namespace: epay
+  annotations:
+    notifications.argoproj.io/subscribe.on-rollout-aborted.slack: epay-alerts
+spec:
+  replicas: 3
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: epay
+      app.kubernetes.io/instance: epay
+      app.kubernetes.io/component: api
+  strategy:
+    canary:
+      # Payments are money movement: never send all traffic to a new version at
+      # once, and never route a canary to a pod that cannot serve traffic.
+      maxSurge: 1
+      maxUnavailable: 0
+      analysis:
+        templates:
+          - templateName: epay-payment-success-rate
+        startingStep: 1
+        args:
+          - name: service-name
+            value: epay-epay-api
+      steps:
+        - setWeight: 10
+        - pause: { duration: 5m }
+        - setWeight: 25
+        - pause: { duration: 5m }
+        - setWeight: 50
+        - pause: { duration: 10m }
+        - setWeight: 100
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: epay
+        app.kubernetes.io/instance: epay
+        app.kubernetes.io/component: api
+    spec:
+      containers:
+        - name: api
+          # Kept in sync with helm/epay/values.production.yaml by the release
+          # workflow, which rewrites this image on every tag.
+          image: ghcr.io/damideji/epay-api:0.1.0
+          ports:
+            - name: http
+              containerPort: 4000
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: http
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: http
+---
+# AnalysisTemplate: fail the canary if payment success rate degrades.
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: epay-payment-success-rate
+  namespace: epay
+spec:
+  args:
+    - name: service-name
+  metrics:
+    - name: payment-success-rate
+      # Queried every minute for the duration of each analysis step.
+      interval: 1m
+      count: 5
+      # A single failed measurement aborts the rollout — payments are not worth
+      # "mostly fine".
+      failureLimit: 1
+      successCondition: result[0] >= 0.995
+      provider:
+        prometheus:
+          address: http://prometheus.monitoring.svc.cluster.local:9090
+          query: |
+            (
+              sum(rate(epay_payments_total{status="COMPLETED"}[5m]))
+              /
+              clamp_min(sum(rate(epay_payments_total[5m])), 0.001)
+            )
+          # Values below this abort immediately rather than waiting for a trend.
+    - name: api-5xx-rate
+      interval: 1m
+      count: 5
+      failureLimit: 1
+      successCondition: result[0] < 0.01
+      provider:
+        prometheus:
+          address: http://prometheus.monitoring.svc.cluster.local:9090
+          query: |
+            (
+              sum(rate(epay_http_requests_total{status=~"5..",job="epay-api"}[5m]))
+              /
+              clamp_min(sum(rate(epay_http_requests_total{job="epay-api"}[5m])), 0.001)
+            )

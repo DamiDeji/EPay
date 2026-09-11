@@ -1,0 +1,11 @@
+{{ define "epay.title" }}[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{ (index .Alerts 0).Annotations.summary }}{{ end }}
+
+{{ define "epay.text" -}}
+{{ range .Alerts -}}
+*Alert:* {{ .Annotations.summary }}
+*Severity:* `{{ .Labels.severity }}`
+*Component:* `{{ .Labels.component }}`
+*Description:* {{ .Annotations.description }}
+{{ if .Annotations.runbook_url }}*Runbook:* {{ .Annotations.runbook_url }}{{ end }}
+{{ end -}}
+{{- end }}

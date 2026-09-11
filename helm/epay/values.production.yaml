@@ -1,0 +1,55 @@
+# Production overrides.
+#
+#   helm upgrade --install epay helm/epay -f helm/epay/values.production.yaml
+#
+# `global.requireDigest: true` makes the chart refuse to render until every image
+# digest below is filled in. Supply real digests for the Node LTS base images
+# built by .github/workflows/release.yml (cosign-signed on tags):
+#
+#   docker buildx imagetools inspect ghcr.io/damideji/epay-api:0.1.0 \
+#     --format '{{ .Manifest.Digest }}'
+#
+global:
+  imagePullPolicy: IfNotPresent
+  requireDigest: true
+
+api:
+  replicas: 3
+
+frontends:
+  - name: web
+    enabled: true
+    image: { repository: epay-web, tag: '0.1.0', digest: '' }
+    replicas: 3
+    port: 3000
+    host: epay.example.com
+  - name: merchant-dashboard
+    enabled: true
+    image: { repository: epay-merchant-dashboard, tag: '0.1.0', digest: '' }
+    replicas: 3
+    port: 3000
+    host: merchant.epay.example.com
+  - name: admin-dashboard
+    enabled: true
+    image: { repository: epay-admin-dashboard, tag: '0.1.0', digest: '' }
+    replicas: 2
+    port: 3000
+    host: admin.epay.example.com
+
+postgres:
+  storage:
+    size: 100Gi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+
+monitoring:
+  enabled: true
+
+ingress:
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: 'true'
+    nginx.ingress.kubernetes.io/limit-rps: '50'
