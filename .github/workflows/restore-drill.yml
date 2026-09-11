@@ -1,0 +1,94 @@
+name: Restore Drill
+
+# Monthly proof that the latest backup can actually be restored.
+#
+# This runs on a schedule rather than only on demand: an untested backup is a
+# liability, and a drill that only ever runs manually is a drill that never runs.
+# It restores into an ephemeral PostgreSQL service container — never production —
+# then runs scripts/verify-restore.sql, which asserts row counts and referential
+# integrity and raises on any violation.
+
+on:
+  schedule:
+    # 06:00 UTC on the 1st of every month.
+    - cron: '0 6 1 * *'
+  workflow_dispatch:
+
+concurrency:
+  group: restore-drill
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write # OIDC → AWS
+
+jobs:
+  drill:
+    name: Restore latest backup and verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: epay
+          POSTGRES_PASSWORD: epay_drill
+          POSTGRES_DB: epay_restore
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends postgresql-client-16
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.BACKUP_AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Run restore drill
+        env:
+          BACKUP_STORAGE: s3
+          BACKUP_BUCKET: ${{ secrets.BACKUP_BUCKET }}
+          BACKUP_REQUIRE_CHECKSUM: '1'
+          # Deliberately the ephemeral service container, not production.
+          RESTORE_DATABASE_URL: postgresql://epay:epay_drill@localhost:5432/epay_restore
+          PUSHGATEWAY_URL: ${{ secrets.PUSHGATEWAY_URL }}
+        run: ./scripts/restore-drill.sh
+
+      - name: Upload drill output
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: restore-drill-log
+          path: |
+            /tmp/drill-output.log
+          if-no-files-found: ignore
+          retention-days: 90
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "## Restore drill — ${{ job.status }}"
+            echo
+            echo "| Field | Value |"
+            echo "| --- | --- |"
+            echo "| Backup source | \`${{ secrets.BACKUP_BUCKET }}\` (latest archive) |"
+            echo "| Restore target | ephemeral \`postgres:16-alpine\` service container |"
+            echo "| Integrity checks | \`scripts/verify-restore.sql\` (orphan + NOT NULL + migration history) |"
+            echo "| Run | ${{ github.run_id }} |"
+            echo
+            echo "RPO is bounded by the nightly backup (24h). See \`docs/disaster-recovery.md\`."
+          } >> "$GITHUB_STEP_SUMMARY"

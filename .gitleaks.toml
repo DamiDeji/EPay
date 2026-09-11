@@ -1,18 +1,88 @@
-# Gitleaks configuration for EPay
+# Gitleaks configuration for EPay.
 # https://github.com/gitleaks/gitleaks#configuration
+#
+# This config extends the default rule set and adds rules for the things EPay
+# actually handles: Stellar secret keys, API keys, and provider tokens.
+#
+# The allowlist is intentionally narrow. A broad allowlist is how a scanner
+# becomes decorative, so every entry below is a specific known-safe path or a
+# documented placeholder value.
 
 title = "EPay Gitleaks Config"
 
-[allowlist]
-  description = "Global allowlist"
-  paths = [
-    "pnpm-lock.yaml",
-    "node_modules/",
-    "dist/",
-    ".turbo/",
-    "coverage/",
-    ".next/",
-  ]
-
 [extend]
-  useDefault = true
+useDefault = true
+
+# ── EPay-specific rules ───────────────────────────────────────────────────────
+
+[[rules]]
+id = "stellar-secret-key"
+description = "Stellar secret key (StrKey, S...)"
+# A Stellar secret key controls real funds. There is never a legitimate reason
+# for one to be committed.
+regex = '''\bS[A-Z2-7]{55}\b'''
+tags = ["stellar", "private-key", "critical"]
+
+[[rules]]
+id = "epay-api-key"
+description = "EPay API key"
+regex = '''\bepay_(live|test)_[A-Za-z0-9]{24,}\b'''
+tags = ["epay", "api-key"]
+
+[[rules]]
+id = "epay-webhook-signature"
+description = "EPay webhook signing secret"
+regex = '''(?i)webhook[_\-]?secret\s*[:=]\s*["']?[A-Za-z0-9_\-]{16,}'''
+secretGroup = 1
+tags = ["epay", "webhook"]
+
+[[rules]]
+id = "anthropic-api-key"
+description = "Anthropic API key"
+regex = '''\bsk-ant-[A-Za-z0-9\-_]{24,}\b'''
+tags = ["anthropic", "api-key"]
+
+[[rules]]
+id = "postgres-uri-with-password"
+description = "PostgreSQL connection URI containing a password"
+regex = '''postgres(ql)?://[^:\s]+:(?!\$\(|\$\{|changeme|change-me|password|epay_dev|epay_test)[^@\s]{6,}@'''
+tags = ["database", "credentials"]
+
+# ── Allowlist ─────────────────────────────────────────────────────────────────
+
+[allowlist]
+description = "Global allowlist"
+paths = [
+  '''pnpm-lock\.yaml''',
+  '''package-lock\.json''',
+  '''yarn\.lock''',
+  '''node_modules/''',
+  '''dist/''',
+  '''\.turbo/''',
+  '''coverage/''',
+  '''\.next/''',
+  '''apps/mobile/\.expo/''',
+  # Template files hold placeholders by design, and are documented as such.
+  '''\.env\.example''',
+  '''\.env\.\w+\.example''',
+  # Contract test fixtures use throwaway keys and addresses.
+  '''packages/contracts/.*test.*\.rs''',
+]
+
+# Exact placeholder strings that appear in docs, templates, and test fixtures.
+# These are values a human can see are not real.
+regexes = [
+  '''change-me''',
+  '''changeme''',
+  '''CHANGE_ME''',
+  '''your-.*-here''',
+  '''xxx+''',
+  '''placeholder''',
+  '''epay_dev''',
+  '''epay_test''',
+  '''epay_drill''',
+  # Test-only Stellar accounts: `G` followed by a repeated character.
+  '''G(A{55}|B{55}|A{10}F\d+[A-Z0-9]*)''',
+  '''A{40,}''',
+  '''mock_signature_[A-Za-z0-9]+''',
+]

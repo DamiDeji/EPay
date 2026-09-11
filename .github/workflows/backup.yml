@@ -1,0 +1,66 @@
+name: Database Backup
+
+# Nightly logical backup with a 30-day retention window.
+#
+# The job intentionally does more than run pg_dump: it verifies the archive is
+# readable with `pg_restore --list` and only then uploads and stamps a heartbeat.
+# The EpayBackupMissed alert (monitoring/prometheus/rules/epay.yml) fires if the
+# heartbeat stops advancing, so a silently broken backup cannot go unnoticed.
+
+on:
+  schedule:
+    # 02:17 UTC — off the hour to avoid the cron stampede.
+    - cron: '17 2 * * *'
+  workflow_dispatch:
+    inputs:
+      retention_days:
+        description: 'Override the backup retention window in days'
+        required: false
+        default: '30'
+
+concurrency:
+  group: database-backup
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write # OIDC → AWS, so no long-lived keys are stored
+
+jobs:
+  backup:
+    name: pg_dump → object storage
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends postgresql-client-16
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.BACKUP_AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Back up
+        env:
+          DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+          BACKUP_STORAGE: s3
+          BACKUP_BUCKET: ${{ secrets.BACKUP_BUCKET }}
+          BACKUP_RETENTION_DAYS: ${{ github.event.inputs.retention_days || '30' }}
+          PUSHGATEWAY_URL: ${{ secrets.PUSHGATEWAY_URL }}
+        run: ./scripts/backup-postgres.sh
+
+      - name: Record failure
+        if: failure()
+        env:
+          PUSHGATEWAY_URL: ${{ secrets.PUSHGATEWAY_URL }}
+        run: |
+          # Do NOT stamp a success timestamp; the alert depends on staleness.
+          curl --silent --show-error --data-binary @- "${PUSHGATEWAY_URL}/metrics/job/epay-backup" <<EOF || true
+          # TYPE epay_backup_last_failure_timestamp_seconds gauge
+          epay_backup_last_failure_timestamp_seconds $(date -u +%s)
+          EOF

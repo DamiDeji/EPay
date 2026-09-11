@@ -1,0 +1,191 @@
+name: Supply Chain
+
+# Software supply-chain controls for EPay:
+#   * SBOM generated on every push (CycloneDX), retained as an artifact
+#   * container images scanned with Trivy (informational on branches, blocking on tags)
+#   * release images signed with cosign keyless (Sigstore OIDC) on version tags
+#   * secret scanning with Gitleaks, blocking on every push and PR
+#
+# Policy intent: a leaked credential blocks immediately (no false-positive excuse
+# is worth a live key), while new CVEs are reported first and only enforced once
+# the backlog is triaged. `TRIVY_BLOCKING` flips that switch.
+
+on:
+  push:
+    branches: [main, develop]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+  schedule:
+    # Re-scan weekly: new CVEs are published against images that are already built.
+    - cron: '0 7 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: supply-chain-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  secrets:
+    name: Secret scanning (Gitleaks)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # full history so historical leaks are caught
+      - name: Run Gitleaks
+        run: |
+          wget -q https://github.com/gitleaks/gitleaks/releases/download/v8.21.2/gitleaks_8.21.2_linux_x64.tar.gz
+          tar xzf gitleaks_8.21.2_linux_x64.tar.gz gitleaks
+          sudo mv gitleaks /usr/local/bin/
+      - name: Scan
+        # Blocking. A leaked Stellar secret key or database password is not a
+        # warning-level event.
+        run: gitleaks detect --config .gitleaks.toml --redact --verbose
+
+  sbom:
+    name: Generate SBOM
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - name: Enable corepack
+        run: corepack enable
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Generate CycloneDX SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: cyclonedx-json
+          output-file: epay-sbom.cdx.json
+          artifact-name: epay-sbom
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v7
+        with:
+          name: epay-sbom-${{ github.sha }}
+          path: epay-sbom.cdx.json
+          retention-days: 90
+
+  trivy-fs:
+    name: Trivy (filesystem)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - name: Scan repository
+        uses: aquasecurity/trivy-action@0.29.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: sarif
+          output: trivy-fs.sarif
+          severity: 'CRITICAL,HIGH'
+          ignore-unfixed: true
+      - name: Upload SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-fs.sarif
+          category: trivy-fs
+
+  images:
+    name: Build, scan, and sign images
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    permissions:
+      contents: read
+      packages: write
+      id-token: write # cosign keyless signing + Trivy provenance
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: epay-api
+            dockerfile: infra/docker/Dockerfile.api
+          - name: epay-indexer
+            dockerfile: infra/docker/Dockerfile.indexer
+          - name: epay-web
+            dockerfile: infra/docker/Dockerfile.web
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: false
+          load: true
+          tags: ${{ matrix.name }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Scan image with Trivy
+        uses: aquasecurity/trivy-action@0.29.0
+        with:
+          image-ref: ${{ matrix.name }}:${{ github.sha }}
+          format: sarif
+          output: trivy-${{ matrix.name }}.sarif
+          severity: 'CRITICAL,HIGH'
+          ignore-unfixed: true
+          exit-code: ${{ startsWith(github.ref, 'refs/tags/v') && '1' || '0' }}
+
+      - name: Upload image SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-${{ matrix.name }}.sarif
+          category: trivy-${{ matrix.name }}
+
+      - name: Install cosign
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: sigstore/cosign-installer@v3
+        with:
+          cosign-release: v2.4.1
+
+      - name: Publish and sign (tags only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          IMAGE: ghcr.io/${{ github.repository_owner }}/${{ matrix.name }}:${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          echo "${{ secrets.GITHUB_TOKEN }}" | \
+            docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          docker tag "${{ matrix.name }}:${{ github.sha }}" "$IMAGE"
+          docker push "$IMAGE"
+
+          # Capture the immutable digest so users can verify what was signed.
+          DIGEST="$(docker buildx imagetools inspect "$IMAGE" \
+            --format '{{ "{{" }} .Manifest.Digest {{ "}}" }}')"
+
+          # Keyless signing: no long-lived signing key exists to leak. Sigstore
+          # records the workflow identity in the transparency log.
+          cosign sign --yes "${IMAGE}@${DIGEST}"
+
+          {
+            echo "### Signed \`${{ matrix.name }}\`"
+            echo
+            echo '```'
+            echo "image:  ${IMAGE}"
+            echo "digest: ${DIGEST}"
+            echo '```'
+            echo
+            echo "Verify with:"
+            echo '```bash'
+            echo "cosign verify \"${IMAGE}@${DIGEST}\" \\"
+            echo "  --certificate-identity-regexp '^https://github.com/${{ github.repository }}/\\.github/workflows/supply-chain\\.yml@' \\"
+            echo "  --certificate-oidc-issuer https://token.actions.githubusercontent.com"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

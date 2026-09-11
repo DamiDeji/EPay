@@ -48,6 +48,30 @@ jobs:
         env:
           TURBO_CONCURRENCY: 4
 
+  helm:
+    name: Helm Chart
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.16.3
+      - name: Lint chart
+        run: helm lint helm/epay
+      - name: Render chart
+        run: helm template epay helm/epay --namespace epay >/dev/null
+      - name: Production values must pin image digests
+        run: |
+          if helm template epay helm/epay -f helm/epay/values.production.yaml >/dev/null 2>&1; then
+            echo "::error::values.production.yaml rendered successfully without pinned image digests"
+            exit 1
+          fi
+      - name: Raw manifests match the chart
+        run: |
+          ./scripts/render-k8s-manifests.sh
+          git diff --exit-code k8s/manifests.yaml
+
   contracts:
     name: Contracts (Soroban)
     runs-on: ubuntu-latest
@@ -154,5 +178,6 @@ jobs:
           tar xzf gitleaks_8.21.2_linux_x64.tar.gz gitleaks
           sudo mv gitleaks /usr/local/bin/
       - name: Check for secrets
+        # Blocking: supply-chain.yml runs the same scan over full history. This
+        # one is the fast pre-merge gate over the working tree.
         run: gitleaks detect --config .gitleaks.toml --verbose --no-git
-        continue-on-error: true
