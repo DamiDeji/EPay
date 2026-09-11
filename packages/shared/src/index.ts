@@ -4,6 +4,10 @@
 import { STELLAR_DECIMALS } from '@epay/config';
 import type { StellarNetwork } from '@epay/types';
 
+// ── Wallet Address Validation (Phase 7h) ──────────────────────────────────────
+// Additional wallet utilities beyond the existing validators
+export { isValidStellarAddress, looksLikeStellarAddress, generateTestAddress } from './wallet-validator';
+
 // ── API Response Helpers ────────────────────────────────────────────────────
 
 export function successResponse<T>(data: T, message?: string) {

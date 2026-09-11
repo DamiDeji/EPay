@@ -246,13 +246,15 @@ export class AuthService {
   private async generateTokens(userId: string): Promise<AuthTokens> {
     const payload = { sub: userId };
 
-    const accessToken = await this.jwtService.signAsync(payload, {
-      expiresIn: process.env.JWT_EXPIRES_IN ?? '15m',
-    });
+    const accessToken = await this.jwtService.signAsync(
+      payload,
+      JSON.parse(JSON.stringify({ expiresIn: process.env.JWT_EXPIRES_IN ?? '15m' })) as Parameters<typeof this.jwtService.signAsync>[1],
+    );
 
-    const refreshToken = await this.jwtService.signAsync(payload, {
-      expiresIn: process.env.JWT_REFRESH_EXPIRES_IN ?? '7d',
-    });
+    const refreshToken = await this.jwtService.signAsync(
+      payload,
+      JSON.parse(JSON.stringify({ expiresIn: process.env.JWT_REFRESH_EXPIRES_IN ?? '7d' })) as Parameters<typeof this.jwtService.signAsync>[1],
+    );
 
     return {
       accessToken,

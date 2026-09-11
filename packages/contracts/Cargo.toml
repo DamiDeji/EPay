@@ -13,6 +13,10 @@ members = [
   "contracts/role-manager",
   "contracts/configuration-manager",
   "contracts/emergency-pause",
+  "contracts/upgrade-manager",
+  "contracts/price-oracle",
+  "contracts/governance",
+  "contracts/impact-nft",
 ]
 
 [workspace.dependencies]

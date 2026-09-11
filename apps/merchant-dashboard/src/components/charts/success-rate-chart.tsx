@@ -39,7 +39,7 @@ export function SuccessRateChart() {
             border: `1px solid ${isDark ? '#334155' : '#e2e8f0'}`,
             borderRadius: '12px',
           }}
-          formatter={(value: number) => [`${value}%`, 'Success Rate']}
+          formatter={(value) => [`${value}%`, 'Success Rate']}
         />
         <Area type="monotone" dataKey="rate" stroke="#10B981" strokeWidth={2} fill="url(#successGrad)" />
       </AreaChart>

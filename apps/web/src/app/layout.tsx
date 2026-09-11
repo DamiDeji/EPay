@@ -1,8 +1,17 @@
 import type { Metadata } from 'next';
+import { NextIntlClientProvider } from 'next-intl';
+import { getLocale, getMessages } from 'next-intl/server';
+import { notFound } from 'next/navigation';
 import { Inter } from 'next/font/google';
 
 import { Providers } from './providers';
 import './globals.css';
+
+const locales = ['en', 'fr', 'es'] as const;
+
+function hasLocale(locale: string): boolean {
+  return locales.includes(locale as 'en' | 'fr' | 'es');
+}
 
 const inter = Inter({
   subsets: ['latin'],
@@ -29,14 +38,28 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://epay.dev'),
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const locale = await getLocale();
+  
+  if (!hasLocale(locale)) {
+    notFound();
+  }
+
+  const messages = await getMessages();
+
   return (
-    <html lang="en" className={inter.variable} suppressHydrationWarning>
+    <html lang={locale} className={inter.variable} suppressHydrationWarning>
       <head>
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
       </head>
       <body className="min-h-screen bg-white dark:bg-slate-950 font-sans">
-        <Providers>{children}</Providers>
+        <NextIntlClientProvider messages={messages}>
+          <Providers>{children}</Providers>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

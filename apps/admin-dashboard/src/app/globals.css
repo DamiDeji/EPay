@@ -29,7 +29,7 @@
     --sidebar-accent: #1e293b;
   }
 
-  * { @apply border-border; }
+  * { border-color: var(--border); }
 
   body {
     @apply bg-[var(--background)] text-[var(--foreground)] antialiased;

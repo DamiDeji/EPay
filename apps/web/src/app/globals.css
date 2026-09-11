@@ -24,7 +24,7 @@
   }
 
   * {
-    @apply border-border;
+    border-color: var(--border);
   }
 
   body {
@@ -35,11 +35,19 @@
 
 @layer components {
   .gradient-text {
-    @apply bg-gradient-to-r from-[#0098EA] to-[#10B981] bg-clip-text text-transparent;
+    background: linear-gradient(to right, #0098EA, #10B981);
+    background-clip: text;
+    color: transparent;
   }
 
   .glass {
-    @apply bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border border-slate-200/50 dark:border-slate-700/50;
+    background-color: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(226, 232, 240, 0.5);
+  }
+  .dark .glass {
+    background-color: rgba(30, 41, 59, 0.8);
+    border-color: rgba(51, 65, 85, 0.5);
   }
 
   .hero-glow {

@@ -6,6 +6,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
 import { AnalyticsModule } from './analytics/analytics.module';
 import { AuditModule } from './audit/audit.module';
+import { AiModule } from './ai/ai.module';
 import { AuthModule } from './auth/auth.module';
 import { DatabaseModule } from './database/database.module';
 import { EscrowModule } from './escrow/escrow.module';
@@ -29,7 +30,17 @@ import { WebhookModule } from './webhook/webhook.module';
     ThrottlerModule.forRoot([
       {
         ttl: 60_000,
-        limit: 100,
+        limit: 100, // 100 requests per minute for general endpoints
+      },
+      {
+        name: 'auth',
+        ttl: 60_000,
+        limit: 10, // 10 auth attempts per minute (brute-force protection)
+      },
+      {
+        name: 'payments',
+        ttl: 60_000,
+        limit: 30, // 30 payment requests per minute
       },
     ]),
     BullModule.forRootAsync({
@@ -55,6 +66,7 @@ import { WebhookModule } from './webhook/webhook.module';
     AnalyticsModule,
     HealthModule,
     AuditModule,
+    AiModule,
   ],
   providers: [
     {

@@ -20,20 +20,46 @@ async function bootstrap(): Promise<void> {
     },
   );
 
-  // Security
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-  (app as any).use(helmet());
+  // Security headers with CSP
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          scriptSrc: ["'self'"],
+          imgSrc: ["'self'", 'data:', 'https://*.stellar.org', 'https://stellar.expert'],
+          connectSrc: ["'self'", 'https://*.stellar.org', process.env.CORS_ORIGINS?.split(',')[0] ?? 'http://localhost:3000'],
+          fontSrc: ["'self'"],
+          frameSrc: ["'none'"],
+          objectSrc: ["'none'"],
+          upgradeInsecureRequests: [],
+        },
+      },
+      crossOriginEmbedderPolicy: false,
+    }),
+  );
 
-  // CORS
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-  (app as any).enableCors({
-    origin: process.env.CORS_ORIGINS?.split(',') ?? ['http://localhost:3000'],
+  // CORS with strict origin validation
+  const allowedOrigins = process.env.CORS_ORIGINS?.split(',').map((o) => o.trim()) ?? ['http://localhost:3000'];
+  app.enableCors({
+    origin: (origin: string | undefined, callback: (err: Error | null, allow: boolean) => void) => {
+      // Allow requests with no origin (mobile apps, curl, etc.)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`Origin ${origin} not allowed by CORS`), false);
+      }
+    },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'x-stellar-signature', 'x-request-id'],
+    exposedHeaders: ['X-Request-Id', 'X-RateLimit-Limit', 'X-RateLimit-Remaining'],
   });
 
   // Global validation pipe
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-  (app as any).useGlobalPipes(
+  app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
@@ -43,6 +69,10 @@ async function bootstrap(): Promise<void> {
       },
     }),
   );
+
+  // Rate limiting — apply uniformly across all 15 modules
+  // (ThrottlerGuard is registered globally in app.module.ts)
+  Logger.log('Rate limiting enabled globally via ThrottlerGuard', 'Security');
 
   // Swagger documentation
   const config = new DocumentBuilder()

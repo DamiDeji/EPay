@@ -16,6 +16,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.125.0",
     "@epay/config": "workspace:*",
     "@epay/database": "workspace:*",
     "@epay/shared": "workspace:*",

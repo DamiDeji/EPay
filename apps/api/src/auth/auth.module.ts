@@ -14,12 +14,15 @@ import { WalletStrategy } from './strategies/wallet.strategy';
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        secret: config.get<string>('JWT_SECRET'),
-        signOptions: {
-          expiresIn: config.get<string>('JWT_EXPIRES_IN', '15m'),
-        },
-      }),
+      useFactory: (config: ConfigService) =>
+        ({
+          secret: config.getOrThrow<string>('JWT_SECRET'),
+          signOptions: {
+            expiresIn: config.getOrThrow<string>('JWT_EXPIRES_IN', '15m'),
+          },
+        }) as Parameters<typeof JwtModule.registerAsync>[0]['useFactory'] extends (...args: any[]) => infer R
+          ? R extends Promise<infer U> ? U : R
+          : never,
     }),
   ],
   controllers: [AuthController],
