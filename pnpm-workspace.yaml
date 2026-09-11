@@ -1,3 +1,21 @@
 packages:
   - 'apps/*'
   - 'packages/*'
+
+# pnpm 10 reads settings from this file rather than the root package.json
+# "pnpm" field, which is now ignored.
+onlyBuiltDependencies:
+  - '@nestjs/core'
+  - '@prisma/client'
+  - '@prisma/engines'
+  - esbuild
+  - msgpackr-extract
+  - prisma
+  - protobufjs
+  - sharp
+
+# vitest 4 requires vite ^6 || ^7 || ^8. The committed lockfile had resolved
+# vite 5.4.21, which fails at runtime with ERR_PACKAGE_PATH_NOT_EXPORTED
+# (./module-runner) and breaks every vitest suite in the monorepo.
+overrides:
+  vite: ^7.0.0

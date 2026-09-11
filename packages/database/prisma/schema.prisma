@@ -1,11 +1,14 @@
+// Prisma 7 graduated metrics/tracing to GA and renamed the full-text-search
+// preview flag; this schema declares no @@fulltext index, so no preview
+// features are required.
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["fullTextSearch", "metrics", "tracing"]
+  provider = "prisma-client-js"
 }
 
+// Prisma 7 moved the connection URL out of the schema and into
+// `prisma.config.ts`. See packages/database/prisma.config.ts.
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // ── User & Authentication ───────────────────────────────────────────────────

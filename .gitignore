@@ -1,4 +1,7 @@
 # Dependencies
+# Observability secrets (metrics token, Slack webhook, PagerDuty key)
+monitoring/secrets/
+
 node_modules/
 .pnpm-store/
 
