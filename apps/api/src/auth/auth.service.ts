@@ -231,7 +231,7 @@ export class AuthService {
     permissions: string[],
   ): Promise<{ rawKey: string }> {
     const rawKey = `epay_${crypto.randomBytes(32).toString('hex')}`;
-    const keyHash = this.hashApiKey(rawKey);
+    const keyHash = await this.hashApiKey(rawKey);
     const prefix = rawKey.slice(0, 8);
 
     await this.prisma.apiKey.create({
