@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "EPay — Pay with Stellar",
+  "version": "0.1.0",
+  "description": "Detect Stellar addresses on any page and pay them with EPay in one click.",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "extension@epay.dev",
+      "strict_min_version": "121.0"
+    }
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Pay with EPay"
+  },
+  "background": {
+    "scripts": ["background.js"],
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "permissions": ["storage", "activeTab"],
+  "host_permissions": [
+    "https://horizon-testnet.stellar.org/*",
+    "https://horizon.stellar.org/*",
+    "https://soroban-testnet.stellar.org/*",
+    "http://localhost:4000/*",
+    "https://api.epay.dev/*"
+  ]
+}

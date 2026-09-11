@@ -1,0 +1,35 @@
+{
+  "name": "@epay/extension",
+  "version": "0.1.0",
+  "private": true,
+  "description": "EPay browser extension — detect Stellar addresses and pay with one click (Manifest V3)",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "build:firefox": "node build.mjs --firefox",
+    "dev": "node build.mjs --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@epay/hooks": "workspace:*",
+    "@epay/sdk": "workspace:*",
+    "@epay/types": "workspace:*",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@epay/config": "workspace:*",
+    "@types/chrome": "^0.1.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitest/coverage-v8": "^4.1.11",
+    "esbuild": "^0.25.0",
+    "typescript": "^7.0.2",
+    "vite": "^7.0.0",
+    "vitest": "^4.1.11"
+  }
+}
