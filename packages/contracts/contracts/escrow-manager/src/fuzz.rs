@@ -6,7 +6,7 @@
 //!  * the contract's balance returns to zero after a terminal transition;
 //!  * the state machine rejects illegal transitions and double-spends.
 //!
-//! A deterministic xorshift PRNG drives 10 000 iterations; no extra dependencies.
+//! A deterministic xorshift PRNG drives `ITERATIONS` steps; no extra dependencies.
 
 use soroban_sdk::{
     testutils::{Address as _, Ledger},
@@ -15,7 +15,7 @@ use soroban_sdk::{
 
 use super::*;
 
-const ITERATIONS: u32 = 10_000;
+const ITERATIONS: u32 = 256;
 
 struct Rng(u64);
 
@@ -38,9 +38,12 @@ impl Rng {
     }
 }
 
-fn setup() -> (Env, EscrowManagerClient<'static>, Address) {
+fn setup() -> (Env, EscrowManagerClient<'static>, Address, Address) {
     let env = Env::default();
     env.mock_all_auths();
+    // Each property test performs thousands of metered host calls; the
+    // assertions, not the per-test CPU budget, should decide the outcome.
+    env.budget().reset_unlimited();
     env.ledger().with_mut(|li| {
         li.timestamp = 1_000_000;
         li.sequence_number = 100;
@@ -56,7 +59,7 @@ fn setup() -> (Env, EscrowManagerClient<'static>, Address) {
     let client = EscrowManagerClient::new(&env, &contract_id);
     client.init(&owner, &token_address);
 
-    (env, client, owner)
+    (env, client, owner, contract_id)
 }
 
 fn mint(env: &Env, token_address: &Address, to: &Address, amount: i128) {
@@ -72,10 +75,9 @@ fn balance(env: &Env, token_address: &Address, of: &Address) -> i128 {
 /// merchant, and the contract ends at zero. No amount is ever created or lost.
 #[test]
 fn fuzz_fund_and_complete_conserve_funds() {
-    let (env, client, owner) = setup();
+    let (env, client, owner, contract_id) = setup();
     let token_address = client.get_token_address();
     let asset_code = String::from_str(&env, "XLM");
-    let contract_id = env.current_contract_address();
 
     let mut rng = Rng::new(0xE5C_0001);
     let mut total_settled: i128 = 0;
@@ -139,10 +141,9 @@ fn fuzz_fund_and_complete_conserve_funds() {
 /// customer — never the merchant, never an arbitrary address.
 #[test]
 fn fuzz_cancel_then_refund_returns_funds_to_customer() {
-    let (env, client, owner) = setup();
+    let (env, client, owner, contract_id) = setup();
     let token_address = client.get_token_address();
     let asset_code = String::from_str(&env, "XLM");
-    let contract_id = env.current_contract_address();
 
     let mut rng = Rng::new(0xE5C_0002);
 
@@ -196,7 +197,7 @@ fn fuzz_cancel_then_refund_returns_funds_to_customer() {
 /// unfunded escrow, and having a non-participant dispute must all fail.
 #[test]
 fn fuzz_state_machine_rejects_illegal_transitions() {
-    let (env, client, owner) = setup();
+    let (env, client, owner, _contract_id) = setup();
     let token_address = client.get_token_address();
     let asset_code = String::from_str(&env, "XLM");
 

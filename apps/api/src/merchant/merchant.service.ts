@@ -147,7 +147,6 @@ export class MerchantService {
     });
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private sanitizeMerchant(merchant: any): Merchant {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { webhookSecret, ...safe } = merchant;

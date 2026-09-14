@@ -65,9 +65,7 @@ export function Footer() {
               Stellar
             </a>
           </p>
-          <p className="text-xs text-slate-400 dark:text-slate-500">
-            Apache-2.0 License
-          </p>
+          <p className="text-xs text-slate-400 dark:text-slate-500">Apache-2.0 License</p>
         </div>
       </div>
     </footer>

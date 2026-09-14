@@ -12,6 +12,8 @@
     "typecheck": "turbo typecheck",
     "test": "turbo test",
     "test:coverage": "turbo test:coverage",
+    "ci": "bash scripts/ci-local.sh",
+    "ci:quick": "bash scripts/ci-local.sh --quick",
     "clean": "turbo clean",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,yml,yaml}\"",
@@ -32,19 +34,20 @@
   "devDependencies": {
     "@commitlint/cli": "^21.2.2",
     "@commitlint/config-conventional": "^21.2.2",
+    "@eslint/js": "^10.0.1",
     "@tailwindcss/postcss": "^4.3.3",
     "@typescript-eslint/eslint-plugin": "^8.67.0",
     "@typescript-eslint/parser": "^8.67.0",
     "eslint": "^10.9.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-import-resolver-typescript": "^4.4.5",
-    "eslint-plugin-import": "^2.29.0",
+    "eslint-plugin-import-x": "^4.17.1",
     "eslint-plugin-unused-imports": "^4.4.1",
     "husky": "^9.0.0",
     "lint-staged": "^17.3.0",
     "prettier": "^3.3.0",
     "turbo": "^2.10.11",
-    "typescript": "^7.0.2"
+    "typescript": "npm:@typescript/typescript6@^6.0.2"
   },
   "engines": {
     "node": ">=20.0.0",

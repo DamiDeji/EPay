@@ -101,13 +101,14 @@ export class EPayClient {
         // eslint-disable-next-line @typescript-eslint/dot-notation
         headers['Authorization'] = `Bearer ${this.token}`;
       } else {
-        // eslint-disable-next-line @typescript-eslint/dot-notation
         headers['x-api-key'] = this.token;
       }
     }
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => { controller.abort(); }, this.config.timeoutMs);
+    const timeout = setTimeout(() => {
+      controller.abort();
+    }, this.config.timeoutMs);
 
     try {
       const response = await fetch(url, {
@@ -121,12 +122,11 @@ export class EPayClient {
 
       if (response.status === 401 && retries < this.config.maxRetries) {
         await this.delay(this.config.retryDelayMs * (retries + 1));
-        return this.request<T>(method, path, body, retries + 1);
+        return await this.request<T>(method, path, body, retries + 1);
       }
 
       if (!response.ok) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const errorBody = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+        const errorBody = (await response.json().catch(() => ({}))) as Record<string, unknown>;
         throw EPayError.fromResponse(response.status, errorBody);
       }
 

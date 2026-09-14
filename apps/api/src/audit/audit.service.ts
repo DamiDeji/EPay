@@ -30,7 +30,9 @@ export class AuditService {
       },
     });
 
-    this.logger.log(`Audit: ${params.action} on ${params.resource} by user ${params.userId ?? 'anonymous'}`);
+    this.logger.log(
+      `Audit: ${params.action} on ${params.resource} by user ${params.userId ?? 'anonymous'}`,
+    );
     return this.sanitizeLog(log);
   }
 

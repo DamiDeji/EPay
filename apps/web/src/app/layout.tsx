@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import { notFound } from 'next/navigation';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
-import { notFound } from 'next/navigation';
-import { Inter } from 'next/font/google';
 
 import { Providers } from './providers';
 import './globals.css';
@@ -26,7 +26,15 @@ export const metadata: Metadata = {
   },
   description:
     'Enterprise-grade decentralized payment gateway on Stellar. Accept crypto payments, manage invoices, escrow, subscriptions, and more.',
-  keywords: ['Stellar', 'crypto payments', 'blockchain', 'payment gateway', 'Web3', 'Soroban', 'decentralized'],
+  keywords: [
+    'Stellar',
+    'crypto payments',
+    'blockchain',
+    'payment gateway',
+    'Web3',
+    'Soroban',
+    'decentralized',
+  ],
   authors: [{ name: 'EPay Contributors' }],
   openGraph: {
     type: 'website',
@@ -38,13 +46,9 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://epay.dev'),
 };
 
-export default async function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const locale = await getLocale();
-  
+
   if (!hasLocale(locale)) {
     notFound();
   }

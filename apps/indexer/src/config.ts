@@ -15,7 +15,8 @@ export interface IndexerConfig {
 
 export function loadConfig(): IndexerConfig {
   return {
-    stellarNetwork: (process.env.STELLAR_NETWORK as 'public' | 'testnet' | 'futurenet' | 'sandbox') ?? 'testnet',
+    stellarNetwork:
+      (process.env.STELLAR_NETWORK as 'public' | 'testnet' | 'futurenet' | 'sandbox') ?? 'testnet',
     horizonUrl: process.env.STELLAR_HORIZON_URL ?? 'https://horizon-testnet.stellar.org',
     sorobanRpcUrl: process.env.STELLAR_SOROBAN_RPC_URL ?? 'https://soroban-testnet.stellar.org',
     redisUrl: process.env.REDIS_URL ?? 'redis://localhost:6379',

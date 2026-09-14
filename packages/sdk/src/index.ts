@@ -35,7 +35,33 @@ export { MerchantsResource } from './resources/merchants';
 export { SettlementsResource } from './resources/settlements';
 export { AnalyticsResource } from './resources/analytics';
 
-// Re-export types for convenience
+// Re-export the enums as *values*, not types.
+//
+// These were part of the `export type { … }` block below, which meant callers
+// could never write `PaymentStatus.PENDING` — TypeScript rejects a type-only
+// import used as a value (`TS1362`). Every example in this package's README and
+// in `examples/` did exactly that, so none of them compiled.
+export {
+  ApiPermission,
+  EscrowStatus,
+  InvoiceStatus,
+  MerchantStatus,
+  MerchantVerificationLevel,
+  MilestoneStatus,
+  NotificationChannel,
+  PaymentStatus,
+  RefundStatus,
+  SettlementStatus,
+  StellarNetwork,
+  SubscriptionBillingInterval,
+  SubscriptionStatus,
+  TreasuryTxStatus,
+  TreasuryTxType,
+  UserRole,
+  WebhookEventType,
+} from '@epay/types';
+
+// Interfaces, aliases and shapes (no runtime value) stay type-only.
 export type {
   Payment,
   CreatePaymentRequest,
@@ -59,21 +85,8 @@ export type {
   WalletAuth,
   AuthTokens,
   User,
-  StellarNetwork,
   StellarAsset,
   AssetBalance,
   Trustline,
   WalletProvider,
-  PaymentStatus,
-  InvoiceStatus,
-  EscrowStatus,
-  RefundStatus,
-  SubscriptionStatus,
-  MilestoneStatus,
-  MerchantStatus,
-  SettlementStatus,
-  TreasuryTxType,
-  TreasuryTxStatus,
-  ApiPermission,
-  NotificationChannel,
 } from '@epay/types';

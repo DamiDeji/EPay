@@ -31,9 +31,7 @@ export function useInvoices(): UseInvoicesReturn {
         if (params?.pageSize) qs.set('pageSize', String(params.pageSize));
         if (params?.status) qs.set('status', params.status);
 
-        const result = await api.get<PaginatedResponse<Invoice>>(
-          `/invoices?${qs.toString()}`,
-        );
+        const result = await api.get<PaginatedResponse<Invoice>>(`/invoices?${qs.toString()}`);
         setInvoices(result.data);
         setTotal(result.total);
       } catch (err) {

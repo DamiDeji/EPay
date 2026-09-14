@@ -43,14 +43,17 @@ export function Sidebar() {
         collapsed ? 'w-20' : 'w-64',
       )}
     >
-      <div className={cn('flex items-center h-16 px-4 border-b border-slate-200 dark:border-slate-700', collapsed ? 'justify-center' : 'gap-3')}>
+      <div
+        className={cn(
+          'flex items-center h-16 px-4 border-b border-slate-200 dark:border-slate-700',
+          collapsed ? 'justify-center' : 'gap-3',
+        )}
+      >
         <Link href="/dashboard" className="flex items-center gap-2 min-w-0">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#1E3A8A] to-[#0098EA] flex items-center justify-center flex-shrink-0">
             <Building2 className="w-4 h-4 text-white" />
           </div>
-          {!collapsed && (
-            <span className="font-bold text-lg whitespace-nowrap">Merchant</span>
-          )}
+          {!collapsed && <span className="font-bold text-lg whitespace-nowrap">Merchant</span>}
         </Link>
       </div>
 
@@ -70,21 +73,41 @@ export function Sidebar() {
               )}
               title={collapsed ? item.label : undefined}
             >
-              <item.icon className={cn('w-5 h-5 flex-shrink-0', isActive && 'text-[#1E3A8A] dark:text-blue-300')} />
+              <item.icon
+                className={cn(
+                  'w-5 h-5 flex-shrink-0',
+                  isActive && 'text-[#1E3A8A] dark:text-blue-300',
+                )}
+              />
               {!collapsed && <span>{item.label}</span>}
             </Link>
           );
         })}
       </nav>
 
-      <div className={cn('p-3 border-t border-slate-200 dark:border-slate-700', collapsed && 'flex flex-col items-center')}>
-        <Button variant="ghost" size="icon" onClick={() => { setCollapsed(!collapsed); }} className="w-full flex items-center gap-2 mb-2">
+      <div
+        className={cn(
+          'p-3 border-t border-slate-200 dark:border-slate-700',
+          collapsed && 'flex flex-col items-center',
+        )}
+      >
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => {
+            setCollapsed(!collapsed);
+          }}
+          className="w-full flex items-center gap-2 mb-2"
+        >
           {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
           {!collapsed && <span className="text-xs">Collapse</span>}
         </Button>
         <Link
           href="/login"
-          onClick={() => { localStorage.removeItem('epay_access_token'); localStorage.removeItem('epay_refresh_token'); }}
+          onClick={() => {
+            localStorage.removeItem('epay_access_token');
+            localStorage.removeItem('epay_refresh_token');
+          }}
           className={cn(
             'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-all',
             collapsed && 'justify-center px-2',

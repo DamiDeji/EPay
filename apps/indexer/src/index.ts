@@ -47,8 +47,12 @@ async function main(): Promise<void> {
     process.exit(0);
   };
 
-  process.on('SIGINT', () => { void onShutdown('SIGINT'); });
-  process.on('SIGTERM', () => { void onShutdown('SIGTERM'); });
+  process.on('SIGINT', () => {
+    void onShutdown('SIGINT');
+  });
+  process.on('SIGTERM', () => {
+    void onShutdown('SIGTERM');
+  });
 
   try {
     log.info('Connecting to database...');
@@ -60,11 +64,15 @@ async function main(): Promise<void> {
     log.info({ lastLedger }, 'Checkpoint loaded');
 
     const scanner = new BlockScanner(config, checkpoint);
-    shutdownHandlers.push(async () => { scanner.stop(); });
+    shutdownHandlers.push(async () => {
+      scanner.stop();
+    });
 
     const queue = new IndexerQueue(config, prisma);
     queue.startWorker();
-    shutdownHandlers.push(async () => { await queue.shutdown(); });
+    shutdownHandlers.push(async () => {
+      await queue.shutdown();
+    });
 
     // Phase 1: Historical sync
     log.info('--- PHASE 1: Historical Sync ---');
@@ -78,7 +86,9 @@ async function main(): Promise<void> {
         log.info({ scanned, total, pct: `${pct}%` }, 'Historical sync progress');
       },
     });
-    shutdownHandlers.push(async () => { historicalSync.stop(); });
+    shutdownHandlers.push(async () => {
+      historicalSync.stop();
+    });
 
     const historicalResult = await historicalSync.run();
     log.info(
@@ -97,34 +107,47 @@ async function main(): Promise<void> {
       scanner,
       checkpoint,
       prisma,
-      onBlockProcessed: (ledger, eventCount) => { void (async () => {
-        if (eventCount > 0) {
-          try {
-            const stats = await queue.getStats();
-            log.debug({ ledger, eventCount, queueStats: stats }, 'Ledger processed in real-time');
-          } catch { /* queue stats may be unavailable */ }
-        }
-      })(); },
+      onBlockProcessed: (ledger, eventCount) => {
+        void (async () => {
+          if (eventCount > 0) {
+            try {
+              const stats = await queue.getStats();
+              log.debug({ ledger, eventCount, queueStats: stats }, 'Ledger processed in real-time');
+            } catch {
+              /* queue stats may be unavailable */
+            }
+          }
+        })();
+      },
       onError: (error, ledger) => {
         log.error({ error: error.message, ledger }, 'Real-time sync error');
       },
     });
-    shutdownHandlers.push(async () => { await realtimeSync.stop(); });
+    shutdownHandlers.push(async () => {
+      await realtimeSync.stop();
+    });
 
     await realtimeSync.start();
 
     // Health check
-    const healthInterval = setInterval(() => { void (async () => {
-      try {
-        const status = await realtimeSync.getStatus();
-        const queueStats = await queue.getStats();
-        log.info({ syncStatus: status, queueStats, uptime: `${Math.round(process.uptime())}s` }, 'Indexer health check');
-      } catch (error: unknown) {
-        log.error({ error }, 'Health check failed');
-      }
-    })(); }, 60_000);
+    const healthInterval = setInterval(() => {
+      void (async () => {
+        try {
+          const status = await realtimeSync.getStatus();
+          const queueStats = await queue.getStats();
+          log.info(
+            { syncStatus: status, queueStats, uptime: `${Math.round(process.uptime())}s` },
+            'Indexer health check',
+          );
+        } catch (error: unknown) {
+          log.error({ error }, 'Health check failed');
+        }
+      })();
+    }, 60_000);
 
-    shutdownHandlers.push(async () => { clearInterval(healthInterval); });
+    shutdownHandlers.push(async () => {
+      clearInterval(healthInterval);
+    });
 
     log.info('=======================================');
     log.info('  EPay Stellar Indexer is running');

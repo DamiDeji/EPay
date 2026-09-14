@@ -7,13 +7,7 @@
  * Run: npx tsx examples/advanced-flows.ts
  */
 
-import {
-  EPayClient,
-  RefundStatus,
-  SettlementStatus,
-  MerchantStatus,
-  SubscriptionBillingInterval,
-} from '../src';
+import { EPayClient, RefundStatus, SettlementStatus, MerchantStatus } from '../src';
 
 async function main() {
   const MERCHANT_ID = 'merch_demo_001';

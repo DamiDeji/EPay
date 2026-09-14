@@ -1,10 +1,4 @@
-import {
-  Controller,
-  Get,
-  Param,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -22,7 +16,12 @@ export class AnalyticsController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get merchant analytics' })
-  @ApiQuery({ name: 'days', required: false, type: Number, description: 'Number of days to look back' })
+  @ApiQuery({
+    name: 'days',
+    required: false,
+    type: Number,
+    description: 'Number of days to look back',
+  })
   async getMerchantAnalytics(
     @Param('merchantId') merchantId: string,
     @Query('days') days?: number,
@@ -45,10 +44,7 @@ export class AnalyticsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get merchant revenue breakdown' })
   @ApiQuery({ name: 'days', required: false, type: Number })
-  async getMerchantRevenue(
-    @Param('merchantId') merchantId: string,
-    @Query('days') days?: number,
-  ) {
+  async getMerchantRevenue(@Param('merchantId') merchantId: string, @Query('days') days?: number) {
     return this.analyticsService.getMerchantRevenue(merchantId, days ?? 30);
   }
 }

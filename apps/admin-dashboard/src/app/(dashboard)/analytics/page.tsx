@@ -2,8 +2,14 @@
 
 import { motion } from 'framer-motion';
 import {
-  BarChart3, TrendingUp, Users, DollarSign, ArrowUpRight, ArrowDownRight,
-  Globe, Zap,
+  BarChart3,
+  TrendingUp,
+  Users,
+  DollarSign,
+  ArrowUpRight,
+  ArrowDownRight,
+  Globe,
+  Zap,
 } from 'lucide-react';
 
 const metrics = [
@@ -45,7 +51,9 @@ export default function AnalyticsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Platform Analytics</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Comprehensive view of EPay platform performance and trends</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          Comprehensive view of EPay platform performance and trends
+        </p>
       </div>
 
       {/* Metrics */}
@@ -63,10 +71,16 @@ export default function AnalyticsPage() {
               <span className="text-xs font-medium text-slate-500">{m.label}</span>
             </div>
             <p className="text-2xl font-bold text-slate-900 dark:text-white">{m.value}</p>
-            <span className={`inline-flex items-center gap-0.5 text-xs font-medium mt-1 ${
-              m.trend === 'up' ? 'text-emerald-500' : 'text-red-500'
-            }`}>
-              {m.trend === 'up' ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+            <span
+              className={`inline-flex items-center gap-0.5 text-xs font-medium mt-1 ${
+                m.trend === 'up' ? 'text-emerald-500' : 'text-red-500'
+              }`}
+            >
+              {m.trend === 'up' ? (
+                <ArrowUpRight className="w-3 h-3" />
+              ) : (
+                <ArrowDownRight className="w-3 h-3" />
+              )}
               {m.change} vs last month
             </span>
           </motion.div>
@@ -86,7 +100,9 @@ export default function AnalyticsPage() {
               const height = Math.max((d.volume / maxVolume) * 100, 4);
               return (
                 <div key={d.day} className="flex-1 flex flex-col items-center gap-2">
-                  <span className="text-xs font-medium text-slate-600 dark:text-slate-300">${d.volume}M</span>
+                  <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
+                    ${d.volume}M
+                  </span>
                   <motion.div
                     initial={{ height: 0 }}
                     animate={{ height: `${height}%` }}
@@ -107,8 +123,12 @@ export default function AnalyticsPage() {
             {volumeBreakdown.map((item) => (
               <div key={item.currency}>
                 <div className="flex justify-between text-sm mb-1.5">
-                  <span className="text-slate-700 dark:text-slate-300 font-medium">{item.currency}</span>
-                  <span className="text-slate-500">{item.volume} ({item.percentage}%)</span>
+                  <span className="text-slate-700 dark:text-slate-300 font-medium">
+                    {item.currency}
+                  </span>
+                  <span className="text-slate-500">
+                    {item.volume} ({item.percentage}%)
+                  </span>
                 </div>
                 <div className="h-2 rounded-full bg-slate-100 dark:bg-white/5 overflow-hidden">
                   <motion.div
@@ -124,7 +144,9 @@ export default function AnalyticsPage() {
 
           {/* Platform health */}
           <div className="mt-6 pt-4 border-t border-slate-200 dark:border-white/5">
-            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Network Stats</h3>
+            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+              Network Stats
+            </h3>
             <div className="grid grid-cols-2 gap-3">
               <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
                 <Globe className="w-4 h-4 text-accent-500 mb-1" />
@@ -159,13 +181,24 @@ export default function AnalyticsPage() {
             </thead>
             <tbody>
               {topMerchants.map((m, i) => (
-                <tr key={m.name} className="border-b border-slate-50 dark:border-white/[0.02] hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors">
+                <tr
+                  key={m.name}
+                  className="border-b border-slate-50 dark:border-white/[0.02] hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors"
+                >
                   <td className="px-5 py-3 text-sm font-bold text-slate-400">{i + 1}</td>
-                  <td className="px-5 py-3 text-sm font-medium text-slate-900 dark:text-white">{m.name}</td>
-                  <td className="px-5 py-3 text-sm text-slate-700 dark:text-slate-300 font-mono">{m.volume}</td>
-                  <td className="px-5 py-3 text-sm text-slate-600 dark:text-slate-400">{m.payments.toLocaleString()}</td>
+                  <td className="px-5 py-3 text-sm font-medium text-slate-900 dark:text-white">
+                    {m.name}
+                  </td>
+                  <td className="px-5 py-3 text-sm text-slate-700 dark:text-slate-300 font-mono">
+                    {m.volume}
+                  </td>
+                  <td className="px-5 py-3 text-sm text-slate-600 dark:text-slate-400">
+                    {m.payments.toLocaleString()}
+                  </td>
                   <td className="px-5 py-3">
-                    <span className={`text-sm font-medium ${m.growth.startsWith('+') ? 'text-emerald-500' : 'text-red-500'}`}>
+                    <span
+                      className={`text-sm font-medium ${m.growth.startsWith('+') ? 'text-emerald-500' : 'text-red-500'}`}
+                    >
                       {m.growth}
                     </span>
                   </td>

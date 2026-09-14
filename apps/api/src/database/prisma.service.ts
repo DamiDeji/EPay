@@ -1,17 +1,14 @@
+import { buildPrismaClientOptions, PrismaClient } from '@epay/database';
 import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
-import { PrismaClient } from '@epay/database';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(PrismaService.name);
 
   constructor() {
-    super({
-      log:
-        process.env.NODE_ENV === 'development'
-          ? ['query', 'info', 'warn', 'error']
-          : ['warn', 'error'],
-    });
+    // Prisma 7 requires a driver adapter; `buildPrismaClientOptions` supplies
+    // the `pg` one so the API and the indexer connect identically.
+    super(buildPrismaClientOptions());
   }
 
   async onModuleInit(): Promise<void> {

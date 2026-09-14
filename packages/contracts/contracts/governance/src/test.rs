@@ -3,7 +3,12 @@
 //! Tests cover: proposal creation, voting, closing, execution,
 //! quorum checks, timelock enforcement, and access control.
 
-use soroban_sdk::{testutils::Address as _, Env, Address, String};
+// `Ledger` supplies `env.ledger().with_mut(...)`; without it the suite does not
+// compile (E0599).
+use soroban_sdk::{
+    testutils::{Address as _, Ledger},
+    Address, Env, String,
+};
 
 use super::*;
 
@@ -22,8 +27,8 @@ fn setup_test() -> (Env, GovernanceClient<'static>, Address) {
     let client = GovernanceClient::new(&env, &contract_id);
     client.init(
         &owner,
-        &Some(604_800_u64),  // 7 days voting period
-        &Some(259_200_u64),  // 72 hour timelock
+        &Some(604_800_u64), // 7 days voting period
+        &Some(259_200_u64), // 72 hour timelock
     );
 
     (env, client, owner)
@@ -35,7 +40,7 @@ fn setup_test() -> (Env, GovernanceClient<'static>, Address) {
 
 #[test]
 fn test_initialize() {
-    let (env, client, owner) = setup_test();
+    let (_env, client, owner) = setup_test();
 
     assert_eq!(client.get_owner(), owner);
     assert_eq!(client.get_voting_period(), 604_800_u64);
@@ -52,11 +57,7 @@ fn test_initialize_with_custom_periods() {
     let contract_id = env.register_contract(None, Governance);
     let client = GovernanceClient::new(&env, &contract_id);
 
-    client.init(
-        &owner,
-        &Some(100_000_u64),
-        &Some(50_000_u64),
-    );
+    client.init(&owner, &Some(100_000_u64), &Some(50_000_u64));
 
     assert_eq!(client.get_voting_period(), 100_000_u64);
     assert_eq!(client.get_timelock(), 50_000_u64);
@@ -112,8 +113,8 @@ fn test_create_multiple_proposals() {
         let id = client.create_proposal(
             &owner,
             &ProposalType::ParameterChange,
-            &String::from_str(&env, &format!("Proposal {}", i)),
-            &String::from_str(&env, &format!("Description for proposal {}. This is a test proposal to verify multiple proposal creation works correctly.", i)),
+            &String::from_str(&env, "A test proposal"),
+            &String::from_str(&env, "Description for a test proposal created to verify that multiple proposal creation works correctly."),
             &None,
         );
         assert_eq!(id, i as u64);
@@ -132,12 +133,16 @@ fn test_create_proposal_title_too_short() {
         &owner,
         &ProposalType::ConfigUpdate,
         &String::from_str(&env, "Short"),
-        &String::from_str(&env, "This is a sufficiently long description for the proposal."),
+        &String::from_str(
+            &env,
+            "This is a sufficiently long description for the proposal.",
+        ),
         &None,
     );
 }
 
 #[test]
+#[should_panic(expected = "Only admin can create proposals")]
 fn test_only_admin_can_create() {
     let (env, client, _owner) = setup_test();
 
@@ -146,7 +151,10 @@ fn test_only_admin_can_create() {
         &non_admin,
         &ProposalType::ConfigUpdate,
         &String::from_str(&env, "Unauthorized proposal"),
-        &String::from_str(&env, "This proposal should not be allowed as only admin can create proposals in this test."),
+        &String::from_str(
+            &env,
+            "This proposal should not be allowed as only admin can create proposals in this test.",
+        ),
         &None,
     );
 }
@@ -163,7 +171,10 @@ fn test_cast_vote() {
         &owner,
         &ProposalType::ConfigUpdate,
         &String::from_str(&env, "Test proposal for voting"),
-        &String::from_str(&env, "This is a test proposal to verify the voting mechanism works correctly."),
+        &String::from_str(
+            &env,
+            "This is a test proposal to verify the voting mechanism works correctly.",
+        ),
         &None,
     );
 
@@ -190,7 +201,10 @@ fn test_cast_multiple_votes() {
         &owner,
         &ProposalType::ConfigUpdate,
         &String::from_str(&env, "Test proposal"),
-        &String::from_str(&env, "Description for the test proposal to verify multiple votes."),
+        &String::from_str(
+            &env,
+            "Description for the test proposal to verify multiple votes.",
+        ),
         &None,
     );
 
@@ -218,7 +232,10 @@ fn test_cannot_double_vote() {
         &owner,
         &ProposalType::ConfigUpdate,
         &String::from_str(&env, "Test proposal"),
-        &String::from_str(&env, "Description for the test proposal to verify double voting is prevented."),
+        &String::from_str(
+            &env,
+            "Description for the test proposal to verify double voting is prevented.",
+        ),
         &None,
     );
 
@@ -236,7 +253,10 @@ fn test_cannot_close_early() {
         &owner,
         &ProposalType::ConfigUpdate,
         &String::from_str(&env, "Test proposal"),
-        &String::from_str(&env, "Description for the test proposal."),
+        &String::from_str(
+            &env,
+            "Description for the test proposal, long enough to satisfy validation.",
+        ),
         &None,
     );
 
@@ -297,7 +317,10 @@ fn test_close_proposal_rejected() {
         &owner,
         &ProposalType::ConfigUpdate,
         &String::from_str(&env, "Test proposal"),
-        &String::from_str(&env, "Description for the test proposal to verify rejection."),
+        &String::from_str(
+            &env,
+            "Description for the test proposal to verify rejection.",
+        ),
         &None,
     );
 
@@ -326,7 +349,10 @@ fn test_execute_after_timelock() {
         &owner,
         &ProposalType::ConfigUpdate,
         &String::from_str(&env, "Test proposal"),
-        &String::from_str(&env, "Description for the test proposal to verify execution."),
+        &String::from_str(
+            &env,
+            "Description for the test proposal to verify execution.",
+        ),
         &None,
     );
 
@@ -340,12 +366,52 @@ fn test_execute_after_timelock() {
     env.ledger().with_mut(|li| {
         li.timestamp = client.get_proposal(&proposal_id).unwrap().voting_period_end + 1;
     });
+    let result = client.close_proposal(&owner, &proposal_id);
+    assert!(result.passed);
+
+    // Advance past the execution timelock, then execute.
+    env.ledger().with_mut(|li| {
+        li.timestamp = client
+            .get_proposal(&proposal_id)
+            .unwrap()
+            .execution_timelock_end
+            + 1;
+    });
+    client.execute_proposal(&owner, &proposal_id);
+
+    assert_eq!(
+        client.get_proposal(&proposal_id).unwrap().status,
+        ProposalStatus::Executed
+    );
+}
+
+#[test]
+#[should_panic(expected = "Execution timelock has not expired")]
+fn test_cannot_execute_before_timelock() {
+    let (env, client, owner) = setup_test();
+
+    let proposal_id = client.create_proposal(
+        &owner,
+        &ProposalType::ConfigUpdate,
+        &String::from_str(&env, "Test proposal"),
+        &String::from_str(
+            &env,
+            "Description for the test proposal to verify execution.",
+        ),
+        &None,
+    );
+
+    for _ in 0..10 {
+        let voter = Address::generate(&env);
+        client.cast_vote(&voter, &proposal_id, &VoteChoice::Yes, &100, &None);
+    }
+
+    env.ledger().with_mut(|li| {
+        li.timestamp = client.get_proposal(&proposal_id).unwrap().voting_period_end + 1;
+    });
     client.close_proposal(&owner, &proposal_id);
 
-    // Try to execute before timelock
-    env.ledger().with_mut(|li| {
-        li.timestamp = client.get_proposal(&proposal_id).unwrap().voting_period_end + 100;
-    });
+    // The 72-hour timelock has not elapsed yet, so execution must be refused.
     client.execute_proposal(&owner, &proposal_id);
 }
 
@@ -358,7 +424,10 @@ fn test_execute_rejected_proposal() {
         &owner,
         &ProposalType::ConfigUpdate,
         &String::from_str(&env, "Test proposal"),
-        &String::from_str(&env, "Description for the test proposal to verify rejected proposals cannot be executed."),
+        &String::from_str(
+            &env,
+            "Description for the test proposal to verify rejected proposals cannot be executed.",
+        ),
         &None,
     );
 
@@ -384,12 +453,15 @@ fn test_execute_rejected_proposal() {
 fn test_get_all_proposals() {
     let (env, client, owner) = setup_test();
 
-    for i in 1..=5 {
+    for _i in 1..=5 {
         client.create_proposal(
             &owner,
             &ProposalType::ConfigUpdate,
-            &String::from_str(&env, &format!("Proposal {}", i)),
-            &String::from_str(&env, &format!("Description {}", i)),
+            &String::from_str(&env, "A test proposal"),
+            &String::from_str(
+                &env,
+                "Description for a proposal, long enough to satisfy validation.",
+            ),
             &None,
         );
     }
@@ -406,7 +478,10 @@ fn test_has_voted() {
         &owner,
         &ProposalType::ConfigUpdate,
         &String::from_str(&env, "Test proposal"),
-        &String::from_str(&env, "Description."),
+        &String::from_str(
+            &env,
+            "Description of a proposal, long enough to satisfy validation.",
+        ),
         &None,
     );
 
@@ -429,7 +504,10 @@ fn test_cancel_proposal() {
         &owner,
         &ProposalType::ConfigUpdate,
         &String::from_str(&env, "Test proposal"),
-        &String::from_str(&env, "Description for cancellation test."),
+        &String::from_str(
+            &env,
+            "Description for the cancellation test, long enough to validate.",
+        ),
         &None,
     );
 
@@ -448,7 +526,10 @@ fn test_non_admin_cannot_cancel_others_proposal() {
         &owner,
         &ProposalType::ConfigUpdate,
         &String::from_str(&env, "Test proposal"),
-        &String::from_str(&env, "Description for cancellation test."),
+        &String::from_str(
+            &env,
+            "Description for the cancellation test, long enough to validate.",
+        ),
         &None,
     );
 
@@ -462,7 +543,7 @@ fn test_non_admin_cannot_cancel_others_proposal() {
 
 #[test]
 fn test_set_quorum() {
-    let (env, client, owner) = setup_test();
+    let (_env, client, owner) = setup_test();
 
     client.set_quorum_bps(&owner, &5000); // 50%
     assert_eq!(client.get_quorum_bps(), 5000);
@@ -471,7 +552,7 @@ fn test_set_quorum() {
 #[test]
 #[should_panic(expected = "Quorum must be between 10% and 100%")]
 fn test_set_quorum_too_low() {
-    let (env, client, owner) = setup_test();
+    let (_env, client, owner) = setup_test();
     client.set_quorum_bps(&owner, &500); // 5%
 }
 
@@ -489,7 +570,7 @@ fn test_merchant_verification_proposal() {
         &ProposalType::MerchantVerification,
         &String::from_str(&env, "Verify Merchant Corp"),
         &String::from_str(&env, "This proposal seeks to verify Merchant Corp as an active merchant on the platform. They have completed all required documentation."),
-        &Some(merchant),
+        &Some(merchant.clone()),
     );
 
     let proposal = client.get_proposal(&id).unwrap();

@@ -1,6 +1,6 @@
 'use client';
 
-import { cn , Button } from '@epay/ui';
+import { cn, Button } from '@epay/ui';
 import {
   LayoutDashboard,
   ArrowLeftRight,
@@ -38,7 +38,12 @@ export function Sidebar() {
       )}
     >
       {/* Logo */}
-      <div className={cn('flex items-center h-16 px-4 border-b border-slate-200 dark:border-slate-700', collapsed ? 'justify-center' : 'gap-3')}>
+      <div
+        className={cn(
+          'flex items-center h-16 px-4 border-b border-slate-200 dark:border-slate-700',
+          collapsed ? 'justify-center' : 'gap-3',
+        )}
+      >
         <Link href="/dashboard" className="flex items-center gap-2 min-w-0">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#0098EA] to-[#1E3A8A] flex items-center justify-center flex-shrink-0">
             <Zap className="w-4 h-4 text-white" />
@@ -79,11 +84,18 @@ export function Sidebar() {
       </nav>
 
       {/* Bottom */}
-      <div className={cn('p-3 border-t border-slate-200 dark:border-slate-700', collapsed && 'flex flex-col items-center')}>
+      <div
+        className={cn(
+          'p-3 border-t border-slate-200 dark:border-slate-700',
+          collapsed && 'flex flex-col items-center',
+        )}
+      >
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => { setCollapsed(!collapsed); }}
+          onClick={() => {
+            setCollapsed(!collapsed);
+          }}
           className="w-full flex items-center gap-2 mb-2"
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >

@@ -66,10 +66,7 @@ export class InvoiceController {
 
   @Patch(':id/mark-paid')
   @ApiOperation({ summary: 'Mark invoice as paid' })
-  async markPaid(
-    @Param('id') id: string,
-    @Body('paymentId') paymentId: string,
-  ) {
+  async markPaid(@Param('id') id: string, @Body('paymentId') paymentId: string) {
     return this.invoiceService.markPaid(id, paymentId);
   }
 

@@ -42,7 +42,11 @@ export default function SettingsScreen(): React.ReactElement {
         <Switch value={biometricRequired} onValueChange={(v) => void onToggleBiometric(v)} />
       </View>
 
-      <Pressable accessibilityRole="button" style={styles.button} onPress={() => void onEnablePush()}>
+      <Pressable
+        accessibilityRole="button"
+        style={styles.button}
+        onPress={() => void onEnablePush()}
+      >
         <Text style={styles.buttonText}>Enable push receipts</Text>
       </Pressable>
 

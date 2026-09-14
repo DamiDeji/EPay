@@ -34,16 +34,16 @@ EPay is a decentralized Web3 payment gateway built on the [Stellar](https://stel
 
 EPay is built specifically for the Stellar network because Stellar offers an ideal foundation for a decentralized payment gateway:
 
-| Capability | Why It Matters for EPay |
-|-----------|------------------------|
-| **3–5 second settlement** | Payments confirm near-instantly — critical for merchant point-of-sale and e-commerce use cases |
-| **Sub-cent transaction fees** | Stellar transactions cost fractions of a cent, making micropayments and high-volume billing economically viable |
-| **Built-in DEX & orderbook** | Stellar's on-chain orderbook enables seamless asset conversion — merchants can accept any Stellar token and settle in their preferred asset |
-| **Soroban smart contracts** | Rust-based WASM contracts with predictable fees, resource metering, and a growing developer ecosystem |
-| **Wide wallet ecosystem** | Freighter, xBull, Albedo, Rabet, Lobstr — merchants and customers already have Stellar wallets |
-| **Real-world adoption** | Stellar powers remittance corridors, aid distribution (UNHCR, Red Cross), and real-world asset tokenization |
-| **Anchor network** | SEP-24 on/off-ramps enable fiat ↔ crypto conversion, bridging traditional finance with blockchain payments |
-| **Regulatory clarity** | Stellar's focus on compliance and real-world use cases aligns with EPay's goal of merchant-grade reliability |
+| Capability                    | Why It Matters for EPay                                                                                                                     |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| **3–5 second settlement**     | Payments confirm near-instantly — critical for merchant point-of-sale and e-commerce use cases                                              |
+| **Sub-cent transaction fees** | Stellar transactions cost fractions of a cent, making micropayments and high-volume billing economically viable                             |
+| **Built-in DEX & orderbook**  | Stellar's on-chain orderbook enables seamless asset conversion — merchants can accept any Stellar token and settle in their preferred asset |
+| **Soroban smart contracts**   | Rust-based WASM contracts with predictable fees, resource metering, and a growing developer ecosystem                                       |
+| **Wide wallet ecosystem**     | Freighter, xBull, Albedo, Rabet, Lobstr — merchants and customers already have Stellar wallets                                              |
+| **Real-world adoption**       | Stellar powers remittance corridors, aid distribution (UNHCR, Red Cross), and real-world asset tokenization                                 |
+| **Anchor network**            | SEP-24 on/off-ramps enable fiat ↔ crypto conversion, bridging traditional finance with blockchain payments                                  |
+| **Regulatory clarity**        | Stellar's focus on compliance and real-world use cases aligns with EPay's goal of merchant-grade reliability                                |
 
 Other blockchains may offer smart contracts, but none combine Stellar's settlement speed, fee structure, built-in DEX, and real-world adoption in a way purpose-built for payment infrastructure. EPay leverages all of these to deliver a payment gateway that's fast, cheap, and ready for real businesses.
 
@@ -81,28 +81,30 @@ The 12 core primitives below, plus `UpgradeManager` (two-step admin transfer +
 72h-timelocked upgrades), `PriceOracle`, `Governance`, and `ImpactNFT`. Full entry
 points, access control, and invariants: [`packages/contracts/README.md`](./packages/contracts/README.md).
 
-| Contract | Purpose |
-|----------|---------|
-| `PaymentRouter` | Route and process payments |
-| `InvoiceManager` | Invoice lifecycle management |
-| `EscrowManager` | Multi-milestone escrow with dispute resolution |
-| `RefundManager` | Full and partial refund engine |
-| `SubscriptionManager` | Recurring billing engine |
-| `SettlementManager` | Periodic settlement processing |
-| `MerchantRegistry` | Merchant onboarding and verification |
-| `TreasuryVault` | Treasury accounting and fee collection |
-| `FeeManager` | Configurable fee structure |
-| `ConfigurationManager` | Platform-wide configuration |
-| `EmergencyPause` | Circuit breaker for emergency halts |
-| `RoleManager` | Role-based access control |
+| Contract               | Purpose                                        |
+| ---------------------- | ---------------------------------------------- |
+| `PaymentRouter`        | Route and process payments                     |
+| `InvoiceManager`       | Invoice lifecycle management                   |
+| `EscrowManager`        | Multi-milestone escrow with dispute resolution |
+| `RefundManager`        | Full and partial refund engine                 |
+| `SubscriptionManager`  | Recurring billing engine                       |
+| `SettlementManager`    | Periodic settlement processing                 |
+| `MerchantRegistry`     | Merchant onboarding and verification           |
+| `TreasuryVault`        | Treasury accounting and fee collection         |
+| `FeeManager`           | Configurable fee structure                     |
+| `ConfigurationManager` | Platform-wide configuration                    |
+| `EmergencyPause`       | Circuit breaker for emergency halts            |
+| `RoleManager`          | Role-based access control                      |
 
 ### Backend API (NestJS)
+
 - **15 modules**: Database, Health, Auth, Merchant, Payment, Invoice, Escrow, Refund, Subscription, Settlement, Treasury, Notification, Webhook, Analytics, Audit
 - **Auth**: JWT, API key, Stellar wallet authentication with role-based guards
 - **Swagger** documentation on all endpoints
 - **70 source files** — zero type errors
 
 ### Blockchain Indexer
+
 - Ledger-by-ledger Stellar Horizon scanning with configurable batch size
 - Event handlers for 5 Soroban contract types (Payment, Escrow, Refund, Subscription, Treasury)
 - Historical sync engine with consecutive failure abort (5 max)
@@ -112,18 +114,20 @@ points, access control, and invariants: [`packages/contracts/README.md`](./packa
 
 ### Frontend Apps (3 dashboards)
 
-| App | Pages | Key Features |
-|-----|-------|-------------|
-| **Web** | Landing, Login, Register, Dashboard (Overview, Payments, Invoices, Wallet, Escrow, Settings) | Hero with gradient animation, dark mode, Framer Motion, responsive |
-| **Merchant** | Login, Dashboard, Payments, Invoices, Analytics, Settlements, Refunds, Subscriptions, Payment Links, Settings | Recharts (bar/line/pie), stat cards, export, QR codes |
-| **Admin** | Login, Overview, Merchants, Payments, Audit Log, Analytics, Settings | Merchant approve/suspend/verify, expandable audit log, platform health, emergency pause |
+| App          | Pages                                                                                                         | Key Features                                                                            |
+| ------------ | ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| **Web**      | Landing, Login, Register, Dashboard (Overview, Payments, Invoices, Wallet, Escrow, Settings)                  | Hero with gradient animation, dark mode, Framer Motion, responsive                      |
+| **Merchant** | Login, Dashboard, Payments, Invoices, Analytics, Settlements, Refunds, Subscriptions, Payment Links, Settings | Recharts (bar/line/pie), stat cards, export, QR codes                                   |
+| **Admin**    | Login, Overview, Merchants, Payments, Audit Log, Analytics, Settings                                          | Merchant approve/suspend/verify, expandable audit log, platform health, emergency pause |
 
 **Live on Vercel:**
+
 - 🔗 **Web:** [epay-web-teal.vercel.app](https://epay-web-teal.vercel.app)
 - 🔗 **Merchant:** [epay-merchant.vercel.app](https://epay-merchant.vercel.app)
 - 🔗 **Admin:** [epay-admin-two.vercel.app](https://epay-admin-two.vercel.app)
 
 ### TypeScript SDK
+
 - **EPayClient**: JWT + API key auth, auto-retry with backoff, timeout handling, GET/POST/PATCH/PUT/DELETE
 - **WalletClient**: Stellar auth message generation, public key validation, balance lookup via Horizon; supports Freighter, xBull, Albedo, Rabet, Lobstr
 - **9 resource modules**: Payments, PaymentLinks, Invoices, Escrows, Refunds, Subscriptions, Merchants, Settlements, Analytics
@@ -131,6 +135,7 @@ points, access control, and invariants: [`packages/contracts/README.md`](./packa
 - **Full README** with 400+ lines of code examples + 4 runnable example scripts
 
 ### Database (Prisma + PostgreSQL)
+
 - **21 models**: User, Merchant, Wallet, Trustline, Payment, Invoice, InvoiceItem, Escrow, Milestone, Refund, Subscription, Settlement, TreasuryTransaction, Notification, WebhookDelivery, ApiKey, AuditLog, PaymentLink, SubscriptionPayment, AnalyticsSnapshot, IdempotencyKey
 - Normalized schema with proper relations, enums, and indexes
 - Seed script with Stellar testnet sample data
@@ -153,6 +158,7 @@ points, access control, and invariants: [`packages/contracts/README.md`](./packa
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - **Node.js** ≥ 20
 - **pnpm** ≥ 9
 - **Rust** ≥ 1.77 (for Soroban contracts)
@@ -222,69 +228,74 @@ pnpm build
 
 ## 📦 Package Overview
 
-| Package | Description | Type |
-|---------|-------------|------|
-| `@epay/contracts` | Soroban smart contracts (16 contracts, Rust) | Library |
-| `@epay/api` | NestJS REST API server | App |
-| `@epay/web` | Customer landing page + dashboard | App |
-| `@epay/merchant-dashboard` | Merchant analytics & management | App |
-| `@epay/admin-dashboard` | Platform administration | App |
-| `@epay/indexer` | Stellar Horizon event indexer | App |
-| `@epay/sdk` | TypeScript SDK for EPay API | Library |
-| `@epay/database` | Prisma ORM client & schema | Library |
-| `@epay/types` | Shared TypeScript type definitions | Library |
-| `@epay/ui` | Shared React UI components | Library |
-| `@epay/hooks` | React hooks for API & wallet | Library |
-| `@epay/shared` | Shared utilities & helpers | Library |
-| `@epay/config` | Environment configuration | Library |
+| Package                    | Description                                  | Type    |
+| -------------------------- | -------------------------------------------- | ------- |
+| `@epay/contracts`          | Soroban smart contracts (16 contracts, Rust) | Library |
+| `@epay/api`                | NestJS REST API server                       | App     |
+| `@epay/web`                | Customer landing page + dashboard            | App     |
+| `@epay/merchant-dashboard` | Merchant analytics & management              | App     |
+| `@epay/admin-dashboard`    | Platform administration                      | App     |
+| `@epay/indexer`            | Stellar Horizon event indexer                | App     |
+| `@epay/sdk`                | TypeScript SDK for EPay API                  | Library |
+| `@epay/database`           | Prisma ORM client & schema                   | Library |
+| `@epay/types`              | Shared TypeScript type definitions           | Library |
+| `@epay/ui`                 | Shared React UI components                   | Library |
+| `@epay/hooks`              | React hooks for API & wallet                 | Library |
+| `@epay/shared`             | Shared utilities & helpers                   | Library |
+| `@epay/config`             | Environment configuration                    | Library |
 
 ---
 
 ## 🛠 Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| **Smart Contracts** | Soroban (Rust), Stellar Network |
-| **Backend** | NestJS, Fastify, TypeScript, Prisma, PostgreSQL, Redis, BullMQ |
-| **Frontend** | Next.js 15, React 19, Tailwind CSS, Framer Motion, Recharts |
-| **SDK** | TypeScript, Stellar SDK, isomorphic fetch |
-| **Indexer** | TypeScript, BullMQ, Pino, Stellar Horizon API |
-| **Wallets** | Freighter, xBull, Albedo, Rabet, Lobstr |
-| **Testing** | Jest, Vitest, Cargo test |
-| **DevOps** | Turborepo, pnpm workspaces, GitHub Actions, Dependabot |
+| Layer               | Technology                                                     |
+| ------------------- | -------------------------------------------------------------- |
+| **Smart Contracts** | Soroban (Rust), Stellar Network                                |
+| **Backend**         | NestJS, Fastify, TypeScript, Prisma, PostgreSQL, Redis, BullMQ |
+| **Frontend**        | Next.js 15, React 19, Tailwind CSS, Framer Motion, Recharts    |
+| **SDK**             | TypeScript, Stellar SDK, isomorphic fetch                      |
+| **Indexer**         | TypeScript, BullMQ, Pino, Stellar Horizon API                  |
+| **Wallets**         | Freighter, xBull, Albedo, Rabet, Lobstr                        |
+| **Testing**         | Jest, Vitest, Cargo test                                       |
+| **DevOps**          | Turborepo, pnpm workspaces, GitHub Actions, Dependabot         |
 
 ---
 
 ## 🧪 Testing
 
-**267 Rust tests, 116 API test cases, 91 SDK tests, 17 shared tests, 23 app tests, 7 Playwright e2e tests.** Concrete counts, because a number you can verify is worth more than an adjective.
+**272 Rust tests, 136 API tests, 91 SDK tests, 17 shared tests, 23 app tests, 7 Playwright e2e tests.** Counts are the ones actually observed on the current tree; run `pnpm test` and `pnpm contracts:test` to reproduce them.
 
-| Package | Framework | Count | Status |
-|---------|-----------|-------|--------|
-| `@epay/contracts` | Cargo test | 267 `#[test]` functions across 16 suites — includes 10,000-iteration property/fuzz suites for TreasuryVault, EscrowManager, RefundManager, SettlementManager | ✅ Runs under `cargo test` in CI |
-| `@epay/api` | Jest | 17 suites, 116 test cases | ⚠️ **Blocked** — 16 suites fail to load (see below) |
-| `@epay/sdk` | Vitest | 4 suites, 91 tests | ✅ Passing (87% statements/lines) |
-| `@epay/shared` | Vitest | 1 suite, 17 tests | ✅ Passing — webhook HMAC signing, verification, retry policy |
-| `@epay/extension` | Vitest | 12 tests | ✅ Passing |
-| `@epay/mobile` | Jest | 11 tests | ✅ Passing |
-| `tests/e2e` | Playwright | 7 tests × 4 browser projects | Requires running apps + API |
-| `tests/k6` | k6 | Load profile | SLOs in [`docs/performance.md`](./docs/performance.md) |
+| Package                                             | Framework  | Count                                                                                                                                              | Status                                                        |
+| --------------------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| `@epay/contracts`                                   | Cargo test | 272 tests across all 16 contracts — includes deterministic property/fuzz suites for TreasuryVault, EscrowManager, RefundManager, SettlementManager | ✅ Passing under `cargo test --workspace` in CI               |
+| `@epay/api`                                         | Jest       | 19 suites, 136 tests                                                                                                                               | ✅ Passing; coverage floors enforced                          |
+| `@epay/sdk`                                         | Vitest     | 4 suites, 91 tests                                                                                                                                 | ✅ Passing                                                    |
+| `@epay/shared`                                      | Vitest     | 1 suite, 17 tests                                                                                                                                  | ✅ Passing — webhook HMAC signing, verification, retry policy |
+| `@epay/extension`                                   | Vitest     | 1 suite, 12 tests                                                                                                                                  | ✅ Passing                                                    |
+| `@epay/mobile`                                      | Vitest     | 1 suite, 11 tests                                                                                                                                  | ✅ Passing                                                    |
+| `@epay/indexer`                                     | Vitest     | **0 tests**                                                                                                                                        | ❌ **Gap** — see below                                        |
+| `apps/web`, `merchant-dashboard`, `admin-dashboard` | Vitest     | **0 tests**                                                                                                                                        | ❌ **Gap** — see below                                        |
+| `tests/e2e`                                         | Playwright | 7 tests × 4 browser projects                                                                                                                       | Requires running apps + API; not yet wired into CI            |
+| `tests/k6`                                          | k6         | Load profile                                                                                                                                       | SLOs in [`docs/performance.md`](./docs/performance.md)        |
 
-**Current API test status.** The API suite is written but does not load, for two
-configuration reasons unrelated to the tests themselves: Prisma 7 requires a driver
-adapter that `packages/database` does not yet pass to `PrismaClient`, and Jest is
-not configured to transform `@stellar/stellar-sdk`'s CommonJS output. Both are
-tracked in the [ROADMAP known issues](./ROADMAP.md#known-issues).
+**Known testing gaps (not hidden behind `--passWithNoTests`).** The indexer has
+no tests despite parsing untrusted on-chain events and owning checkpoint/recovery
+logic, and the three Next.js apps have none either. API coverage is ~54% lines
+against an 80% goal. Both are tracked in
+[`docs/FINAL-ENGINEERING-REPORT.md`](./docs/FINAL-ENGINEERING-REPORT.md#18-remaining-risks-and-todo).
 
 ```bash
+# Run everything CI runs, locally
+pnpm ci
+
 # Run all tests
 pnpm test
 
-# Run with coverage
+# Run with coverage (thresholds enforced)
 pnpm test:coverage
 
-# Run contracts tests only (includes the fuzz suites)
-cargo test --manifest-path packages/contracts/Cargo.toml
+# Run contract tests only (includes the property/fuzz suites)
+pnpm contracts:test
 ```
 
 ---

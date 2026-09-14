@@ -274,7 +274,9 @@ impl EscrowManager {
             .unwrap_or_else(|| panic!("Escrow not found"));
 
         if escrow.status != EscrowStatus::Cancelled && escrow.status != EscrowStatus::Disputed {
-            panic!("Cannot refund — escrow must be cancelled or disputed");
+            // ASCII-only so the message survives host log escaping and can be
+            // matched verbatim by `should_panic(expected = ...)`.
+            panic!("Cannot refund: escrow must be cancelled or disputed");
         }
 
         // CHECKS-EFFECTS-INTERACTIONS: Update state BEFORE external transfer

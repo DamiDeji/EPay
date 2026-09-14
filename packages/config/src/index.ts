@@ -16,15 +16,15 @@ const envSchema = z.object({
   HOST: z.string().default('0.0.0.0'),
 
   // Database
-  DATABASE_URL: z.string().url(),
+  DATABASE_URL: z.url(),
 
   // Redis
-  REDIS_URL: z.string().url().default('redis://localhost:6379'),
+  REDIS_URL: z.url().default('redis://localhost:6379'),
 
   // Stellar
   STELLAR_NETWORK: z.enum(['public', 'testnet', 'futurenet', 'sandbox']).default('testnet'),
-  STELLAR_HORIZON_URL: z.string().url().default('https://horizon-testnet.stellar.org'),
-  STELLAR_SOROBAN_RPC_URL: z.string().url().default('https://soroban-testnet.stellar.org'),
+  STELLAR_HORIZON_URL: z.url().default('https://horizon-testnet.stellar.org'),
+  STELLAR_SOROBAN_RPC_URL: z.url().default('https://soroban-testnet.stellar.org'),
 
   // JWT
   JWT_SECRET: z.string().min(32),
@@ -70,7 +70,7 @@ function loadEnv(): EnvConfig {
 
   if (!parsed.success) {
     console.error('❌ Invalid environment variables:');
-    console.error(parsed.error.flatten().fieldErrors);
+    console.error(z.treeifyError(parsed.error));
     throw new Error('Invalid environment configuration');
   }
 
@@ -80,9 +80,7 @@ function loadEnv(): EnvConfig {
 let _config: EnvConfig | null = null;
 
 export function getConfig(): EnvConfig {
-  if (!_config) {
-    _config = loadEnv();
-  }
+  _config ??= loadEnv();
   return _config;
 }
 
@@ -128,7 +126,10 @@ export const INDEXER_CONFIRMATION_LEDGERS = 12;
 
 // ── Stellar Network URLs ────────────────────────────────────────────────────
 
-export const STELLAR_NETWORK_URLS: Record<string, { horizon: string; sorobanRpc: string; passphrase: string }> = {
+export const STELLAR_NETWORK_URLS: Record<
+  string,
+  { horizon: string; sorobanRpc: string; passphrase: string }
+> = {
   public: {
     horizon: 'https://horizon.stellar.org',
     sorobanRpc: 'https://soroban-rpc.stellar.org',

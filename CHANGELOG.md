@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 
 #### Governance & repo hygiene
+
 - `CODE_OF_CONDUCT.md` — Contributor Covenant v2.1, with enforcement guidelines
   and a `conduct@epay.dev` reporting address.
 - `CONTRIBUTORS.md` — maintainers, contributors, and the automation accounts that
@@ -22,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   PRs-welcome, each linking to a real target.
 
 #### Contract documentation & test depth
+
 - `packages/contracts/README.md` — per-contract entry points, access control, and
   invariants for all 16 contracts, grouped by trust tier.
 - `packages/contracts/SECURITY.md` — ownership model, two-step `transfer_admin` →
@@ -37,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   for new contract events, and Helm lint/template + manifest drift for ops changes.
 
 #### Observability (API)
+
 - `GET /metrics` in Prometheus exposition format, with a hand-rolled registry
   (`apps/api/src/observability/`) instead of `prom-client` so no new packages enter
   the SBOM. Emits the metric names the alert rules already reference.
@@ -46,6 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   degrades to structured logging when unset, with no SDK dependency.
 
 #### Webhooks
+
 - HMAC-SHA256 signing with a GitHub-style `X-EPay-Signature: t=…,v1=…` header,
   including timestamp-in-signature so `t` cannot be tampered with.
 - Retry/backoff schedule (30s, 2m, 10m, 30m, 2h, 6h) and dead-lettering after the
@@ -57,6 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   TypeScript, Python, and Go.
 
 #### Infrastructure
+
 - Helm `ExternalSecret` template plus `externalSecrets` values, so credentials can
   come from a secret manager instead of a committed Kubernetes Secret, with
   `docs/external-secrets.md` covering AWS/GCP/Vault stores and rotation.
@@ -64,16 +69,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   against the deployed web app and informational until triaged.
 
 #### Documentation
+
 - `docs/` index (`docs/README.md`), `getting-started.md`,
   `contract-integration.md`, `performance.md`, `webhook-receiver.md`, and
   `external-secrets.md`.
-- `docs/architecture.md` (renamed from `ARCHITECTURE.md`) now explains *why*:
+- `docs/architecture.md` (renamed from `ARCHITECTURE.md`) now explains _why_:
   NestJS over bare Express, 16 contracts over a monolith, Prisma, and how the
   indexer reconciles with on-chain state.
 - ADRs `0005-contract-decomposition.md` and `0006-dashboard-decomposition.md`, and
   a Stellar-vs-EVM comparison added to ADR 0001.
 
 #### Client surfaces
+
 - `apps/mobile` — Expo SDK 57 / React Native 0.86 mobile app using `expo-router`,
   reusing `@epay/sdk` and `@epay/types`. QR payment scanning (`expo-camera`),
   biometric payment authorization with device-passcode fallback disabled
@@ -86,6 +93,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   `useWallet` hook from `@epay/hooks`.
 
 #### Observability
+
 - `monitoring/` — Prometheus, Grafana, and Alertmanager stack with a
   bearer-token-gated `/metrics` scrape path.
 - Four provisioned Grafana dashboards: platform health, payment-flow success
@@ -97,6 +105,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   (database-checked readiness) alongside the existing `GET /health`.
 
 #### Deployment & GitOps
+
 - `helm/epay/` chart: API, indexer, three dashboards, PostgreSQL StatefulSet,
   Ingress, ConfigMap, pre-upgrade Prisma migration Job, HPA (2–10),
   PodDisruptionBudget (`minAvailable: 1`), default-deny NetworkPolicy with
@@ -108,6 +117,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   canary gated on a Prometheus payment-success-rate `AnalysisTemplate`.
 
 #### Security & supply chain
+
 - `.github/workflows/supply-chain.yml` — CycloneDX SBOM per push, Trivy
   filesystem and image scans (informational on branches, blocking on tags),
   cosign keyless signing of release images, and blocking Gitleaks.
@@ -117,6 +127,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   and a concrete response SLA (48h acknowledgement, 30/60/90-day patch targets).
 
 #### Disaster recovery
+
 - `.github/workflows/backup.yml` — nightly encrypted-aware `pg_dump` with
   archive verification and a 30-day retention window.
 - `.github/workflows/restore-drill.yml` — monthly scheduled restore into an
@@ -127,6 +138,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   runbook) and `docs/restore-runbook.md` (step-by-step restore with rollback).
 
 #### Documentation
+
 - ADRs `docs/adr/0001-chain-choice.md`, `0002-custody-model.md`,
   `0003-auth-model.md`, `0004-upgrade-pattern.md`.
 
@@ -181,6 +193,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Added
 
 #### Smart Contracts
+
 - `PaymentRouter` — route and process payments with status lifecycle
 - `EscrowManager` — multi-milestone escrow with dispute resolution
 - `RefundManager` — full and partial refund engine
@@ -195,17 +208,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `RoleManager` — role-based access control
 
 #### Backend (NestJS API)
+
 - 15 modules: Database, Health, Auth, Merchant, Payment, Invoice, Escrow, Refund, Subscription, Settlement, Treasury, Notification, Webhook, Analytics, Audit
 - JWT + API key + wallet authentication with 6 guards and 3 strategies
 - Swagger documentation on all endpoints
 - **101 unit tests** across 16 test suites
 
 #### Frontend (Next.js)
+
 - **Customer Web App** — landing page, auth, dashboard (overview, payments, invoices, wallet, escrow, settings)
 - **Merchant Dashboard** — analytics (Recharts), payments, invoices, settlements, refunds, subscriptions, payment links
 - **Admin Dashboard** — platform overview, merchant management, payments monitoring, audit log, analytics, system health
 
 #### SDK
+
 - `EPayClient` — JWT/API key auth, retry, timeout, 5 HTTP methods
 - `WalletClient` — Stellar auth messages, address validation, balance lookup
 - 9 resource modules: Payments, PaymentLinks, Invoices, Escrows, Refunds, Subscriptions, Merchants, Settlements, Analytics
@@ -214,16 +230,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - README with 400+ lines of code examples + 4 runnable example scripts
 
 #### Blockchain Indexer
+
 - Ledger-by-ledger Stellar scanning with configurable batch size
 - 5 event handler types (Payment, Escrow, Refund, Subscription, Treasury)
 - Historical + real-time sync engines with checkpoint recovery
 - BullMQ queue with worker and Redis error handling
 
 #### Database
+
 - 21 Prisma models with normalized schema
 - Seed script with sample data
 
 #### DevOps
+
 - Turborepo with pnpm workspaces (15 packages/apps)
 - GitHub Actions CI (lint, typecheck, test, build)
 - CodeQL security analysis

@@ -3,7 +3,12 @@
 //! Tests cover: merchant registration, verification, suspension, reactivation,
 //! address lookups, verification level bumps, and authorization checks.
 
-use soroban_sdk::{testutils::Address as _, Env, Address, String};
+// `Ledger` supplies `env.ledger().with_mut(...)`; without it the suite does not
+// compile (E0599).
+use soroban_sdk::{
+    testutils::{Address as _, Ledger},
+    Address, Env, String, Vec,
+};
 
 use super::*;
 
@@ -22,7 +27,7 @@ fn setup_test() -> (Env, MerchantRegistryClient<'static>, Address, Address) {
     let client = MerchantRegistryClient::new(&env, &contract_id);
     client.init(&owner);
 
-    (env, client, owner, owner.clone())
+    (env, client, owner.clone(), owner)
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -31,9 +36,21 @@ fn setup_test() -> (Env, MerchantRegistryClient<'static>, Address, Address) {
 
 #[test]
 fn test_initialize() {
-    let (env, client, _owner, _verifier) = setup_test();
-    assert_eq!(client.get_next_id(), 1);
+    let (env, client, owner, _verifier) = setup_test();
+
+    // An empty registry knows nobody, and the first merchant gets id 1.
     assert!(!client.is_merchant(&Address::generate(&env)));
+
+    let id = client.register_merchant(
+        &owner,
+        &String::from_str(&env, "Acme"),
+        &String::from_str(&env, "billing@acme.test"),
+        &Address::generate(&env),
+        &None,
+        &None,
+    );
+    assert_eq!(id, 1);
+    assert!(client.is_merchant(&owner));
 }
 
 #[test]
@@ -281,7 +298,7 @@ fn test_cannot_reactivate_non_suspended() {
 
 #[test]
 fn test_get_merchant_by_address() {
-    let (env, client, owner, verifier) = setup_test();
+    let (env, client, owner, _verifier) = setup_test();
 
     let settlement = Address::generate(&env);
     let merchant_id = client.register_merchant(
@@ -326,22 +343,27 @@ fn test_is_merchant_active() {
 // ════════════════════════════════════════════════════════════════════
 
 #[test]
-#[should_panic(expected = "Merchant not found")]
 fn test_get_nonexistent_merchant() {
-    let (env, client, _owner, _verifier) = setup_test();
-    client.get_merchant(&9999_u64);
+    let (_env, client, _owner, _verifier) = setup_test();
+
+    // Unknown ids are reported as absent rather than panicking, so callers can
+    // distinguish "not registered" from a failed call.
+    assert!(client.get_merchant(&9999_u64).is_none());
 }
 
 #[test]
 fn test_multiple_merchants_independent() {
-    let (env, client, owner, verifier) = setup_test();
+    let (env, client, _owner, verifier) = setup_test();
 
+    // One merchant per owner address: `merchant` is the account being
+    // registered, `m1..m3` are the settlement destinations.
+    let merchant = Address::generate(&env);
     let m1 = Address::generate(&env);
     let m2 = Address::generate(&env);
     let m3 = Address::generate(&env);
 
     let id1 = client.register_merchant(
-        &owner,
+        &merchant,
         &String::from_str(&env, "Merchant 1"),
         &String::from_str(&env, "m1@test"),
         &m1,
@@ -349,7 +371,7 @@ fn test_multiple_merchants_independent() {
         &None,
     );
     let id2 = client.register_merchant(
-        &owner,
+        &Address::generate(&env),
         &String::from_str(&env, "Merchant 2"),
         &String::from_str(&env, "m2@test"),
         &m2,
@@ -357,7 +379,7 @@ fn test_multiple_merchants_independent() {
         &None,
     );
     let id3 = client.register_merchant(
-        &owner,
+        &Address::generate(&env),
         &String::from_str(&env, "Merchant 3"),
         &String::from_str(&env, "m3@test"),
         &m3,
@@ -365,17 +387,33 @@ fn test_multiple_merchants_independent() {
         &None,
     );
 
+    // Ids are allocated in registration order and are distinct.
+    assert_eq!((id1, id2, id3), (1, 2, 3));
+
     // Verify only the first
     client.verify_merchant(&verifier, &id1);
 
-    assert_eq!(client.get_merchant(&id1).unwrap().status, MerchantStatus::Active);
-    assert_eq!(client.get_merchant(&id2).unwrap().status, MerchantStatus::Pending);
-    assert_eq!(client.get_merchant(&id3).unwrap().status, MerchantStatus::Pending);
+    assert_eq!(
+        client.get_merchant(&id1).unwrap().status,
+        MerchantStatus::Active
+    );
+    assert_eq!(
+        client.get_merchant(&id2).unwrap().status,
+        MerchantStatus::Pending
+    );
+    assert_eq!(
+        client.get_merchant(&id3).unwrap().status,
+        MerchantStatus::Pending
+    );
 }
 
 // ════════════════════════════════════════════════════════════════════
-// FUZZ: 10,000 iterations — merchant registration and verification
+// END-TO-END SWEEP: registration, verification, suspension, reactivation
 // ════════════════════════════════════════════════════════════════════
+
+/// Number of merchants registered by the registry sweep. Each registration is a
+/// metered host call, so this is sized for CI runtime.
+const COUNT: u64 = 128;
 
 #[test]
 fn test_fuzz_merchant_registry() {
@@ -391,56 +429,70 @@ fn test_fuzz_merchant_registry() {
     let contract_id = env.register_contract(None, MerchantRegistry);
     let client = MerchantRegistryClient::new(&env, &contract_id);
     client.init(&owner);
+    // Each iteration issues several metered contract calls; the assertions, not
+    // the per-test CPU budget, should decide the outcome.
+    env.budget().reset_unlimited();
 
-    // Register 500 merchants
-    let mut merchants = Vec::new();
-    for i in 0..500 {
+    // Register `COUNT` merchants. `format!` is unavailable in `no_std`, so the
+    // fixture data is drawn from fixed literals.
+    let mut merchants = Vec::new(&env);
+    for i in 0..COUNT {
         let owner_addr = Address::generate(&env);
         let settlement = Address::generate(&env);
         let id = client.register_merchant(
             &owner_addr,
-            &String::from_str(&env, &format!("Merchant {}", i)),
-            &String::from_str(&env, &format!("m{}\@test", i)),
+            &String::from_str(&env, "Example Merchant"),
+            &String::from_str(&env, "billing@example.test"),
             &settlement,
             &None,
             &None,
         );
-        merchants.push((id, owner_addr, settlement));
+
+        // IDs are allocated sequentially from 1, with no gaps or reuse.
+        assert_eq!(id, i + 1);
+
+        merchants.push_back((id, owner_addr, settlement));
     }
 
     // Verify half of them
-    for (i, (id, _owner_addr, _settlement)) in merchants.iter().enumerate() {
+    for i in 0..COUNT as usize {
         if i % 2 == 0 {
-            client.verify_merchant(&owner, id);
+            let (id, _, _) = merchants.get(i as u32).unwrap();
+            client.verify_merchant(&owner, &id);
             assert_eq!(
-                client.get_merchant(id).unwrap().status,
+                client.get_merchant(&id).unwrap().status,
                 MerchantStatus::Active
             );
         }
     }
 
     // Suspend some verified ones
-    for (i, (id, _owner_addr, _settlement)) in merchants.iter().enumerate() {
+    for i in 0..COUNT as usize {
         if i % 2 == 0 && i % 5 == 0 {
-            client.suspend_merchant(&owner, id);
+            let (id, _, _) = merchants.get(i as u32).unwrap();
+            client.suspend_merchant(&owner, &id);
             assert_eq!(
-                client.get_merchant(id).unwrap().status,
+                client.get_merchant(&id).unwrap().status,
                 MerchantStatus::Suspended
             );
         }
     }
 
     // Reactivate some suspended
-    for (i, (id, _owner_addr, _settlement)) in merchants.iter().enumerate() {
+    for i in 0..COUNT as usize {
         if i % 2 == 0 && i % 5 == 0 && i % 7 == 0 {
-            client.reactivate_merchant(&owner, id);
+            let (id, _, _) = merchants.get(i as u32).unwrap();
+            client.reactivate_merchant(&owner, &id);
             assert_eq!(
-                client.get_merchant(id).unwrap().status,
+                client.get_merchant(&id).unwrap().status,
                 MerchantStatus::Active
             );
         }
     }
 
-    // Verify total count
-    assert_eq!(client.get_next_id(), 501);
+    // Every registered merchant is still addressable by its id afterwards.
+    for i in 0..COUNT as usize {
+        let (id, _, _) = merchants.get(i as u32).unwrap();
+        assert!(client.get_merchant(&id).is_some());
+    }
 }

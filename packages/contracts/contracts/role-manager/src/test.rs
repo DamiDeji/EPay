@@ -3,7 +3,12 @@
 //! Tests cover: role assignment, revocation, role checking,
 //! access control, and admin-only operations.
 
-use soroban_sdk::{testutils::Address as _, Env, Address};
+// `Ledger` supplies `env.ledger().with_mut(...)`; without it the suite does not
+// compile (E0599).
+use soroban_sdk::{
+    testutils::{Address as _, Ledger},
+    Address, Env, Vec,
+};
 
 use super::*;
 
@@ -22,7 +27,7 @@ fn setup_test() -> (Env, RoleManagerClient<'static>, Address, Address) {
     let client = RoleManagerClient::new(&env, &contract_id);
     client.init(&owner);
 
-    (env, client, owner, owner.clone())
+    (env, client, owner.clone(), owner)
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -31,7 +36,7 @@ fn setup_test() -> (Env, RoleManagerClient<'static>, Address, Address) {
 
 #[test]
 fn test_initialize() {
-    let (env, client, owner, _admin) = setup_test();
+    let (_env, client, owner, _admin) = setup_test();
 
     // Owner should have Admin role after init
     assert!(client.has_role(&owner, &Role::Admin));
@@ -201,6 +206,9 @@ fn test_revoke_nonexistent_role_is_noop() {
 fn test_fuzz_role_management() {
     let env = Env::default();
     env.mock_all_auths();
+    // This suite performs thousands of contract calls; lift the per-test CPU
+    // budget so the assertions, not the metering, decide the outcome.
+    env.budget().reset_unlimited();
 
     env.ledger().with_mut(|li| {
         li.timestamp = 1_000_000;
@@ -212,46 +220,29 @@ fn test_fuzz_role_management() {
     let client = RoleManagerClient::new(&env, &contract_id);
     client.init(&owner);
 
-    let roles = [
-        Role::Admin,
-        Role::Verifier,
-        Role::Operator,
-        Role::Auditor,
-    ];
+    let roles = [Role::Admin, Role::Verifier, Role::Operator, Role::Auditor];
 
-    // Generate 250 addresses and assign random roles
-    let mut addresses = Vec::new();
-    for i in 0..250 {
-        let addr = Address::generate(&env);
-        addresses.push(addr);
+    // Generate 250 addresses and cycle roles across them deterministically.
+    let mut addresses = Vec::new(&env);
+    for _ in 0..250 {
+        addresses.push_back(Address::generate(&env));
     }
 
-    for i in 0..1000 {
-        let addr_idx = i % 250;
-        let addr = &addresses[addr_idx];
-        let role = roles[i % roles.len()];
+    for i in 0usize..1000 {
+        let addr = addresses.get((i % 250) as u32).unwrap();
+        let role = roles[i % roles.len()].clone();
 
-        // Assign
-        client.assign_role(&owner, addr, &role);
-        assert!(client.has_role(addr, &role));
-
-        // Verify other roles unchanged
-        for other_role in &roles {
-            if other_role != &role || addr_idx < 2 {
-                // Not asserting others are false — they may have been assigned before
-            }
-        }
+        client.assign_role(&owner, &addr, &role);
+        assert!(client.has_role(&addr, &role));
     }
 
-    // Revoke half the assignments
-    for i in 0..500 {
-        let addr_idx = i % 250;
-        let addr = &addresses[addr_idx];
-        let role = roles[i % roles.len()];
+    // Revoke half the assignments; revocation must be observable immediately.
+    for i in 0usize..500 {
+        let addr = addresses.get((i % 250) as u32).unwrap();
+        let role = roles[i % roles.len()].clone();
 
-        if client.has_role(addr, &role) {
-            client.revoke_role(&owner, addr, &role);
-            assert!(!client.has_role(addr, &role));
-        }
+        assert!(client.has_role(&addr, &role));
+        client.revoke_role(&owner, &addr, &role);
+        assert!(!client.has_role(&addr, &role));
     }
 }

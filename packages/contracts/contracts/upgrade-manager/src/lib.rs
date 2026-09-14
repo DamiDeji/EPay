@@ -11,25 +11,38 @@
 #![no_std]
 
 use soroban_sdk::{
-    contract, contractimpl, contracttype, symbol_short, Address, Env, String, Symbol,
+    contract, contractimpl, contracttype, symbol_short, Address, Bytes, Env, String, Symbol, Vec,
 };
 
+// `symbol_short!` is limited to 9 ASCII characters; the previous names exceeded
+// that limit and prevented this crate from compiling at all.
 const OWNER_KEY: Symbol = symbol_short!("owner");
-const PENDING_ADMIN_KEY: Symbol = symbol_short!("pending_admin");
-const UPGRADE_PROPOSAL_KEY: Symbol = symbol_short!("upgrade_proposal");
+const PENDING_ADMIN_KEY: Symbol = symbol_short!("pending");
+const UPGRADE_PROPOSAL_KEY: Symbol = symbol_short!("upg_prop");
+const UPGRADE_STATUS_KEY: Symbol = symbol_short!("upg_stat");
+const NEXT_PROPOSAL_KEY: Symbol = symbol_short!("next_prop");
+const LAST_UPGRADE_KEY: Symbol = symbol_short!("last_upg");
+const PROPOSAL_KEY: Symbol = symbol_short!("proposal");
 const MIN_TIMELOCK_SECONDS: u64 = 259_200; // 72 hours
 
+/// A proposed, not-yet-accepted admin handover.
+///
+/// `#[contracttype]` does not support enum variants with named fields, so the
+/// pending handover is modelled as a struct held in an `Option`.
 #[contracttype]
 #[derive(Clone, Debug, PartialEq)]
-pub enum AdminTransferState {
-    None,
-    Pending { new_admin: Address, proposed_by: Address, proposed_at: u64 },
+pub struct PendingAdminTransfer {
+    pub new_admin: Address,
+    pub proposed_by: Address,
+    pub proposed_at: u64,
 }
 
 #[contracttype]
 #[derive(Clone, Debug, PartialEq)]
 pub struct UpgradeProposal {
-    pub new_wasm_hash: Vec<u8>,
+    /// SHA-256 hash of the new WASM binary. `Bytes` (not `Vec<u8>`) is the
+    /// Soroban value type that round-trips through contract storage.
+    pub new_wasm_hash: Bytes,
     pub proposed_by: Address,
     pub proposed_at: u64,
     pub executable_at: u64,
@@ -54,10 +67,13 @@ impl UpgradeManager {
             panic!("Already initialized");
         }
         env.storage().instance().set(&OWNER_KEY, &owner);
-        env.storage().instance().set(&PENDING_ADMIN_KEY, &AdminTransferState::None);
         env.storage()
             .instance()
-            .set(&symbol_short!("upgrade_status"), &UpgradeStatus::None);
+            .set(&PENDING_ADMIN_KEY, &Option::<PendingAdminTransfer>::None);
+        env.storage()
+            .instance()
+            .set(&UPGRADE_STATUS_KEY, &UpgradeStatus::None);
+        env.storage().instance().set(&NEXT_PROPOSAL_KEY, &1u64);
     }
 
     /// Check if the caller is the current admin.
@@ -82,16 +98,18 @@ impl UpgradeManager {
     pub fn transfer_admin(env: Env, caller: Address, new_admin: Address) {
         Self::require_admin(&env, &caller);
 
-        if new_admin == Address::zero() {
-            panic!("Cannot transfer to zero address");
+        if new_admin == caller {
+            panic!("Cannot transfer admin to the current admin");
         }
 
-        let state = AdminTransferState::Pending {
-            new_admin,
-            proposed_by: caller,
+        let state = PendingAdminTransfer {
+            new_admin: new_admin.clone(),
+            proposed_by: caller.clone(),
             proposed_at: env.ledger().timestamp(),
         };
-        env.storage().instance().set(&PENDING_ADMIN_KEY, &state);
+        env.storage()
+            .instance()
+            .set(&PENDING_ADMIN_KEY, &Some(state));
 
         env.events().publish(
             (Symbol::new(&env, "admin_transfer_proposed"),),
@@ -102,62 +120,47 @@ impl UpgradeManager {
     /// Accept a pending admin transfer. Only the proposed new admin can call this.
     /// After acceptance, the caller becomes the new admin.
     pub fn accept_admin(env: Env, caller: Address) {
-        let pending: AdminTransferState = env
+        let pending: Option<PendingAdminTransfer> = env
             .storage()
             .instance()
             .get(&PENDING_ADMIN_KEY)
-            .unwrap();
+            .unwrap_or(None);
 
         match pending {
-            AdminTransferState::None => {
-                panic!("No admin transfer pending");
-            }
-            AdminTransferState::Pending {
-                new_admin,
-                proposed_by: _,
-                proposed_at: _,
-            } => {
-                if caller != new_admin {
-                    panic!("Only the proposed admin can accept");
-                }
-                env.storage().instance().set(&OWNER_KEY, &caller);
-                env.storage()
-                    .instance()
-                    .set(&PENDING_ADMIN_KEY, &AdminTransferState::None);
-
-                env.events().publish(
-                    (Symbol::new(&env, "admin_transfer_completed"),),
-                    (caller,),
-                );
-            }
+            None => panic!("No admin transfer pending"),
+            Some(p) if p.new_admin != caller => panic!("Only the proposed admin can accept"),
+            Some(_) => {}
         }
+
+        env.storage().instance().set(&OWNER_KEY, &caller);
+        env.storage()
+            .instance()
+            .set(&PENDING_ADMIN_KEY, &Option::<PendingAdminTransfer>::None);
+
+        env.events()
+            .publish((Symbol::new(&env, "admin_transfer_completed"),), (caller,));
     }
 
     /// Cancel a pending admin transfer. Only the current admin can cancel.
     pub fn cancel_admin_transfer(env: Env, caller: Address) {
         Self::require_admin(&env, &caller);
 
-        let pending: AdminTransferState = env
+        let pending: Option<PendingAdminTransfer> = env
             .storage()
             .instance()
             .get(&PENDING_ADMIN_KEY)
-            .unwrap();
+            .unwrap_or(None);
 
-        match pending {
-            AdminTransferState::None => {
-                panic!("No admin transfer to cancel");
-            }
-            AdminTransferState::Pending { .. } => {
-                env.storage()
-                    .instance()
-                    .set(&PENDING_ADMIN_KEY, &AdminTransferState::None);
-            }
+        if pending.is_none() {
+            panic!("No admin transfer to cancel");
         }
 
-        env.events().publish(
-            (Symbol::new(&env, "admin_transfer_cancelled"),),
-            (),
-        );
+        env.storage()
+            .instance()
+            .set(&PENDING_ADMIN_KEY, &Option::<PendingAdminTransfer>::None);
+
+        env.events()
+            .publish((Symbol::new(&env, "admin_transfer_cancelled"),), ());
     }
 
     // ════════════════════════════════════════════════════════════════════
@@ -173,7 +176,7 @@ impl UpgradeManager {
     pub fn propose_upgrade(
         env: Env,
         caller: Address,
-        new_wasm_hash: Vec<u8>,
+        new_wasm_hash: Bytes,
         description: String,
     ) -> u64 {
         Self::require_admin(&env, &caller);
@@ -187,7 +190,7 @@ impl UpgradeManager {
 
         let proposal = UpgradeProposal {
             new_wasm_hash,
-            proposed_by: caller,
+            proposed_by: caller.clone(),
             proposed_at: now,
             executable_at,
             description,
@@ -197,13 +200,13 @@ impl UpgradeManager {
         let proposal_id: u64 = env
             .storage()
             .instance()
-            .get(&symbol_short!("next_proposal_id"))
+            .get(&NEXT_PROPOSAL_KEY)
             .unwrap_or(1);
         env.storage()
             .instance()
-            .set(&symbol_short!("next_proposal_id"), &(proposal_id + 1));
+            .set(&NEXT_PROPOSAL_KEY, &(proposal_id + 1));
 
-        let key = (symbol_short!("proposal"), proposal_id);
+        let key = (PROPOSAL_KEY, proposal_id);
         env.storage().persistent().set(&key, &proposal);
 
         env.events().publish(
@@ -219,7 +222,7 @@ impl UpgradeManager {
     pub fn execute_upgrade(env: Env, caller: Address, proposal_id: u64) {
         Self::require_admin(&env, &caller);
 
-        let key = (symbol_short!("proposal"), proposal_id);
+        let key = (PROPOSAL_KEY, proposal_id);
         let proposal: UpgradeProposal = env
             .storage()
             .persistent()
@@ -238,10 +241,8 @@ impl UpgradeManager {
             .set(&UPGRADE_PROPOSAL_KEY, &Some(proposal.clone()));
         env.storage()
             .instance()
-            .set(&symbol_short!("upgrade_status"), &UpgradeStatus::Executed);
-        env.storage()
-            .instance()
-            .set(&symbol_short!("last_upgrade_at"), &now);
+            .set(&UPGRADE_STATUS_KEY, &UpgradeStatus::Executed);
+        env.storage().instance().set(&LAST_UPGRADE_KEY, &now);
 
         // Remove the proposal
         env.storage().persistent().remove(&key);
@@ -256,7 +257,7 @@ impl UpgradeManager {
     pub fn cancel_upgrade(env: Env, caller: Address, proposal_id: u64) {
         Self::require_admin(&env, &caller);
 
-        let key = (symbol_short!("proposal"), proposal_id);
+        let key = (PROPOSAL_KEY, proposal_id);
         let _: UpgradeProposal = env
             .storage()
             .persistent()
@@ -265,10 +266,8 @@ impl UpgradeManager {
 
         env.storage().persistent().remove(&key);
 
-        env.events().publish(
-            (Symbol::new(&env, "upgrade_cancelled"),),
-            (proposal_id,),
-        );
+        env.events()
+            .publish((Symbol::new(&env, "upgrade_cancelled"),), (proposal_id,));
     }
 
     // ════════════════════════════════════════════════════════════════════
@@ -277,23 +276,23 @@ impl UpgradeManager {
 
     /// Get a pending upgrade proposal by ID.
     pub fn get_upgrade_proposal(env: Env, proposal_id: u64) -> Option<UpgradeProposal> {
-        let key = (symbol_short!("proposal"), proposal_id);
+        let key = (PROPOSAL_KEY, proposal_id);
         env.storage().persistent().get(&key)
     }
 
     /// Get all pending upgrade proposals.
     pub fn get_pending_proposals(env: Env) -> Vec<u64> {
-        let mut proposals = Vec::new();
+        let mut proposals = Vec::new(&env);
         let next_id: u64 = env
             .storage()
             .instance()
-            .get(&symbol_short!("next_proposal_id"))
+            .get(&NEXT_PROPOSAL_KEY)
             .unwrap_or(1);
 
         for id in 1..next_id {
-            let key = (symbol_short!("proposal"), id);
+            let key = (PROPOSAL_KEY, id);
             if env.storage().persistent().has(&key) {
-                proposals.push(id);
+                proposals.push_back(id);
             }
         }
 
@@ -302,30 +301,20 @@ impl UpgradeManager {
 
     /// Check if there's a pending admin transfer.
     pub fn has_pending_admin_transfer(env: Env) -> bool {
-        let pending: AdminTransferState = env
-            .storage()
+        env.storage()
             .instance()
-            .get(&PENDING_ADMIN_KEY)
-            .unwrap();
-        matches!(pending, AdminTransferState::Pending { .. })
+            .get::<Symbol, Option<PendingAdminTransfer>>(&PENDING_ADMIN_KEY)
+            .unwrap_or(None)
+            .is_some()
     }
 
     /// Get the pending admin (if any).
     pub fn get_pending_admin(env: Env) -> Option<Address> {
-        let pending: AdminTransferState = env
-            .storage()
+        env.storage()
             .instance()
-            .get(&PENDING_ADMIN_KEY)
-            .unwrap();
-
-        match pending {
-            AdminTransferState::Pending {
-                new_admin,
-                proposed_by: _,
-                proposed_at: _,
-            } => Some(new_admin),
-            AdminTransferState::None => None,
-        }
+            .get::<Symbol, Option<PendingAdminTransfer>>(&PENDING_ADMIN_KEY)
+            .unwrap_or(None)
+            .map(|p| p.new_admin)
     }
 
     // ════════════════════════════════════════════════════════════════════

@@ -9,10 +9,7 @@ export class AnalyticsResource extends BaseResource {
   /**
    * Get analytics for a specific merchant.
    */
-  async getMerchantAnalytics(
-    merchantId: string,
-    days?: number,
-  ): Promise<PaymentAnalytics> {
+  async getMerchantAnalytics(merchantId: string, days?: number): Promise<PaymentAnalytics> {
     const qs = days !== undefined ? `?days=${String(days)}` : '';
     return this.client.get<PaymentAnalytics>(`/analytics/merchant/${merchantId}${qs}`);
   }
@@ -20,7 +17,10 @@ export class AnalyticsResource extends BaseResource {
   /**
    * Get merchant revenue breakdown.
    */
-  async getMerchantRevenue(merchantId: string, days?: number): Promise<{
+  async getMerchantRevenue(
+    merchantId: string,
+    days?: number,
+  ): Promise<{
     totalRevenue: string;
     totalFees: string;
     netRevenue: string;

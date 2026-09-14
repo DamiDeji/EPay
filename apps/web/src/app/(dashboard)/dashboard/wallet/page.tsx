@@ -15,11 +15,41 @@ import {
 import { useState } from 'react';
 
 const TRANSACTIONS = [
-  { type: 'in', amount: '150.00 XLM', from: 'GAD...x9m2', date: '2026-08-05 14:22', txHash: '0xabc...123' },
-  { type: 'out', amount: '45.00 XLM', to: 'GBD...k4h7', date: '2026-08-05 10:15', txHash: '0xdef...456' },
-  { type: 'in', amount: '12.50 XLM', from: 'GCD...v2f1', date: '2026-08-04 18:40', txHash: '0xghi...789' },
-  { type: 'in', amount: '89.99 XLM', from: 'GDD...n6c3', date: '2026-08-04 09:10', txHash: '0xjkl...012' },
-  { type: 'out', amount: '250.00 XLM', to: 'GED...p8d9', date: '2026-08-03 22:05', txHash: '0xmno...345' },
+  {
+    type: 'in',
+    amount: '150.00 XLM',
+    from: 'GAD...x9m2',
+    date: '2026-08-05 14:22',
+    txHash: '0xabc...123',
+  },
+  {
+    type: 'out',
+    amount: '45.00 XLM',
+    to: 'GBD...k4h7',
+    date: '2026-08-05 10:15',
+    txHash: '0xdef...456',
+  },
+  {
+    type: 'in',
+    amount: '12.50 XLM',
+    from: 'GCD...v2f1',
+    date: '2026-08-04 18:40',
+    txHash: '0xghi...789',
+  },
+  {
+    type: 'in',
+    amount: '89.99 XLM',
+    from: 'GDD...n6c3',
+    date: '2026-08-04 09:10',
+    txHash: '0xjkl...012',
+  },
+  {
+    type: 'out',
+    amount: '250.00 XLM',
+    to: 'GED...p8d9',
+    date: '2026-08-03 22:05',
+    txHash: '0xmno...345',
+  },
 ];
 
 export default function WalletPage() {
@@ -41,11 +71,19 @@ export default function WalletPage() {
             <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#0098EA]/10 to-[#1E3A8A]/10 flex items-center justify-center mx-auto mb-6">
               <Wallet className="w-10 h-10 text-[#0098EA]" />
             </div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Connect Your Wallet</h2>
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+              Connect Your Wallet
+            </h2>
             <p className="text-slate-500 dark:text-slate-400 mb-6 max-w-sm mx-auto">
               Link your Stellar wallet to send and receive payments directly on the blockchain.
             </p>
-            <Button size="lg" className="gap-2" onClick={() => { setIsConnected(true); }}>
+            <Button
+              size="lg"
+              className="gap-2"
+              onClick={() => {
+                setIsConnected(true);
+              }}
+            >
               <Wallet className="w-4 h-4" />
               Connect Stellar Wallet
             </Button>
@@ -59,7 +97,13 @@ export default function WalletPage() {
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">Wallet</h1>
-        <Button variant="outline" size="sm" className="gap-2" onClick={refreshBalance} disabled={isRefreshing}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-2"
+          onClick={refreshBalance}
+          disabled={isRefreshing}
+        >
           <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
           Refresh
         </Button>
@@ -88,11 +132,7 @@ export default function WalletPage() {
             <div className="mb-4">
               <div className="text-sm opacity-70 mb-1">Balance</div>
               <div className="text-4xl sm:text-5xl font-bold">
-                {isRefreshing ? (
-                  <Skeleton className="h-12 w-48 bg-white/20" />
-                ) : (
-                  '1,250.75 XLM'
-                )}
+                {isRefreshing ? <Skeleton className="h-12 w-48 bg-white/20" /> : '1,250.75 XLM'}
               </div>
               <div className="text-sm opacity-60 mt-1">≈ $3,126.88 USD</div>
             </div>
@@ -125,10 +165,18 @@ export default function WalletPage() {
                 <span className="font-mono text-sm truncate">GAD2kR...Bx9Yp8mQwL_fVn3</span>
               </div>
               <div className="flex items-center gap-1 flex-shrink-0">
-                <Button variant="ghost" size="icon" className="text-white hover:bg-white/10 h-8 w-8">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-white hover:bg-white/10 h-8 w-8"
+                >
                   <Copy className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="icon" className="text-white hover:bg-white/10 h-8 w-8">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-white hover:bg-white/10 h-8 w-8"
+                >
                   <ExternalLink className="w-4 h-4" />
                 </Button>
               </div>

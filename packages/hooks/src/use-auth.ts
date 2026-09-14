@@ -59,11 +59,7 @@ export function useAuth() {
   );
 
   const register = useCallback(
-    async (
-      email: string,
-      displayName: string,
-      password: string,
-    ): Promise<void> => {
+    async (email: string, displayName: string, password: string): Promise<void> => {
       const result = await api.post<{ user: User; tokens: AuthTokens }>('/auth/register', {
         email,
         displayName,

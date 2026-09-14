@@ -11,8 +11,8 @@ EPay is a non-custodial payment gateway. An early prototype targeted **The Open 
 (TON)** using the **Acton** smart-contract toolkit. That prototype was abandoned, but the
 chain identity lived on in two places that were never updated:
 
-1. The GitHub repository "About" description, which still read *"built on The Open Network
-   (TON) using the Acton smart contract development toolkit"*.
+1. The GitHub repository "About" description, which still read _"built on The Open Network
+   (TON) using the Acton smart contract development toolkit"_.
 2. Local planning documents that referred to a "migration away from a prior TON prototype"
    (`docs/WAVE_APPEAL.md`).
 
@@ -21,14 +21,14 @@ contradiction rather than a genuine second implementation.
 
 ### Evidence from the codebase
 
-| Signal | Location | Value |
-| --- | --- | --- |
-| Contract runtime | `packages/contracts/Cargo.toml` | `soroban-sdk = "21.0.0"`, `soroban-token-sdk = "21.0.0"` |
-| Compile target | `packages/contracts/package.json`, `.github/workflows/ci.yml` | `wasm32-unknown-unknown` |
-| Contract set | `packages/contracts/contracts/*` | 12 Soroban (Rust) contracts |
-| Client SDK chain | `packages/sdk/package.json` | `@stellar/stellar-sdk` |
-| Indexer source | `apps/indexer` | Stellar Horizon ledgers + Soroban contract events |
-| Wallet model | `packages/hooks/src/use-wallet.ts`, `packages/types` | Freighter / xBull / Albedo / Rabet / Lobstr, `G...` ed25519 addresses |
+| Signal           | Location                                                      | Value                                                                 |
+| ---------------- | ------------------------------------------------------------- | --------------------------------------------------------------------- |
+| Contract runtime | `packages/contracts/Cargo.toml`                               | `soroban-sdk = "21.0.0"`, `soroban-token-sdk = "21.0.0"`              |
+| Compile target   | `packages/contracts/package.json`, `.github/workflows/ci.yml` | `wasm32-unknown-unknown`                                              |
+| Contract set     | `packages/contracts/contracts/*`                              | 12 Soroban (Rust) contracts                                           |
+| Client SDK chain | `packages/sdk/package.json`                                   | `@stellar/stellar-sdk`                                                |
+| Indexer source   | `apps/indexer`                                                | Stellar Horizon ledgers + Soroban contract events                     |
+| Wallet model     | `packages/hooks/src/use-wallet.ts`, `packages/types`          | Freighter / xBull / Albedo / Rabet / Lobstr, `G...` ed25519 addresses |
 
 There is no TON/Acton dependency, build step, or contract source anywhere in `main`.
 
@@ -56,14 +56,14 @@ The obvious alternative to Stellar is an EVM L2 (Base, Arbitrum, Optimism) or
 Ethereum itself. It has more developers, more tooling, and more wallet
 integrations. We still chose Stellar, for reasons specific to payments:
 
-| Dimension | Stellar/Soroban | EVM L2 | Why it decided the choice |
-| --- | --- | --- | --- |
-| **Settlement cost** | sub-cent, deterministic | cents to dollars on L1, variable on L2 | High-volume billing and micropayments are only viable with sub-cent fees |
-| **Settlement time** | 3–5s to finality | seconds on L2, but with L1 reorg risk in the window | Merchant point-of-sale needs near-instant, low-variance confirmation |
-| **Asset conversion** | protocol-level DEX/orderbook | requires integrating a third-party AMM or oracle | Merchants can accept one asset and settle in another without EPay operating liquidity |
-| **Fee predictability** | resource-metered, capped | gas auctions, priority fees, spikes | A payment gateway must bound worst-case transaction cost |
-| **Anchor/SEP standards** | SEP-24/31 give a real fiat path | ramps are third-party and fragmented | Regulatory and fiat off-ramps map to the target merchants |
-| **Wallet ecosystem** | Freighter, xBull, Albedo, Rabet, Lobstr | far larger (MetaMask, WalletConnect, …) | **The one dimension the EVM wins**, and the main cost of this decision |
+| Dimension                | Stellar/Soroban                         | EVM L2                                              | Why it decided the choice                                                             |
+| ------------------------ | --------------------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| **Settlement cost**      | sub-cent, deterministic                 | cents to dollars on L1, variable on L2              | High-volume billing and micropayments are only viable with sub-cent fees              |
+| **Settlement time**      | 3–5s to finality                        | seconds on L2, but with L1 reorg risk in the window | Merchant point-of-sale needs near-instant, low-variance confirmation                  |
+| **Asset conversion**     | protocol-level DEX/orderbook            | requires integrating a third-party AMM or oracle    | Merchants can accept one asset and settle in another without EPay operating liquidity |
+| **Fee predictability**   | resource-metered, capped                | gas auctions, priority fees, spikes                 | A payment gateway must bound worst-case transaction cost                              |
+| **Anchor/SEP standards** | SEP-24/31 give a real fiat path         | ramps are third-party and fragmented                | Regulatory and fiat off-ramps map to the target merchants                             |
+| **Wallet ecosystem**     | Freighter, xBull, Albedo, Rabet, Lobstr | far larger (MetaMask, WalletConnect, …)             | **The one dimension the EVM wins**, and the main cost of this decision                |
 
 None of these are absolute, and a payments product could be built on an L2. But
 EPay's differentiators — merchant-grade settlement cost, speed, and built-in

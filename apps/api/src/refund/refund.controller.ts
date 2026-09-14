@@ -67,10 +67,7 @@ export class RefundController {
 
   @Patch(':id/process')
   @ApiOperation({ summary: 'Process an approved refund' })
-  async process(
-    @Param('id') id: string,
-    @Body('txHash') txHash: string,
-  ) {
+  async process(@Param('id') id: string, @Body('txHash') txHash: string) {
     return this.refundService.process(id, txHash);
   }
 

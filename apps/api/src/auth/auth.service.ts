@@ -1,12 +1,7 @@
 import * as crypto from 'crypto';
 
 import type { AuthTokens, User } from '@epay/types';
-import {
-  Injectable,
-  UnauthorizedException,
-  ConflictException,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Keypair } from '@stellar/stellar-sdk';
 
@@ -128,11 +123,7 @@ export class AuthService {
 
     // Verify the Ed25519 signature against the public key
     const authMessage = message ?? 'Login to EPay';
-    const isSignatureValid = this.verifyStellarSignature(
-      stellarPublicKey,
-      authMessage,
-      signature,
-    );
+    const isSignatureValid = this.verifyStellarSignature(stellarPublicKey, authMessage, signature);
 
     if (!isSignatureValid) {
       this.logger.warn(
@@ -145,17 +136,15 @@ export class AuthService {
       where: { stellarPublicKey },
     });
 
-    if (!user) {
-      // Auto-register wallet user after successful signature verification
-      user = await this.prisma.user.create({
-        data: {
-          email: `stellar_${stellarPublicKey.slice(0, 8)}@epay.internal`,
-          displayName: `Stellar ${stellarPublicKey.slice(0, 6)}...${stellarPublicKey.slice(-4)}`,
-          role: 'CUSTOMER',
-          stellarPublicKey,
-        },
-      });
-    }
+    // Auto-register the wallet user after successful signature verification.
+    user ??= await this.prisma.user.create({
+      data: {
+        email: `stellar_${stellarPublicKey.slice(0, 8)}@epay.internal`,
+        displayName: `Stellar ${stellarPublicKey.slice(0, 6)}...${stellarPublicKey.slice(-4)}`,
+        role: 'CUSTOMER',
+        stellarPublicKey,
+      },
+    });
 
     const tokens = await this.generateTokens(user.id);
     await this.prisma.user.update({
@@ -195,10 +184,7 @@ export class AuthService {
       where: {
         prefix,
         isActive: true,
-        OR: [
-          { expiresAt: null },
-          { expiresAt: { gt: new Date() } },
-        ],
+        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
       },
       include: {
         user: true,
@@ -260,12 +246,16 @@ export class AuthService {
 
     const accessToken = await this.jwtService.signAsync(
       payload,
-      JSON.parse(JSON.stringify({ expiresIn: process.env.JWT_EXPIRES_IN ?? '15m' })) as Parameters<typeof this.jwtService.signAsync>[1],
+      JSON.parse(JSON.stringify({ expiresIn: process.env.JWT_EXPIRES_IN ?? '15m' })) as Parameters<
+        typeof this.jwtService.signAsync
+      >[1],
     );
 
     const refreshToken = await this.jwtService.signAsync(
       payload,
-      JSON.parse(JSON.stringify({ expiresIn: process.env.JWT_REFRESH_EXPIRES_IN ?? '7d' })) as Parameters<typeof this.jwtService.signAsync>[1],
+      JSON.parse(
+        JSON.stringify({ expiresIn: process.env.JWT_REFRESH_EXPIRES_IN ?? '7d' }),
+      ) as Parameters<typeof this.jwtService.signAsync>[1],
     );
 
     return {
@@ -276,7 +266,6 @@ export class AuthService {
     };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private sanitizeUser(user: any): User {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { passwordHash, passwordSalt, refreshToken, twoFactorSecret, ...safe } = user;
@@ -288,9 +277,7 @@ export class AuthService {
    * @returns hex-encoded derived key (not a combined format; salt is stored separately)
    */
   private hashPassword(password: string, salt: string): string {
-    return crypto
-      .scryptSync(password, salt, PASSWORD_KEY_LENGTH)
-      .toString('hex');
+    return crypto.scryptSync(password, salt, PASSWORD_KEY_LENGTH).toString('hex');
   }
 
   /**
@@ -298,9 +285,7 @@ export class AuthService {
    * Uses timing-safe comparison to prevent timing attacks.
    */
   private verifyPassword(password: string, storedHash: string, salt: string): boolean {
-    const computed = crypto
-      .scryptSync(password, salt, PASSWORD_KEY_LENGTH)
-      .toString('hex');
+    const computed = crypto.scryptSync(password, salt, PASSWORD_KEY_LENGTH).toString('hex');
     return crypto.timingSafeEqual(Buffer.from(computed), Buffer.from(storedHash));
   }
 
@@ -312,11 +297,7 @@ export class AuthService {
    * @param message   - The original message that was signed
    * @param signature - Base64-encoded Ed25519 signature from the wallet
    */
-  private verifyStellarSignature(
-    publicKey: string,
-    message: string,
-    signature: string,
-  ): boolean {
+  private verifyStellarSignature(publicKey: string, message: string, signature: string): boolean {
     try {
       const keypair = Keypair.fromPublicKey(publicKey);
       const dataBuffer = Buffer.from(message, 'utf-8');
@@ -338,16 +319,13 @@ export class AuthService {
           reject(err);
           return;
         }
-        resolve(result as Buffer);
+        resolve(result);
       });
     });
     return `${salt}:${derivedKey.toString('hex')}`;
   }
 
-  private async verifyApiKey(
-    key: string,
-    storedHash: string,
-  ): Promise<boolean> {
+  private async verifyApiKey(key: string, storedHash: string): Promise<boolean> {
     const [salt, storedDerivedKeyHex] = storedHash.split(':');
     if (!salt || !storedDerivedKeyHex) return false;
 
@@ -357,7 +335,7 @@ export class AuthService {
           reject(err);
           return;
         }
-        resolve(result as Buffer);
+        resolve(result);
       });
     });
 

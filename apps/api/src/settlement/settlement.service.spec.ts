@@ -1,20 +1,34 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { SettlementService } from './settlement.service';
-import { PrismaService } from '../database/prisma.service';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { BadRequestException } from '@nestjs/common';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
+
 import { createMockPrismaService, mockDate } from '../../test/mocks/prisma.mock';
+import { PrismaService } from '../database/prisma.service';
+
+import { SettlementService } from './settlement.service';
 
 describe('SettlementService', () => {
   let service: SettlementService;
   let prisma: ReturnType<typeof createMockPrismaService>;
 
   const mockSettlement = {
-    id: 'set_1', settlementId: 'set_abc', merchantId: 'merch_1',
-    amount: BigInt(5000000000), currency: 'XLM', feeAmount: BigInt(25000000),
-    netAmount: BigInt(4975000000), status: 'PENDING',
-    paymentIds: ['pay_1', 'pay_2'], txHash: null,
-    settlementAddress: 'pending', periodStart: mockDate('2026-08-01'), periodEnd: mockDate(),
-    processedAt: null, metadata: {}, createdAt: mockDate(), updatedAt: mockDate(),
+    id: 'set_1',
+    settlementId: 'set_abc',
+    merchantId: 'merch_1',
+    amount: BigInt(5000000000),
+    currency: 'XLM',
+    feeAmount: BigInt(25000000),
+    netAmount: BigInt(4975000000),
+    status: 'PENDING',
+    paymentIds: ['pay_1', 'pay_2'],
+    txHash: null,
+    settlementAddress: 'pending',
+    periodStart: mockDate('2026-08-01'),
+    periodEnd: mockDate(),
+    processedAt: null,
+    metadata: {},
+    createdAt: mockDate(),
+    updatedAt: mockDate(),
   };
 
   beforeEach(async () => {
@@ -48,7 +62,10 @@ describe('SettlementService', () => {
     it('should process a pending settlement', async () => {
       prisma.settlement.findUnique.mockResolvedValue(mockSettlement);
       prisma.settlement.update.mockResolvedValue({
-        ...mockSettlement, status: 'COMPLETED', txHash: '0xabc', processedAt: mockDate(),
+        ...mockSettlement,
+        status: 'COMPLETED',
+        txHash: '0xabc',
+        processedAt: mockDate(),
       });
 
       const result = await service.process('set_1', '0xabc', 'GAD_wallet');
@@ -58,7 +75,9 @@ describe('SettlementService', () => {
 
     it('should throw if not pending', async () => {
       prisma.settlement.findUnique.mockResolvedValue({ ...mockSettlement, status: 'COMPLETED' });
-      await expect(service.process('set_1', '0xabc', 'GAD_wallet')).rejects.toThrow(BadRequestException);
+      await expect(service.process('set_1', '0xabc', 'GAD_wallet')).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 });

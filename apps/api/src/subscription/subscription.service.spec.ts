@@ -1,21 +1,38 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { SubscriptionService } from './subscription.service';
-import { PrismaService } from '../database/prisma.service';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { SubscriptionBillingInterval } from '@epay/types';
+import { BadRequestException } from '@nestjs/common';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
+
 import { createMockPrismaService, mockDate } from '../../test/mocks/prisma.mock';
+import { PrismaService } from '../database/prisma.service';
+
+import { SubscriptionService } from './subscription.service';
 
 describe('SubscriptionService', () => {
   let service: SubscriptionService;
   let prisma: ReturnType<typeof createMockPrismaService>;
 
   const mockSub = {
-    id: 'sub_1', subscriptionId: 'sub_abc', merchantId: 'merch_1', customerId: 'cust_1',
-    planName: 'Premium Plan', amount: BigInt(1000000000), currency: 'XLM',
-    interval: 'MONTHLY', status: 'ACTIVE',
-    trialEndDate: null, currentPeriodStart: mockDate(), currentPeriodEnd: new Date('2026-09-05'),
-    nextBillingDate: new Date('2026-09-05'), maxPayments: 12, paymentsMade: 3,
-    lastPaymentId: null, cancelledAt: null,
-    metadata: {}, createdAt: mockDate(), updatedAt: mockDate(),
+    id: 'sub_1',
+    subscriptionId: 'sub_abc',
+    merchantId: 'merch_1',
+    customerId: 'cust_1',
+    planName: 'Premium Plan',
+    amount: BigInt(1000000000),
+    currency: 'XLM',
+    interval: 'MONTHLY',
+    status: 'ACTIVE',
+    trialEndDate: null,
+    currentPeriodStart: mockDate(),
+    currentPeriodEnd: new Date('2026-09-05'),
+    nextBillingDate: new Date('2026-09-05'),
+    maxPayments: 12,
+    paymentsMade: 3,
+    lastPaymentId: null,
+    cancelledAt: null,
+    metadata: {},
+    createdAt: mockDate(),
+    updatedAt: mockDate(),
   };
 
   beforeEach(async () => {
@@ -30,8 +47,13 @@ describe('SubscriptionService', () => {
     it('should create a subscription', async () => {
       prisma.subscription.create.mockResolvedValue(mockSub);
       const result = await service.create({
-        merchantId: 'merch_1', customerId: 'cust_1', planName: 'Premium',
-        amount: '1000000000', currency: 'XLM', interval: 'MONTHLY',
+        merchantId: 'merch_1',
+        customerId: 'cust_1',
+        planName: 'Premium',
+        amount: '1000000000',
+        assetCode: 'XLM',
+        assetIssuer: 'native',
+        interval: SubscriptionBillingInterval.MONTHLY,
       });
       expect(result.subscriptionId).toMatch(/^sub_/);
       expect(result.planName).toBe('Premium Plan');
@@ -40,8 +62,14 @@ describe('SubscriptionService', () => {
     it('should set TRIAL status with trialDays', async () => {
       prisma.subscription.create.mockResolvedValue({ ...mockSub, status: 'TRIAL' });
       const result = await service.create({
-        merchantId: 'merch_1', customerId: 'cust_1', planName: 'Trial',
-        amount: '1000', currency: 'XLM', interval: 'MONTHLY', trialDays: 7,
+        merchantId: 'merch_1',
+        customerId: 'cust_1',
+        planName: 'Trial',
+        amount: '1000',
+        assetCode: 'XLM',
+        assetIssuer: 'native',
+        interval: SubscriptionBillingInterval.MONTHLY,
+        trialDays: 7,
       });
       expect(result.status).toBe('TRIAL');
     });
@@ -73,7 +101,11 @@ describe('SubscriptionService', () => {
   describe('cancel', () => {
     it('should cancel a subscription', async () => {
       prisma.subscription.findUnique.mockResolvedValue(mockSub);
-      prisma.subscription.update.mockResolvedValue({ ...mockSub, status: 'CANCELLED', cancelledAt: mockDate() });
+      prisma.subscription.update.mockResolvedValue({
+        ...mockSub,
+        status: 'CANCELLED',
+        cancelledAt: mockDate(),
+      });
       const result = await service.cancel('sub_1');
       expect(result.status).toBe('CANCELLED');
     });

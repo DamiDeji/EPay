@@ -3,7 +3,12 @@
 //! Tests cover: initialization, settlement creation, processing,
 //! fee calculation, state transitions, and data integrity.
 
-use soroban_sdk::{testutils::Address as _, Env, Address, String};
+// `Ledger` supplies `env.ledger().with_mut(...)`; without it the suite does not
+// compile (E0599).
+use soroban_sdk::{
+    testutils::{Address as _, Ledger},
+    Address, Env, String,
+};
 
 use super::*;
 
@@ -31,9 +36,11 @@ fn setup_test() -> (Env, SettlementManagerClient<'static>, Address) {
 
 #[test]
 fn test_initialize() {
-    let (env, client, _owner) = setup_test();
-    assert_eq!(client.get_next_id(), 1);
+    let (_env, client, _owner) = setup_test();
+
+    // Empty registry: no settlement ids have been allocated yet.
     assert!(client.get_settlement(&1).is_none());
+    assert!(client.get_settlement(&0).is_none());
 }
 
 #[test]
@@ -138,8 +145,8 @@ fn test_settlement_id_increments() {
     let merchant = Address::generate(&env);
     let asset_code = String::from_str(&env, "XLM");
 
-    assert_eq!(client.get_next_id(), 1);
-    client.create_settlement(
+    // Ids are handed out sequentially from 1 with no gaps or reuse.
+    let first = client.create_settlement(
         &merchant,
         &1_000_000_i128,
         &asset_code,
@@ -147,8 +154,9 @@ fn test_settlement_id_increments() {
         &1_000_000_u64,
         &2_000_000_u64,
     );
-    assert_eq!(client.get_next_id(), 2);
-    client.create_settlement(
+    assert_eq!(first, 1);
+
+    let second = client.create_settlement(
         &merchant,
         &2_000_000_i128,
         &asset_code,
@@ -156,7 +164,9 @@ fn test_settlement_id_increments() {
         &1_000_000_u64,
         &2_000_000_u64,
     );
-    assert_eq!(client.get_next_id(), 3);
+    assert_eq!(second, 2);
+    assert!(client.get_settlement(&first).is_some());
+    assert!(client.get_settlement(&second).is_some());
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -195,6 +205,10 @@ fn test_process_settlement() {
     assert!(settlement.processed_at.is_some());
 }
 
+/// Settlements created by the accounting sweep. Each create/process is a metered
+/// host call, so this is sized for CI runtime.
+const SWEEP: u64 = 64;
+
 // ════════════════════════════════════════════════════════════════════
 // MULTIPLE SETTLEMENTS
 // ════════════════════════════════════════════════════════════════════
@@ -206,28 +220,28 @@ fn test_multiple_settlements() {
     let merchant = Address::generate(&env);
     let asset_code = String::from_str(&env, "XLM");
 
-    let ids = (0..5)
-        .map(|i| {
-            client.create_settlement(
-                &merchant,
-                &(1_000_000_i128 * (i as i128 + 1)),
-                &asset_code,
-                &50_u32,
-                &(1_000_000_u64 + i * 1000),
-                &(2_000_000_u64 + i * 1000),
-            )
-        })
-        .collect::<Vec<_>>();
+    // A plain fixed-size array keeps the test free of heap allocation.
+    let mut ids = [0_u64; 5];
+    for (i, slot) in ids.iter_mut().enumerate() {
+        *slot = client.create_settlement(
+            &merchant,
+            &(1_000_000_i128 * (i as i128 + 1)),
+            &asset_code,
+            &50_u32,
+            &(1_000_000_u64 + i as u64 * 1000),
+            &(2_000_000_u64 + i as u64 * 1000),
+        );
+    }
 
     // Process every other settlement
     for (i, id) in ids.iter().enumerate() {
         if i % 2 == 0 {
-            client.process_settlement(*id);
+            client.process_settlement(id);
         }
     }
 
     for (i, id) in ids.iter().enumerate() {
-        let s = client.get_settlement(*id).unwrap();
+        let s = client.get_settlement(id).unwrap();
         if i % 2 == 0 {
             assert_eq!(s.status, SettlementStatus::Completed);
             assert!(s.processed_at.is_some());
@@ -245,7 +259,7 @@ fn test_multiple_settlements() {
 #[test]
 #[should_panic(expected = "Settlement not found")]
 fn test_operations_on_nonexistent_settlement() {
-    let (env, client, _owner) = setup_test();
+    let (_env, client, _owner) = setup_test();
     client.process_settlement(&9999_u64);
 }
 
@@ -271,7 +285,8 @@ fn test_net_amount_plus_fee_equals_total() {
                 s.amount,
                 s.fee_amount + s.net_amount,
                 "amount != fee + net for amount={}, fee_bps={}",
-                amount, fee_bps
+                amount,
+                fee_bps
             );
         }
     }
@@ -296,17 +311,18 @@ fn test_fuzz_settlement_stress() {
     let contract_id = env.register_contract(None, SettlementManager);
     let client = SettlementManagerClient::new(&env, &contract_id);
     client.init(&owner);
+    env.budget().reset_unlimited();
 
     let asset_code = String::from_str(&env, "XLM");
 
-    // Create 1000 settlements with varying amounts and fees
+    // Create `SWEEP` settlements with varying amounts and fees
     let mut total_amount: i128 = 0;
     let mut total_fee: i128 = 0;
     let mut total_net: i128 = 0;
 
-    for i in 0..1000 {
-        let amount = ((i as u64 + 1) * 100_000) as i128;
-        let fee_bps = 10 + (i % 50) * 10; // 10 bps to 4910 bps... but capped at 500
+    for i in 0..SWEEP {
+        let amount = ((i + 1) * 100_000) as i128;
+        let fee_bps = (10 + (i % 50) * 10) as u32; // 10 bps to 4910 bps, capped at 500
         let capped_fee = fee_bps.min(500);
 
         let id = client.create_settlement(

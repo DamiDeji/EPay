@@ -6,7 +6,11 @@
  * Run: npx tsx examples/basic-usage.ts
  */
 
+import type { StellarAsset } from '../src';
 import { EPayClient, PaymentStatus, InvoiceStatus, EPayError } from '../src';
+
+/** Native XLM, the asset shape every create request expects. */
+const NATIVE_ASSET: StellarAsset = { code: 'XLM', issuer: 'native', type: 'native' };
 
 async function main() {
   // ── 1. Initialize the client ────────────────────────────────────────
@@ -23,8 +27,8 @@ async function main() {
     const payment = await client.payments.create({
       merchantId: 'merch_demo_001',
       amount: '1000000000', // 1 XLM in stroops
-      currency: 'XLM',
-      recipientAddress: 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMAU',
+      asset: NATIVE_ASSET,
+      recipientPublicKey: 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMAU',
       description: 'Demo payment for SDK example',
       memo: 'SDK example',
       expiresIn: 3600,
@@ -40,13 +44,20 @@ async function main() {
 
     // ── 4. List payments with pagination ──────────────────────────────
     console.log('Listing payments (page 1, 10 per page)...');
-    const { data, total, page, totalPages, hasNext } = await client.payments.list({
+    const {
+      data: payments,
+      total,
+      page,
+      totalPages,
+      hasNext,
+    } = await client.payments.list({
       merchantId: 'merch_demo_001',
       status: PaymentStatus.PENDING,
       page: 1,
       pageSize: 10,
     });
     console.log(`  ✅ Found ${total} payments (page ${page}/${totalPages})`);
+    console.log(`     On this page: ${payments.length}`);
     console.log(`     Has next page: ${hasNext}\n`);
 
     // ── 5. Create an invoice ──────────────────────────────────────────
@@ -54,10 +65,20 @@ async function main() {
     const invoice = await client.invoices.create({
       merchantId: 'merch_demo_001',
       amount: '5000000000',
-      currency: 'XLM',
+      asset: NATIVE_ASSET,
       items: [
-        { description: 'Consulting hours (5h)', quantity: 5, unitPrice: '800000000', total: '4000000000' },
-        { description: 'Project setup fee', quantity: 1, unitPrice: '1000000000', total: '1000000000' },
+        {
+          description: 'Consulting hours (5h)',
+          quantity: 5,
+          unitPrice: '800000000',
+          total: '4000000000',
+        },
+        {
+          description: 'Project setup fee',
+          quantity: 1,
+          unitPrice: '1000000000',
+          total: '1000000000',
+        },
       ],
       dueDate: new Date(Date.now() + 30 * 86400_000),
       notes: 'Invoice for Q3 consulting services',
@@ -95,4 +116,4 @@ async function main() {
   }
 }
 
-main();
+void main();

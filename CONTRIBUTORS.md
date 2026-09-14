@@ -9,8 +9,8 @@ open a pull request that adds your name — that counts as a contribution too.
 
 ## Maintainers
 
-| Name | Role | Areas | GitHub |
-| --- | --- | --- | --- |
+| Name     | Role                       | Areas                                                                                | GitHub                                   |
+| -------- | -------------------------- | ------------------------------------------------------------------------------------ | ---------------------------------------- |
 | Damilare | Lead Engineer / Maintainer | Soroban contracts, NestJS API, Next.js dashboards, indexer, SDK, release engineering | [@DamiDeji](https://github.com/DamiDeji) |
 
 Maintainers are the people who can merge to `main` and cut releases; see
@@ -18,8 +18,8 @@ Maintainers are the people who can merge to `main` and cut releases; see
 
 ## Contributors
 
-| Name | Contribution |
-| --- | --- |
+| Name                                                | Contribution                                                           |
+| --------------------------------------------------- | ---------------------------------------------------------------------- |
 | Damilare ([@DamiDeji](https://github.com/DamiDeji)) | Project author — contracts, API, dashboards, indexer, SDK, docs, CI/CD |
 
 ## Automation
@@ -27,9 +27,9 @@ Maintainers are the people who can merge to `main` and cut releases; see
 These accounts are not people, but they do write to this repository and deserve
 to be listed so their commits are attributable:
 
-| Account | What it does |
-| --- | --- |
-| [@dependabot](https://github.com/dependabot) | Dependency updates (see `.github/dependabot.yml`) |
+| Account                                              | What it does                                          |
+| ---------------------------------------------------- | ----------------------------------------------------- |
+| [@dependabot](https://github.com/dependabot)         | Dependency updates (see `.github/dependabot.yml`)     |
 | [@github-actions](https://github.com/github-actions) | Scheduled backups, restore drills, supply-chain scans |
 
 ## How to be listed

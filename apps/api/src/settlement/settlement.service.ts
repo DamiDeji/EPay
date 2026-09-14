@@ -1,10 +1,6 @@
 import { generateId, calculateFee } from '@epay/shared';
 import type { Settlement, PaginatedResponse } from '@epay/types';
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 
 import { PrismaService } from '../database/prisma.service';
 
@@ -25,10 +21,7 @@ export class SettlementService {
     }
 
     const settlementId = generateId('set');
-    const totalAmount = completedPayments.reduce(
-      (sum, p) => sum + p.amount,
-      BigInt(0),
-    );
+    const totalAmount = completedPayments.reduce((sum, p) => sum + p.amount, BigInt(0));
     const feeAmount = BigInt(calculateFee(totalAmount.toString(), 50));
     const netAmount = totalAmount - feeAmount;
     const paymentIds = completedPayments.map((p) => p.id);

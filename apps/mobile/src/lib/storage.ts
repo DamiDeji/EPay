@@ -82,8 +82,10 @@ export async function readCache<T>(key: string): Promise<T | null> {
   }
 }
 
-export async function writeCache<T>(key: string, value: T, ttlMs: number): Promise<void> {
-  const envelope: CacheEnvelope<T> = { value, expiresAt: Date.now() + ttlMs };
+// Not generic: `value` is the only place the type would appear, so a type
+// parameter bought nothing at the call site.
+export async function writeCache(key: string, value: unknown, ttlMs: number): Promise<void> {
+  const envelope: CacheEnvelope<unknown> = { value, expiresAt: Date.now() + ttlMs };
   await AsyncStorage.setItem(`cache:${key}`, JSON.stringify(envelope));
 }
 

@@ -1,9 +1,9 @@
+import { Anthropic } from '@anthropic-ai/sdk';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { Anthropic } from '@anthropic-ai/sdk';
 
-import { AiService } from './ai.service';
 import { AiController } from './ai.controller';
+import { AiService } from './ai.service';
 
 @Module({
   imports: [ConfigModule],

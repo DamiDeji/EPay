@@ -15,6 +15,18 @@ const REQUEST_TIMEOUT_MS = 10_000;
 /** Store at most this much of a receiver's response body. */
 const MAX_RESPONSE_SNIPPET = 1024;
 
+/**
+ * How long a claimed delivery stays invisible to other workers.
+ *
+ * `processDue` claims a row by pushing `nextAttemptAt` forward by this much
+ * inside a conditional `updateMany`. Run `N` API replicas and only the replica
+ * whose update matched one row sends the request; the rest see zero rows and
+ * move on. If the claiming replica dies mid-request the lease simply expires and
+ * the delivery becomes due again, so a crash delays a webhook instead of losing
+ * it. 60s comfortably exceeds `REQUEST_TIMEOUT_MS`.
+ */
+const CLAIM_LEASE_MS = 60_000;
+
 export interface EnqueueWebhookParams {
   merchantId: string;
   eventType: string;
@@ -74,7 +86,7 @@ export class WebhookDispatcherService {
         merchantId: params.merchantId,
         eventType: params.eventType,
         url: params.url,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
         payload: params.payload as any,
         eventId: params.eventId,
         signature,
@@ -86,13 +98,20 @@ export class WebhookDispatcherService {
     return { id: delivery.id, signature };
   }
 
-  /** Attempt every delivery whose retry is due. Returns the results. */
+  /**
+   * Attempt every delivery whose retry is due, claiming each one first so that
+   * concurrent workers cannot send the same webhook twice.
+   *
+   * Returns only the results this caller actually processed — a delivery another
+   * replica claimed is not reported here.
+   */
   async processDue(limit = 50): Promise<WebhookAttemptResult[]> {
+    const now = new Date();
     const due = await this.prisma.webhookDelivery.findMany({
       where: {
         succeededAt: null,
         deadLetteredAt: null,
-        nextAttemptAt: { lte: new Date() },
+        nextAttemptAt: { lte: now },
       },
       orderBy: { nextAttemptAt: 'asc' },
       take: limit,
@@ -100,9 +119,31 @@ export class WebhookDispatcherService {
 
     const results: WebhookAttemptResult[] = [];
     for (const delivery of due) {
+      if (!(await this.claim(delivery.id, now))) {
+        continue;
+      }
       results.push(await this.attempt(delivery.id));
     }
     return results;
+  }
+
+  /**
+   * Take exclusive responsibility for a delivery by pushing its `nextAttemptAt`
+   * into the future, but only if it is still due and still unfinished. The
+   * `updateMany` + `count` check is the whole point: it is a single atomic
+   * statement, so two replicas racing for the same row cannot both see `1`.
+   */
+  private async claim(id: string, now: Date): Promise<boolean> {
+    const result = await this.prisma.webhookDelivery.updateMany({
+      where: {
+        id,
+        succeededAt: null,
+        deadLetteredAt: null,
+        nextAttemptAt: { lte: now },
+      },
+      data: { nextAttemptAt: new Date(now.getTime() + CLAIM_LEASE_MS) },
+    });
+    return result.count === 1;
   }
 
   /** Perform a single delivery attempt and apply the retry policy. */
@@ -116,10 +157,14 @@ export class WebhookDispatcherService {
 
     const body = JSON.stringify(delivery.payload);
     const signature =
-      delivery.signature ?? buildWebhookSignatureHeader(await this.secretFor(delivery.merchantId), body);
+      delivery.signature ??
+      buildWebhookSignatureHeader(await this.secretFor(delivery.merchantId), body);
 
     let statusCode: number | null = null;
-    let responseSnippet = '';
+    // Assigned on every path below — in the `try` from the receiver's body, or
+    // in the `catch` from the failure itself — so an initial value would only
+    // ever be overwritten.
+    let responseSnippet: string;
     let succeeded = false;
 
     try {
@@ -143,7 +188,13 @@ export class WebhookDispatcherService {
       responseSnippet = error instanceof Error ? error.message : String(error);
     }
 
-    return this.recordAttempt(delivery.id, delivery.attempts, statusCode, responseSnippet, succeeded);
+    return this.recordAttempt(
+      delivery.id,
+      delivery.attempts,
+      statusCode,
+      responseSnippet,
+      succeeded,
+    );
   }
 
   private async recordAttempt(
@@ -168,7 +219,13 @@ export class WebhookDispatcherService {
           nextAttemptAt: null,
         },
       });
-      return { deliveryId: id, statusCode, succeeded: true, nextAttemptAt: null, deadLettered: false };
+      return {
+        deliveryId: id,
+        statusCode,
+        succeeded: true,
+        nextAttemptAt: null,
+        deadLettered: false,
+      };
     }
 
     // `attemptIndex` is the number of *retries* already scheduled.
@@ -190,7 +247,13 @@ export class WebhookDispatcherService {
       this.logger.error(
         `Webhook delivery ${id} dead-lettered after ${String(attempts)} attempts (last status ${String(statusCode)})`,
       );
-      return { deliveryId: id, statusCode, succeeded: false, nextAttemptAt: null, deadLettered: true };
+      return {
+        deliveryId: id,
+        statusCode,
+        succeeded: false,
+        nextAttemptAt: null,
+        deadLettered: true,
+      };
     }
 
     const nextAttemptAt = new Date(now.getTime() + delaySeconds * 1000);

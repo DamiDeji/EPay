@@ -46,10 +46,10 @@ and the API read the same key, so the app and the database agree on the password
 
 ## Why both Helm and raw manifests?
 
-| Path | Use when |
-| --- | --- |
-| `helm/epay/` | You want values overrides, digest enforcement, and release history. This is the maintained path. |
-| `k8s/manifests.yaml` | You deploy with `kubectl apply`, or you need to diff exactly what will hit the cluster. |
+| Path                 | Use when                                                                                         |
+| -------------------- | ------------------------------------------------------------------------------------------------ |
+| `helm/epay/`         | You want values overrides, digest enforcement, and release history. This is the maintained path. |
+| `k8s/manifests.yaml` | You deploy with `kubectl apply`, or you need to diff exactly what will hit the cluster.          |
 
 Argo CD deploys the Helm chart (see `gitops/argocd-application.yaml`), not this
 file.

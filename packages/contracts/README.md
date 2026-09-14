@@ -58,12 +58,12 @@ Grouping the contracts by how much damage a bug can do makes review effort
 proportional to risk, and matches how the audit is scoped in
 [SECURITY.md](./SECURITY.md).
 
-| Tier | Contracts | Why |
-| --- | --- | --- |
-| **Funds-at-risk** | `EscrowManager`, `RefundManager`, `TreasuryVault`, `PaymentRouter`, `FeeManager` | Move or account for real token balances |
+| Tier                | Contracts                                                                        | Why                                                                 |
+| ------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| **Funds-at-risk**   | `EscrowManager`, `RefundManager`, `TreasuryVault`, `PaymentRouter`, `FeeManager` | Move or account for real token balances                             |
 | **State-integrity** | `InvoiceManager`, `SubscriptionManager`, `SettlementManager`, `MerchantRegistry` | Authoritative business records; wrong state means wrong money later |
-| **Control-plane** | `UpgradeManager`, `EmergencyPause`, `RoleManager`, `ConfigurationManager` | Can halt or reconfigure everything else |
-| **Extension** | `PriceOracle`, `Governance`, `ImpactNFT` | Newer; not on the money path for a v1 merchant |
+| **Control-plane**   | `UpgradeManager`, `EmergencyPause`, `RoleManager`, `ConfigurationManager`        | Can halt or reconfigure everything else                             |
+| **Extension**       | `PriceOracle`, `Governance`, `ImpactNFT`                                         | Newer; not on the money path for a v1 merchant                      |
 
 ---
 

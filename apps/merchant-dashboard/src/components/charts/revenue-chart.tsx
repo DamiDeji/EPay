@@ -2,9 +2,7 @@
 
 import { useTheme } from 'next-themes';
 import { useState, useEffect } from 'react';
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-} from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const DATA = [
   { month: 'Jan', revenue: 420, volume: 520, fees: 21 },
@@ -20,7 +18,9 @@ const DATA = [
 export function RevenueChart() {
   const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   if (!mounted) return <div className="h-80" />;
 
@@ -29,9 +29,23 @@ export function RevenueChart() {
   return (
     <ResponsiveContainer width="100%" height={320}>
       <BarChart data={DATA} barGap={4}>
-        <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#334155' : '#e2e8f0'} vertical={false} />
-        <XAxis dataKey="month" tick={{ fontSize: 12, fill: isDark ? '#94a3b8' : '#64748b' }} axisLine={false} tickLine={false} />
-        <YAxis tick={{ fontSize: 12, fill: isDark ? '#94a3b8' : '#64748b' }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}`} />
+        <CartesianGrid
+          strokeDasharray="3 3"
+          stroke={isDark ? '#334155' : '#e2e8f0'}
+          vertical={false}
+        />
+        <XAxis
+          dataKey="month"
+          tick={{ fontSize: 12, fill: isDark ? '#94a3b8' : '#64748b' }}
+          axisLine={false}
+          tickLine={false}
+        />
+        <YAxis
+          tick={{ fontSize: 12, fill: isDark ? '#94a3b8' : '#64748b' }}
+          axisLine={false}
+          tickLine={false}
+          tickFormatter={(v) => `${v}`}
+        />
         <Tooltip
           contentStyle={{
             backgroundColor: isDark ? '#1e293b' : '#fff',

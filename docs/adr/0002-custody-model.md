@@ -30,7 +30,7 @@ it (escrow and subscriptions).** EPay never takes custody of funds. The
 in escrow only for the lifetime of a specific agreement, and their release
 conditions are enforced on-chain.
 
-`TreasuryVault` and `FeeManager` hold *platform fees* only — never user
+`TreasuryVault` and `FeeManager` hold _platform fees_ only — never user
 principal.
 
 ## Rationale
@@ -67,7 +67,7 @@ principal.
 - The auth model must be wallet-signature based alongside passwords
   ([ADR 0003](./0003-auth-model.md)).
 - The mobile app is deliberately watch-and-pay, never hold-a-key.
-- Contract upgrade paths need a timelock, because a malicious upgrade *would*
+- Contract upgrade paths need a timelock, because a malicious upgrade _would_
   grant spending authority ([ADR 0004](./0004-upgrade-pattern.md)).
 
 ## Rejected alternatives

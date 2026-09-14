@@ -8,9 +8,11 @@ rust-version.workspace = true
 crate-type = ["cdylib", "rlib"]
 path = "src/lib.rs"
 
-[features]
-default = ["std"]
-std = ["soroban-sdk/std"]
+# See governance/Cargo.toml: the `std` feature does not exist on soroban-sdk 21
+# and made the workspace unresolvable. `testutils` is what the test module needs.
 
 [dependencies]
 soroban-sdk = { workspace = true }
+
+[dev-dependencies]
+soroban-sdk = { workspace = true, features = ["testutils"] }

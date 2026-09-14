@@ -22,8 +22,8 @@ pnpm --filter @epay/extension build:firefox    # Firefox MV3 → dist/
 pnpm --filter @epay/extension dev              # watch build
 ```
 
-Load `apps/extension/dist` via `chrome://extensions` → *Load unpacked*, or
-`about:debugging` → *Load Temporary Add-on* in Firefox.
+Load `apps/extension/dist` via `chrome://extensions` → _Load unpacked_, or
+`about:debugging` → _Load Temporary Add-on_ in Firefox.
 
 `@epay/sdk` and `@epay/hooks` must be built first:
 
@@ -34,14 +34,14 @@ pnpm --filter @epay/hooks build
 
 ## Permissions (least privilege)
 
-| Permission | Why it is needed |
-| --- | --- |
-| `storage` | Persist the configured API/web URLs between popup and service-worker restarts. |
-| `activeTab` | Read the current tab to query the content script for detected addresses. |
+| Permission  | Why it is needed                                                               |
+| ----------- | ------------------------------------------------------------------------------ |
+| `storage`   | Persist the configured API/web URLs between popup and service-worker restarts. |
+| `activeTab` | Read the current tab to query the content script for detected addresses.       |
 
 `host_permissions` are limited to Horizon, Soroban RPC, and the EPay API. The
 extension requests no browsing-history, `webRequest`, or `<all_urls>` host
-access; the content script matches `<all_urls>` for *injection* only and makes no
+access; the content script matches `<all_urls>` for _injection_ only and makes no
 network requests of its own.
 
 ## Tests
@@ -65,5 +65,5 @@ the background worker is declared as an event page
 
 - Icons are intentionally not declared: Chrome and Firefox use a generated
   placeholder until the brand PNGs are added under `apps/extension/icons/`.
-- The extension is a *thin* surface. It never holds keys and never talks to
+- The extension is a _thin_ surface. It never holds keys and never talks to
   Soroban directly — it hands off to the hosted EPay checkout.

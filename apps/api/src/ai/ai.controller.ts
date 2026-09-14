@@ -1,12 +1,4 @@
-import {
-  Controller,
-  Get,
-  Param,
-  Query,
-  HttpCode,
-  HttpStatus,
-  ParseUUIDPipe,
-} from '@nestjs/common';
+import { Controller, Get, Param, Query, HttpCode, HttpStatus, ParseUUIDPipe } from '@nestjs/common';
 
 import { AiService, MerchantSummary, InvoiceSummary, SettlementSummary } from './ai.service';
 
@@ -19,7 +11,7 @@ export class AiController {
     @Param('id', ParseUUIDPipe) merchantId: string,
     @Query('tone') tone?: 'professional' | 'casual' | 'technical',
   ): Promise<{ success: true; data: MerchantSummary }> {
-    const options = tone ? { tone: tone as 'professional' | 'casual' | 'technical' } : {};
+    const options = tone ? { tone: tone } : {};
     const data = await this.aiService.generateMerchantSummary(merchantId, options);
     return { success: true, data };
   }
@@ -29,7 +21,7 @@ export class AiController {
     @Param('id', ParseUUIDPipe) invoiceId: string,
     @Query('tone') tone?: 'professional' | 'casual' | 'technical',
   ): Promise<{ success: true; data: InvoiceSummary }> {
-    const options = tone ? { tone: tone as 'professional' | 'casual' | 'technical' } : {};
+    const options = tone ? { tone: tone } : {};
     const data = await this.aiService.generateInvoiceSummary(invoiceId, options);
     return { success: true, data };
   }
@@ -39,17 +31,17 @@ export class AiController {
     @Param('id', ParseUUIDPipe) settlementId: string,
     @Query('tone') tone?: 'professional' | 'casual' | 'technical',
   ): Promise<{ success: true; data: SettlementSummary }> {
-    const options = tone ? { tone: tone as 'professional' | 'casual' | 'technical' } : {};
+    const options = tone ? { tone: tone } : {};
     const data = await this.aiService.generateSettlementSummary(settlementId, options);
     return { success: true, data };
   }
 
   @Get('health')
   @HttpCode(HttpStatus.OK)
-  async health(): Promise<{ status: string; cached: number }> {
+  health(): { status: string; cached: number } {
     return {
       status: 'ok',
-      cached: this.aiService['cache'].size,
+      cached: this.aiService.cacheSize,
     };
   }
 }

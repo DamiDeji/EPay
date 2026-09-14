@@ -14,8 +14,12 @@ export async function handleSubscriptionEvent(
   switch (eventName) {
     case 'SubscriptionCreated': {
       const d = data as {
-        subscriptionId: number; merchant: string; customer: string; planName: string;
-        amount: string; interval: string;
+        subscriptionId: number;
+        merchant: string;
+        customer: string;
+        planName: string;
+        amount: string;
+        interval: string;
       };
       await prisma.subscription.upsert({
         where: { subscriptionId: `sub_${d.subscriptionId}` },

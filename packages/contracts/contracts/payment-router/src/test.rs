@@ -45,10 +45,15 @@ fn setup_test() -> (
     (env, client, contract_id, owner, token_admin, token_address)
 }
 
-/// Helper: fund a contract address with tokens from the token admin.
+/// Helper: mint tokens to an address from the token admin.
 fn fund_address(env: &Env, token_address: &Address, recipient: &Address, amount: i128) {
     let token_client = token::StellarAssetClient::new(env, token_address);
     token_client.mint(recipient, &amount);
+}
+
+/// Helper: token balance of an address.
+fn balance_of(env: &Env, token_address: &Address, of: &Address) -> i128 {
+    token::Client::new(env, token_address).balance(of)
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -90,12 +95,14 @@ fn test_cannot_reinitialize() {
 
 #[test]
 fn test_create_payment() {
-    let (env, client, _contract_id, _owner, _token_admin, _token) = setup_test();
+    let (env, client, _contract_id, _owner, token_admin, token) = setup_test();
 
     let payer = Address::generate(&env);
     let merchant = Address::generate(&env);
     let recipient = Address::generate(&env);
     let asset_code = String::from_str(&env, "native");
+
+    fund_address(&env, &token, &payer, 10_000_000);
 
     let payment_id = client.create_payment(
         &merchant,
@@ -113,17 +120,48 @@ fn test_create_payment() {
     assert_eq!(payment.amount, 10_000_000);
     assert_eq!(payment.status, PaymentStatus::Pending);
     assert_eq!(payment.fee, 50_000);
+
+    // Creating a payment moves the payer's tokens into the router, so the
+    // record is always backed by funds the contract holds.
+    let _ = token_admin;
+    assert_eq!(balance_of(&env, &token, &payer), 0);
+}
+
+#[test]
+#[should_panic]
+fn test_create_payment_requires_funds() {
+    let (env, client, _contract_id, _owner, _token_admin, token) = setup_test();
+
+    let payer = Address::generate(&env);
+    let merchant = Address::generate(&env);
+    let recipient = Address::generate(&env);
+    let asset_code = String::from_str(&env, "native");
+
+    // The payer has no balance, so the transfer inside `create_payment` fails.
+    client.create_payment(
+        &merchant,
+        &payer,
+        &recipient,
+        &10_000_000_i128,
+        &asset_code,
+        &None,
+        &None,
+    );
+
+    let _ = token;
 }
 
 #[test]
 fn test_create_payment_with_memo() {
-    let (env, client, _contract_id, _owner, _token_admin, _token) = setup_test();
+    let (env, client, _contract_id, _owner, _token_admin, token) = setup_test();
 
     let payer = Address::generate(&env);
     let merchant = Address::generate(&env);
     let recipient = Address::generate(&env);
     let asset_code = String::from_str(&env, "native");
     let memo = String::from_str(&env, "Invoice #42");
+
+    fund_address(&env, &token, &payer, 5_000_000);
 
     let payment_id = client.create_payment(
         &merchant,
@@ -151,6 +189,9 @@ fn test_confirm_and_complete_payment() {
     let recipient = Address::generate(&env);
     let asset_code = String::from_str(&env, "native");
 
+    // The payer funds the payment; `create_payment` moves it into the router.
+    fund_address(&env, &token_address, &payer, 10_000_000);
+
     let payment_id = client.create_payment(
         &merchant,
         &payer,
@@ -161,6 +202,8 @@ fn test_confirm_and_complete_payment() {
         &None,
     );
 
+    assert_eq!(balance_of(&env, &token_address, &contract_id), 10_000_000);
+
     let tx_hash = String::from_str(&env, "abc123def456");
 
     // Confirm — merchant is the caller
@@ -170,14 +213,16 @@ fn test_confirm_and_complete_payment() {
     assert_eq!(payment.status, PaymentStatus::Confirmed);
     assert_eq!(payment.tx_hash, Some(tx_hash));
 
-    // Fund contract before completing
-    fund_address(&env, &token_address, &contract_id, 10_000_000);
-
     // Complete — merchant can complete
     client.complete_payment(&merchant, &payment_id);
 
     let payment = client.get_payment(&payment_id).unwrap();
     assert_eq!(payment.status, PaymentStatus::Completed);
+
+    // Conservation of funds: the recipient receives amount - fee and the router
+    // retains exactly the fee.
+    assert_eq!(balance_of(&env, &token_address, &recipient), 9_950_000);
+    assert_eq!(balance_of(&env, &token_address, &contract_id), 50_000);
 }
 
 #[test]
@@ -188,6 +233,8 @@ fn test_owner_can_confirm_and_complete() {
     let merchant = Address::generate(&env);
     let recipient = Address::generate(&env);
     let asset_code = String::from_str(&env, "native");
+
+    fund_address(&env, &token_address, &payer, 10_000_000);
 
     let payment_id = client.create_payment(
         &merchant,
@@ -207,25 +254,25 @@ fn test_owner_can_confirm_and_complete() {
     let payment = client.get_payment(&payment_id).unwrap();
     assert_eq!(payment.status, PaymentStatus::Confirmed);
 
-    // Fund contract
-    fund_address(&env, &token_address, &contract_id, 10_000_000);
-
     // Owner can complete
     client.complete_payment(&owner, &payment_id);
 
     let payment = client.get_payment(&payment_id).unwrap();
     assert_eq!(payment.status, PaymentStatus::Completed);
+    assert_eq!(balance_of(&env, &token_address, &contract_id), 50_000);
 }
 
 #[test]
 #[should_panic(expected = "Not confirmed")]
 fn test_cannot_complete_unconfirmed() {
-    let (env, client, _contract_id, _owner, _token_admin, _token) = setup_test();
+    let (env, client, _contract_id, _owner, _token_admin, token) = setup_test();
 
     let payer = Address::generate(&env);
     let merchant = Address::generate(&env);
     let recipient = Address::generate(&env);
     let asset_code = String::from_str(&env, "native");
+
+    fund_address(&env, &token, &payer, 10_000_000);
 
     let payment_id = client.create_payment(
         &merchant,
@@ -247,12 +294,14 @@ fn test_cannot_complete_unconfirmed() {
 
 #[test]
 fn test_fail_payment() {
-    let (env, client, _contract_id, _owner, _token_admin, _token) = setup_test();
+    let (env, client, _contract_id, _owner, _token_admin, token) = setup_test();
 
     let payer = Address::generate(&env);
     let merchant = Address::generate(&env);
     let recipient = Address::generate(&env);
     let asset_code = String::from_str(&env, "native");
+
+    fund_address(&env, &token, &payer, 10_000_000);
 
     let payment_id = client.create_payment(
         &merchant,
@@ -275,13 +324,15 @@ fn test_fail_payment() {
 // ════════════════════════════════════════════════════════════════
 
 #[test]
-fn test_refund_payment() {
+fn test_refund_payment_returns_retained_fee() {
     let (env, client, contract_id, owner, _token_admin, token_address) = setup_test();
 
     let payer = Address::generate(&env);
     let merchant = Address::generate(&env);
     let recipient = Address::generate(&env);
     let asset_code = String::from_str(&env, "native");
+
+    fund_address(&env, &token_address, &payer, 10_000_000);
 
     let payment_id = client.create_payment(
         &merchant,
@@ -295,30 +346,119 @@ fn test_refund_payment() {
 
     let tx_hash = String::from_str(&env, "abc123");
     client.confirm_payment(&merchant, &payment_id, &tx_hash);
-
-    fund_address(&env, &token_address, &contract_id, 10_000_000);
-
     client.complete_payment(&merchant, &payment_id);
 
-    // Refund needs more tokens in contract
-    fund_address(&env, &token_address, &contract_id, 10_000_000);
+    // After completion the router's remaining liability for this payment is the
+    // fee it retained; the net amount is with the recipient.
+    assert_eq!(balance_of(&env, &token_address, &contract_id), 50_000);
 
     // Only owner can refund
     client.refund_payment(&owner, &payment_id);
 
     let payment = client.get_payment(&payment_id).unwrap();
     assert_eq!(payment.status, PaymentStatus::Refunded);
+
+    // The refund is fund-conserving: the payer gets exactly what the contract
+    // held, and the contract is left with nothing for this payment.
+    assert_eq!(balance_of(&env, &token_address, &payer), 50_000);
+    assert_eq!(balance_of(&env, &token_address, &contract_id), 0);
 }
 
 #[test]
-#[should_panic(expected = "Can only refund completed")]
-fn test_cannot_refund_pending() {
-    let (env, client, _contract_id, owner, _token_admin, _token) = setup_test();
+fn test_refund_cannot_drain_another_payments_funds() {
+    let (env, client, contract_id, owner, _token_admin, token_address) = setup_test();
+
+    let payer_a = Address::generate(&env);
+    let payer_b = Address::generate(&env);
+    let merchant = Address::generate(&env);
+    let recipient = Address::generate(&env);
+    let asset_code = String::from_str(&env, "native");
+
+    fund_address(&env, &token_address, &payer_a, 10_000_000);
+    fund_address(&env, &token_address, &payer_b, 10_000_000);
+
+    // Payment A completes, leaving only its fee behind.
+    let id_a = client.create_payment(
+        &merchant,
+        &payer_a,
+        &recipient,
+        &10_000_000_i128,
+        &asset_code,
+        &None,
+        &None,
+    );
+    let tx_hash = String::from_str(&env, "a");
+    client.confirm_payment(&merchant, &id_a, &tx_hash);
+    client.complete_payment(&merchant, &id_a);
+
+    // Payment B is still open, so its 10_000_000 is held by the router.
+    let _id_b = client.create_payment(
+        &merchant,
+        &payer_b,
+        &recipient,
+        &10_000_000_i128,
+        &asset_code,
+        &None,
+        &None,
+    );
+
+    // Refunding A must not take B's escrowed principal. Before the accounting
+    // fix this call pulled the full 10_000_000 out of the router, which then
+    // made B's own completion fail for lack of balance.
+    client.refund_payment(&owner, &id_a);
+
+    // Router must still hold B's principal, untouched by A's refund.
+    assert_eq!(balance_of(&env, &token_address, &contract_id), 10_000_000);
+
+    // Now prove B can still be completed. This is the real regression guard.
+    client.confirm_payment(&merchant, &_id_b, &tx_hash);
+    client.complete_payment(&merchant, &_id_b);
+}
+
+#[test]
+fn test_payer_balance_conserved_across_full_lifecycle() {
+    let (env, client, _contract_id, owner, _token_admin, token_address) = setup_test();
 
     let payer = Address::generate(&env);
     let merchant = Address::generate(&env);
     let recipient = Address::generate(&env);
     let asset_code = String::from_str(&env, "native");
+
+    let amount = 10_000_000_i128;
+    fund_address(&env, &token_address, &payer, amount);
+
+    let id = client.create_payment(
+        &merchant,
+        &payer,
+        &recipient,
+        &amount,
+        &asset_code,
+        &None,
+        &None,
+    );
+    let tx_hash = String::from_str(&env, "lifecycle");
+    client.confirm_payment(&merchant, &id, &tx_hash);
+    client.complete_payment(&merchant, &id);
+    client.refund_payment(&owner, &id);
+
+    // amount = recipient's net + payer's refunded fee + the platform fee that
+    // remains in the router (zero here, because the fee was refunded).
+    let recipient_got = balance_of(&env, &token_address, &recipient);
+    let payer_got_back = balance_of(&env, &token_address, &payer);
+    assert_eq!(recipient_got + payer_got_back, amount);
+}
+
+#[test]
+#[should_panic(expected = "Can only refund completed")]
+fn test_cannot_refund_pending() {
+    let (env, client, _contract_id, owner, _token_admin, token) = setup_test();
+
+    let payer = Address::generate(&env);
+    let merchant = Address::generate(&env);
+    let recipient = Address::generate(&env);
+    let asset_code = String::from_str(&env, "native");
+
+    fund_address(&env, &token, &payer, 1_000_000);
 
     let payment_id = client.create_payment(
         &merchant,
@@ -341,12 +481,14 @@ fn test_cannot_refund_pending() {
 #[test]
 #[should_panic(expected = "Not pending")]
 fn test_cannot_confirm_twice() {
-    let (env, client, _contract_id, _owner, _token_admin, _token) = setup_test();
+    let (env, client, _contract_id, _owner, _token_admin, token) = setup_test();
 
     let payer = Address::generate(&env);
     let merchant = Address::generate(&env);
     let recipient = Address::generate(&env);
     let asset_code = String::from_str(&env, "native");
+
+    fund_address(&env, &token, &payer, 10_000_000);
 
     let payment_id = client.create_payment(
         &merchant,
@@ -366,12 +508,14 @@ fn test_cannot_confirm_twice() {
 
 #[test]
 fn test_payment_count() {
-    let (env, client, _contract_id, _owner, _token_admin, _token) = setup_test();
+    let (env, client, _contract_id, _owner, _token_admin, token) = setup_test();
 
     let payer = Address::generate(&env);
     let merchant = Address::generate(&env);
     let recipient = Address::generate(&env);
     let asset_code = String::from_str(&env, "native");
+
+    fund_address(&env, &token, &payer, 6_000_000);
 
     assert_eq!(client.get_payment_count(), 0);
     client.create_payment(
@@ -408,12 +552,14 @@ fn test_payment_count() {
 
 #[test]
 fn test_payment_exists() {
-    let (env, client, _contract_id, _owner, _token_admin, _token) = setup_test();
+    let (env, client, _contract_id, _owner, _token_admin, token) = setup_test();
 
     let payer = Address::generate(&env);
     let merchant = Address::generate(&env);
     let recipient = Address::generate(&env);
     let asset_code = String::from_str(&env, "native");
+
+    fund_address(&env, &token, &payer, 1_000_000);
 
     assert!(!client.payment_exists(&1));
     client.create_payment(

@@ -1,11 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  buildPaymentUri,
-  findStellarAccounts,
-  isStellarAccount,
-  truncateAccount,
-} from './detect';
+import { buildPaymentUri, findStellarAccounts, isStellarAccount, truncateAccount } from './detect';
 
 // `G` followed by 55 base32 characters (RFC 4648 alphabet A–Z and 2–7).
 const A = `G${'A'.repeat(55)}`;
@@ -59,9 +54,7 @@ describe('truncateAccount', () => {
 
 describe('buildPaymentUri', () => {
   it('encodes destination, amount, and asset', () => {
-    expect(buildPaymentUri(A, '12.5', 'USDC')).toBe(
-      `epay://pay?to=${A}&amount=12.5&asset=USDC`,
-    );
+    expect(buildPaymentUri(A, '12.5', 'USDC')).toBe(`epay://pay?to=${A}&amount=12.5&asset=USDC`);
   });
 
   it('omits empty optional parameters', () => {

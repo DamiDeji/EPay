@@ -14,7 +14,7 @@ export class CreatePaymentLinkDto {
   @IsString()
   assetCode: string;
 
-  @ApiProperty({ example: "native", description: "Asset issuer (native for XLM)" })
+  @ApiProperty({ example: 'native', description: 'Asset issuer (native for XLM)' })
   @IsString()
   assetIssuer: string;
 

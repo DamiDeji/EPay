@@ -1,16 +1,16 @@
 'use client';
 
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, Button, Input, Badge } from '@epay/ui';
 import {
-  User,
-  Bell,
-  Globe,
-  Key,
-  Save,
-  Copy,
-  Eye,
-  EyeOff,
-} from 'lucide-react';
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  Button,
+  Input,
+  Badge,
+} from '@epay/ui';
+import { User, Bell, Globe, Key, Save, Copy, Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
 
 export default function SettingsPage() {
@@ -20,7 +20,9 @@ export default function SettingsPage() {
     <div className="space-y-8 max-w-3xl">
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">Settings</h1>
-        <p className="text-slate-500 dark:text-slate-400 mt-1">Manage your account and preferences.</p>
+        <p className="text-slate-500 dark:text-slate-400 mt-1">
+          Manage your account and preferences.
+        </p>
       </div>
 
       {/* Profile */}
@@ -81,7 +83,9 @@ export default function SettingsPage() {
                   variant="ghost"
                   size="icon"
                   className="h-6 w-6"
-                  onClick={() => { setShowApiKey(!showApiKey); }}
+                  onClick={() => {
+                    setShowApiKey(!showApiKey);
+                  }}
                 >
                   {showApiKey ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
                 </Button>
@@ -108,14 +112,19 @@ export default function SettingsPage() {
             </div>
             <div>
               <CardTitle>Webhooks</CardTitle>
-              <CardDescription>Configure webhook endpoints for real-time event notifications.</CardDescription>
+              <CardDescription>
+                Configure webhook endpoints for real-time event notifications.
+              </CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <label className="text-sm font-medium">Webhook URL</label>
-            <Input placeholder="https://your-app.com/webhooks/epay" defaultValue="https://example.com/webhooks/epay" />
+            <Input
+              placeholder="https://your-app.com/webhooks/epay"
+              defaultValue="https://example.com/webhooks/epay"
+            />
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium">Webhook Secret</label>
@@ -154,11 +163,7 @@ export default function SettingsPage() {
               <div key={item.label} className="flex items-center justify-between py-2">
                 <span className="text-sm text-slate-700 dark:text-slate-300">{item.label}</span>
                 <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="sr-only peer"
-                    defaultChecked={item.enabled}
-                  />
+                  <input type="checkbox" className="sr-only peer" defaultChecked={item.enabled} />
                   <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#0098EA]" />
                 </label>
               </div>

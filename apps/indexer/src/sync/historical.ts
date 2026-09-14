@@ -116,6 +116,7 @@ export class HistoricalSync {
             );
             throw new Error(
               `Historical sync aborted after ${this.consecutiveFailures} consecutive batch failures`,
+              { cause: error },
             );
           }
           // Otherwise continue with next batch for resilience
@@ -124,11 +125,21 @@ export class HistoricalSync {
 
       const durationMs = Date.now() - startedAt;
       log.info(
-        { blocksProcessed: totalBlocks, eventsFound: totalEvents, durationMs, batchesFailed: this.totalFailures },
+        {
+          blocksProcessed: totalBlocks,
+          eventsFound: totalEvents,
+          durationMs,
+          batchesFailed: this.totalFailures,
+        },
         'Historical sync completed',
       );
 
-      return { blocksProcessed: totalBlocks, eventsFound: totalEvents, durationMs, batchesFailed: this.totalFailures };
+      return {
+        blocksProcessed: totalBlocks,
+        eventsFound: totalEvents,
+        durationMs,
+        batchesFailed: this.totalFailures,
+      };
     } catch (error) {
       log.error({ error }, 'Historical sync failed');
       throw error;

@@ -1,5 +1,5 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Anthropic } from '@anthropic-ai/sdk';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 
 import { PrismaService } from '../database/prisma.service';
 
@@ -36,6 +36,14 @@ export interface SettlementSummary {
 export class AiService {
   private readonly logger = new Logger(AiService.name);
   private readonly cache = new Map<string, { data: unknown; expiresAt: number }>();
+
+  /**
+   * Number of cached summaries. Exposed because the controller's health probe
+   * reports it; reading the private map directly did not compile (`TS2341`).
+   */
+  get cacheSize(): number {
+    return this.cache.size;
+  }
 
   constructor(
     @Inject('AnthropicClient') private readonly anthropic: Anthropic,
@@ -179,14 +187,12 @@ export class AiService {
 
   private async callAnthropic(prompt: string, options: AiSummaryOptions): Promise<string> {
     try {
-        const response = await this.anthropic.messages.create(
-        {
-          model: 'claude-3-5-sonnet-20241022',
-          max_tokens: options.maxLength ?? 500,
-          messages: [{ role: 'user', content: prompt }],
-          system: this.getSystemPrompt(options.tone ?? 'professional'),
-        } as Parameters<typeof this.anthropic.messages.create>[0],
-      );
+      const response = await this.anthropic.messages.create({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: options.maxLength ?? 500,
+        messages: [{ role: 'user', content: prompt }],
+        system: this.getSystemPrompt(options.tone ?? 'professional'),
+      } as Parameters<typeof this.anthropic.messages.create>[0]);
 
       // Type guard for non-streaming response
       if ('content' in response && Array.isArray(response.content)) {
@@ -197,7 +203,9 @@ export class AiService {
       }
       return '';
     } catch (error) {
-      this.logger.error(`Anthropic API error: ${error}`);
+      this.logger.error(
+        `Anthropic API error: ${error instanceof Error ? error.message : String(error)}`,
+      );
       // Fallback: return a basic summary without AI
       return this.generateFallbackSummary(prompt);
     }
@@ -252,7 +260,10 @@ Provide:
   }): string {
     const dueDate = new Date(invoice.dueDate).toLocaleDateString();
     const items = invoice.items
-      .map((i) => `- ${i.description}: ${i.quantity} x ${i.unitPrice} = ${i.quantity * Number(i.unitPrice)}`)
+      .map(
+        (i) =>
+          `- ${i.description}: ${i.quantity} x ${i.unitPrice} = ${i.quantity * Number(i.unitPrice)}`,
+      )
       .join('\n');
 
     return `Generate a plain-language summary for this invoice:

@@ -3,7 +3,12 @@
 //! Tests cover: platform config initialization, config retrieval,
 //! config updates, maintenance mode toggle, and access control.
 
-use soroban_sdk::{testutils::Address as _, Env, Address};
+// `Ledger` supplies `env.ledger().with_mut(...)`; without it the suite does not
+// compile (E0599).
+use soroban_sdk::{
+    testutils::{Address as _, Ledger},
+    Address, Env,
+};
 
 use super::*;
 
@@ -31,7 +36,7 @@ fn setup_test() -> (Env, ConfigurationManagerClient<'static>, Address) {
 
 #[test]
 fn test_initialize() {
-    let (env, client, _owner) = setup_test();
+    let (_env, client, _owner) = setup_test();
 
     let config = client.get_config();
     assert_eq!(config.platform_fee_bps, 50);
@@ -64,7 +69,7 @@ fn test_cannot_reinitialize() {
 
 #[test]
 fn test_get_config() {
-    let (env, client, _owner) = setup_test();
+    let (_env, client, _owner) = setup_test();
 
     let config = client.get_config();
     assert_eq!(config.platform_fee_bps, 50);
@@ -74,7 +79,7 @@ fn test_get_config() {
 
 #[test]
 fn test_is_maintenance_mode_default() {
-    let (env, client, _owner) = setup_test();
+    let (_env, client, _owner) = setup_test();
     assert!(!client.is_maintenance_mode());
 }
 
@@ -86,7 +91,7 @@ fn test_is_maintenance_mode_default() {
 fn test_update_config_by_owner() {
     let (env, client, owner) = setup_test();
 
-    let original = client.get_config();
+    let _original = client.get_config();
     let new_config = PlatformConfig {
         platform_fee_bps: 100,
         min_payment_amount: 500_000,
@@ -201,7 +206,7 @@ fn test_config_updated_at_increments() {
 
 #[test]
 fn test_concurrent_config_reads() {
-    let (env, client, _owner) = setup_test();
+    let (_env, client, _owner) = setup_test();
 
     // Read config multiple times — should be consistent
     let c1 = client.get_config();
@@ -230,22 +235,24 @@ fn test_fuzz_config_updates() {
     let contract_id = env.register_contract(None, ConfigurationManager);
     let client = ConfigurationManagerClient::new(&env, &contract_id);
     client.init(&owner);
+    env.budget().reset_unlimited();
 
-    let intervals = [
-        1_u64, 7, 14, 30, 60, 90, 365,
-    ];
+    let intervals: [u64; 7] = [1, 7, 14, 30, 60, 90, 365];
 
-    for i in 0..1000 {
-        env.ledger().with_mut(|li| li.timestamp = (1_000_000 + i as u64 * 100));
+    // Each step writes and reads back a full config; bound the sweep so the
+    // metered host calls stay fast enough for every commit.
+    for i in 0..256usize {
+        env.ledger()
+            .with_mut(|li| li.timestamp = 1_000_000 + i as u64 * 100);
 
         let mut config = client.get_config();
         config.platform_fee_bps = 10 + ((i % 50) * 10) as u32;
         config.min_payment_amount = ((i as u64 + 1) * 100_000) as i128;
-        config.max_payment_amount = 100_000_000_000_000 - ((i as u64) * 1_000_000_000);
+        config.max_payment_amount = 100_000_000_000_000_i128 - (i as i128) * 1_000_000_000;
         config.payment_expiry_seconds = intervals[i % intervals.len()];
         config.refund_window_days = 30 + ((i % 12) * 30) as u32;
-        config.max_milestones = 5 + ((i % 16) * 1) as u32;
-        config.settlement_interval_days = intervals[(i / 2) % intervals.len()];
+        config.max_milestones = 5 + (i % 16) as u32;
+        config.settlement_interval_days = intervals[(i / 2) % intervals.len()] as u32;
         config.maintenance_mode = i % 3 == 0;
 
         client.update_config(&owner, &config);

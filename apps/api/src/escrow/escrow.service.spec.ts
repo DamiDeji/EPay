@@ -1,21 +1,55 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { EscrowService } from './escrow.service';
-import { PrismaService } from '../database/prisma.service';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { BadRequestException } from '@nestjs/common';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
+
 import { createMockPrismaService, mockDate } from '../../test/mocks/prisma.mock';
+import { PrismaService } from '../database/prisma.service';
+
+import { EscrowService } from './escrow.service';
 
 describe('EscrowService', () => {
   let service: EscrowService;
   let prisma: ReturnType<typeof createMockPrismaService>;
 
   const mockEscrow = {
-    id: 'esc_1', escrowId: 'esc_abc', merchantId: 'merch_1', customerId: 'cust_1',
-    amount: BigInt(5000000000), currency: 'XLM', status: 'CREATED',
-    contractAddress: 'pending', txHash: null, currentMilestone: 0,
-    disputedAt: null, resolvedAt: null, metadata: {}, createdAt: mockDate(), updatedAt: mockDate(),
+    id: 'esc_1',
+    escrowId: 'esc_abc',
+    merchantId: 'merch_1',
+    customerId: 'cust_1',
+    amount: BigInt(5000000000),
+    currency: 'XLM',
+    status: 'CREATED',
+    contractAddress: 'pending',
+    txHash: null,
+    currentMilestone: 0,
+    disputedAt: null,
+    resolvedAt: null,
+    metadata: {},
+    createdAt: mockDate(),
+    updatedAt: mockDate(),
     milestones: [
-      { id: 'mil_1', escrowId: 'esc_1', index: 0, description: 'Design', amount: BigInt(2500000000), status: 'PENDING', completedAt: null, releasedAt: null, releaseTxHash: null },
-      { id: 'mil_2', escrowId: 'esc_1', index: 1, description: 'Development', amount: BigInt(2500000000), status: 'PENDING', completedAt: null, releasedAt: null, releaseTxHash: null },
+      {
+        id: 'mil_1',
+        escrowId: 'esc_1',
+        index: 0,
+        description: 'Design',
+        amount: BigInt(2500000000),
+        status: 'PENDING',
+        completedAt: null,
+        releasedAt: null,
+        releaseTxHash: null,
+      },
+      {
+        id: 'mil_2',
+        escrowId: 'esc_1',
+        index: 1,
+        description: 'Development',
+        amount: BigInt(2500000000),
+        status: 'PENDING',
+        completedAt: null,
+        releasedAt: null,
+        releaseTxHash: null,
+      },
     ],
   };
 
@@ -31,7 +65,10 @@ describe('EscrowService', () => {
     it('should create escrow with milestones', async () => {
       prisma.escrow.create.mockResolvedValue(mockEscrow);
       const result = await service.create({
-        merchantId: 'merch_1', customerId: 'cust_1', currency: 'XLM',
+        merchantId: 'merch_1',
+        customerId: 'cust_1',
+        assetCode: 'XLM',
+        assetIssuer: 'native',
         milestones: [
           { description: 'Design', amount: '2500000000' },
           { description: 'Development', amount: '2500000000' },
@@ -61,7 +98,11 @@ describe('EscrowService', () => {
       const funded = { ...mockEscrow, status: 'FUNDED' };
       prisma.escrow.findUnique.mockResolvedValueOnce(funded);
       prisma.milestone.update.mockResolvedValue({});
-      prisma.escrow.update.mockResolvedValue({ ...funded, status: 'IN_PROGRESS', currentMilestone: 1 });
+      prisma.escrow.update.mockResolvedValue({
+        ...funded,
+        status: 'IN_PROGRESS',
+        currentMilestone: 1,
+      });
 
       const result = await service.completeMilestone('esc_1', 0);
       expect(result.status).toBe('IN_PROGRESS');

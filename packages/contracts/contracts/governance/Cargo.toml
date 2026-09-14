@@ -8,9 +8,14 @@ rust-version.workspace = true
 crate-type = ["cdylib", "rlib"]
 path = "src/lib.rs"
 
-[features]
-default = ["std"]
-std = ["soroban-sdk/std"]
+# No `[features]` block: soroban-sdk 21 has no `std` feature (its features are
+# alloc, curve25519-dalek, docs, hazmat and testutils), so the `default = ["std"]`
+# + `std = ["soroban-sdk/std"]` pair this crate used to declare made the whole
+# workspace unresolvable — `cargo test`, `clippy` and the wasm build all failed
+# before compiling a single contract.
 
 [dependencies]
 soroban-sdk = { workspace = true }
+
+[dev-dependencies]
+soroban-sdk = { workspace = true, features = ["testutils"] }

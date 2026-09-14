@@ -1,8 +1,11 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { PaymentService } from './payment.service';
-import { PrismaService } from '../database/prisma.service';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { BadRequestException } from '@nestjs/common';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
+
 import { createMockPrismaService, mockDate } from '../../test/mocks/prisma.mock';
+import { PrismaService } from '../database/prisma.service';
+
+import { PaymentService } from './payment.service';
 
 describe('PaymentService', () => {
   let service: PaymentService;
@@ -46,8 +49,9 @@ describe('PaymentService', () => {
       const result = await service.create({
         merchantId: 'merch_1',
         amount: '1000000000',
-        currency: 'XLM',
-        recipientAddress: 'GAD_recipient',
+        assetCode: 'XLM',
+        assetIssuer: 'native',
+        recipientPublicKey: 'GAD_recipient',
       });
       expect(result.paymentId).toMatch(/^pay_/);
       expect(prisma.payment.create).toHaveBeenCalled();
@@ -58,8 +62,9 @@ describe('PaymentService', () => {
         service.create({
           merchantId: 'merch_1',
           amount: '1000',
-          currency: 'XLM',
-          recipientAddress: 'GAD_recipient',
+          assetCode: 'XLM',
+          assetIssuer: 'native',
+          recipientPublicKey: 'GAD_recipient',
         }),
       ).rejects.toThrow(BadRequestException);
     });
@@ -69,8 +74,9 @@ describe('PaymentService', () => {
         service.create({
           merchantId: 'merch_1',
           amount: '100000000000001',
-          currency: 'XLM',
-          recipientAddress: 'GAD_recipient',
+          assetCode: 'XLM',
+          assetIssuer: 'native',
+          recipientPublicKey: 'GAD_recipient',
         }),
       ).rejects.toThrow(BadRequestException);
     });
@@ -80,8 +86,9 @@ describe('PaymentService', () => {
       const result = await service.create({
         merchantId: 'merch_1',
         amount: '1000000',
-        currency: 'XLM',
-        recipientAddress: 'GAD_recipient',
+        assetCode: 'XLM',
+        assetIssuer: 'native',
+        recipientPublicKey: 'GAD_recipient',
       });
       expect(result.paymentId).toMatch(/^pay_/);
     });
@@ -91,8 +98,9 @@ describe('PaymentService', () => {
       const result = await service.create({
         merchantId: 'merch_1',
         amount: '100000000000000',
-        currency: 'XLM',
-        recipientAddress: 'GAD_recipient',
+        assetCode: 'XLM',
+        assetIssuer: 'native',
+        recipientPublicKey: 'GAD_recipient',
       });
       expect(result.paymentId).toMatch(/^pay_/);
     });
@@ -123,7 +131,11 @@ describe('PaymentService', () => {
   describe('confirm', () => {
     it('should confirm a pending payment', async () => {
       prisma.payment.findUnique.mockResolvedValue(mockPayment);
-      prisma.payment.update.mockResolvedValue({ ...mockPayment, status: 'CONFIRMED', txHash: '0xabc' });
+      prisma.payment.update.mockResolvedValue({
+        ...mockPayment,
+        status: 'CONFIRMED',
+        txHash: '0xabc',
+      });
       const result = await service.confirm('pay_1', '0xabc');
       expect(result.status).toBe('CONFIRMED');
     });
@@ -168,15 +180,27 @@ describe('PaymentService', () => {
   describe('payment links', () => {
     it('should create a payment link', async () => {
       prisma.paymentLink.create.mockResolvedValue({
-        id: 'link_1', code: 'test_code', url: 'https://epay.dev/pay/test_code',
-        amount: BigInt(1000), currency: 'XLM', description: null,
-        maxPayments: null, currentPayments: 0, expiresAt: null,
-        isActive: true, merchantId: 'merch_1', metadata: {},
-        createdAt: mockDate(), updatedAt: mockDate(),
+        id: 'link_1',
+        code: 'test_code',
+        url: 'https://epay.dev/pay/test_code',
+        amount: BigInt(1000),
+        currency: 'XLM',
+        description: null,
+        maxPayments: null,
+        currentPayments: 0,
+        expiresAt: null,
+        isActive: true,
+        merchantId: 'merch_1',
+        metadata: {},
+        createdAt: mockDate(),
+        updatedAt: mockDate(),
       });
 
       const result = await service.createPaymentLink({
-        merchantId: 'merch_1', amount: '1000000000', currency: 'XLM',
+        merchantId: 'merch_1',
+        amount: '1000000000',
+        assetCode: 'XLM',
+        assetIssuer: 'native',
       });
 
       expect(result.code).toBeDefined();

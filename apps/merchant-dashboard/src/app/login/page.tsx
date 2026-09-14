@@ -1,6 +1,15 @@
 'use client';
 
-import { Button, Input, Card, CardHeader, CardContent, CardTitle, CardDescription, CardFooter } from '@epay/ui';
+import {
+  Button,
+  Input,
+  Card,
+  CardHeader,
+  CardContent,
+  CardTitle,
+  CardDescription,
+  CardFooter,
+} from '@epay/ui';
 import { motion } from 'framer-motion';
 import { Mail, Lock, ArrowRight, AlertCircle, Building2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -13,7 +22,7 @@ export default function MerchantLoginPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
@@ -41,7 +50,12 @@ export default function MerchantLoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-12 bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-950 dark:to-slate-900">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="w-full max-w-md">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-md"
+      >
         <Card className="shadow-xl">
           <CardHeader className="text-center pb-2">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#1E3A8A]/10 to-[#0098EA]/10 flex items-center justify-center mx-auto mb-4">
@@ -59,17 +73,39 @@ export default function MerchantLoginPage() {
             )}
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Email Address</label>
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Email Address
+                </label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <Input type="email" placeholder="merchant@business.com" value={email} onChange={(e) => { setEmail(e.target.value); }} className="pl-10" required />
+                  <Input
+                    type="email"
+                    placeholder="merchant@business.com"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                    }}
+                    className="pl-10"
+                    required
+                  />
                 </div>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Password</label>
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Password
+                </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <Input type="password" placeholder="••••••••" value={password} onChange={(e) => { setPassword(e.target.value); }} className="pl-10" required />
+                  <Input
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                    }}
+                    className="pl-10"
+                    required
+                  />
                 </div>
               </div>
               <Button type="submit" className="w-full gap-2" size="lg" disabled={isLoading}>
@@ -81,7 +117,9 @@ export default function MerchantLoginPage() {
           <CardFooter className="justify-center">
             <p className="text-sm text-slate-500 dark:text-slate-400">
               New merchant?{' '}
-              <a href="/register" className="text-[#0098EA] hover:underline font-medium">Create account</a>
+              <a href="/register" className="text-[#0098EA] hover:underline font-medium">
+                Create account
+              </a>
             </p>
           </CardFooter>
         </Card>

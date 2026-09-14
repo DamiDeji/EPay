@@ -6,12 +6,11 @@
  * Run: npx tsx examples/escrow-workflow.ts
  */
 
-import {
-  EPayClient,
-  EscrowStatus,
-  SubscriptionBillingInterval,
-  SubscriptionStatus,
-} from '../src';
+import type { StellarAsset } from '../src';
+import { EPayClient, EscrowStatus, SubscriptionBillingInterval, SubscriptionStatus } from '../src';
+
+/** Native XLM, the asset shape every create request expects. */
+const NATIVE_ASSET: StellarAsset = { code: 'XLM', issuer: 'native', type: 'native' };
 
 async function main() {
   const client = new EPayClient({
@@ -33,7 +32,7 @@ async function main() {
     merchantId: 'merch_demo_001',
     customerId: 'cust_demo_789',
     amount: '15000000000', // 15 XLM
-    currency: 'XLM',
+    asset: NATIVE_ASSET,
     milestones: [
       { index: 0, description: 'Design mockups & wireframes', amount: '5000000000' },
       { index: 1, description: 'Frontend implementation', amount: '5000000000' },
@@ -88,13 +87,14 @@ async function main() {
     customerId: 'cust_demo_789',
     planName: 'Pro Plan',
     amount: '2000000000', // 2 XLM / month
-    currency: 'XLM',
+    asset: NATIVE_ASSET,
     interval: SubscriptionBillingInterval.MONTHLY,
     trialDays: 7,
     maxPayments: 12,
   });
   console.log(`   ✅ Subscription created: ${sub.subscriptionId}`);
-  console.log(`      Plan: ${sub.planName}`);    console.log(`      Amount: ${sub.amount} stroops / ${sub.interval}`);
+  console.log(`      Plan: ${sub.planName}`);
+  console.log(`      Amount: ${sub.amount} stroops / ${sub.interval}`);
   console.log(`      Status: ${sub.status}\n`);
 
   // 2. Pause the subscription

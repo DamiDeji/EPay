@@ -93,6 +93,48 @@ groups:
           summary: 'BullMQ queue {{ $labels.queue }} has a large backlog'
           description: '{{ $value }} jobs are waiting on queue {{ $labels.queue }}; indexer lag will follow.'
 
+  - name: epay-webhooks
+    interval: 1m
+    rules:
+      # Emitted by WebhookDispatchScheduler (apps/api/src/webhook). A dead-letter
+      # means a merchant's receiver has been unreachable for the entire ~8.5h
+      # retry schedule, so the event is never coming unless someone replays it.
+      - alert: EpayWebhookDeadLettered
+        expr: increase(epay_webhook_deliveries_total{outcome="dead_lettered"}[15m]) > 0
+        for: 0m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: 'Webhook deliveries are being dead-lettered'
+          description: '{{ $value }} delivery(ies) exhausted the retry schedule in the last 15m. Inspect webhook_deliveries for the affected merchants and replay once the receiver recovers.'
+          runbook_url: 'https://github.com/DamiDeji/EPay/blob/main/docs/webhook-receiver.md'
+
+      # The scheduler itself failing (e.g. the database is unreachable) means
+      # *nothing* is being delivered, which is silent without this rule.
+      - alert: EpayWebhookDispatchFailing
+        expr: increase(epay_webhook_dispatch_errors_total[10m]) > 3
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: 'Webhook dispatch passes are failing'
+          description: '{{ $value }} dispatch passes failed in the last 10m; outbound webhooks are not being sent.'
+
+      # A high retry rate across the fleet usually means one receiver is down.
+      - alert: EpayWebhookRetryRateHigh
+        expr: |
+          sum(rate(epay_webhook_deliveries_total{outcome="retrying"}[10m]))
+            / clamp_min(sum(rate(epay_webhook_deliveries_total[10m])), 0.001) > 0.5
+        for: 20m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: 'Over half of webhook attempts are failing'
+          description: 'Retry rate is {{ $value | humanizePercentage }} of all webhook attempts over 20m.'
+
   - name: epay-disaster-recovery
     interval: 1m
     rules:

@@ -13,10 +13,7 @@ const log = createChildLogger('dispatcher');
  * Route a parsed blockchain event to the correct handler based on
  * which contract emitted it.
  */
-export async function dispatchEvent(
-  event: ParsedEvent,
-  prisma: any,
-): Promise<void> {
+export async function dispatchEvent(event: ParsedEvent, prisma: any): Promise<void> {
   const { contractName } = event;
 
   try {

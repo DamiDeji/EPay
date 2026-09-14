@@ -8,7 +8,8 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'sw
 
 export const metadata: Metadata = {
   title: { default: 'Admin Panel | EPay', template: '%s | EPay Admin' },
-  description: 'EPay platform administration — manage merchants, monitor payments, view audit logs.',
+  description:
+    'EPay platform administration — manage merchants, monitor payments, view audit logs.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

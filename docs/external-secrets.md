@@ -9,12 +9,12 @@ The Helm chart mounts a Secret named `epay-secrets` (`.Values.secrets.existingSe
 into the API, indexer, and dashboards. Something has to populate it. The options,
 ranked by how much damage a compromise does:
 
-| Approach | Verdict |
-| --- | --- |
-| Literal values in `values.yaml` | ❌ Never. The file is in git; the secret is now public forever. |
-| Hand-created `kubectl create secret` | ⚠️ Works, but nobody knows the provenance, rotation is manual, and it drifts. |
-| Sealed Secrets | ✅ Good for small teams; secrets live encrypted in git. Rotating still means a commit. |
-| **External Secrets Operator (ESO)** | ✅ **What this repo ships.** The source of truth is your cloud secret manager; the Kubernetes Secret is a cache the operator refreshes. |
+| Approach                             | Verdict                                                                                                                                 |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Literal values in `values.yaml`      | ❌ Never. The file is in git; the secret is now public forever.                                                                         |
+| Hand-created `kubectl create secret` | ⚠️ Works, but nobody knows the provenance, rotation is manual, and it drifts.                                                           |
+| Sealed Secrets                       | ✅ Good for small teams; secrets live encrypted in git. Rotating still means a commit.                                                  |
+| **External Secrets Operator (ESO)**  | ✅ **What this repo ships.** The source of truth is your cloud secret manager; the Kubernetes Secret is a cache the operator refreshes. |
 
 With ESO, the credential's lifecycle lives where you already rotate credentials
 (AWS Secrets Manager, GCP Secret Manager, HashiCorp Vault, …) and Kubernetes
@@ -45,8 +45,8 @@ externalSecrets:
     - key: JWT_SECRET
     - key: WEBHOOK_SECRET
     - key: METRICS_TOKEN
-      remoteKey: metrics-token        # different name in the manager
-      property: value                 # JSON field, for a JSON secret
+      remoteKey: metrics-token # different name in the manager
+      property: value # JSON field, for a JSON secret
     - key: ANTHROPIC_API_KEY
 ```
 

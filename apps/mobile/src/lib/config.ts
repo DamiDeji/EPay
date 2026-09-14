@@ -1,6 +1,5 @@
-import Constants from 'expo-constants';
-
 import { StellarNetwork } from '@epay/types';
+import Constants from 'expo-constants';
 
 /**
  * Runtime configuration for the mobile app.
@@ -18,18 +17,15 @@ export interface MobileConfig {
 }
 
 const NETWORK: StellarNetwork =
-  (process.env['EXPO_PUBLIC_STELLAR_NETWORK'] as StellarNetwork | undefined) ??
-  StellarNetwork.TESTNET;
+  (process.env.EXPO_PUBLIC_STELLAR_NETWORK as StellarNetwork | undefined) ?? StellarNetwork.TESTNET;
 
 export const config: MobileConfig = {
-  apiUrl: process.env['EXPO_PUBLIC_API_URL'] ?? 'http://localhost:4000',
+  apiUrl: process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:4000',
   network: NETWORK,
-  horizonUrl:
-    process.env['EXPO_PUBLIC_HORIZON_URL'] ?? 'https://horizon-testnet.stellar.org',
-  sorobanRpcUrl:
-    process.env['EXPO_PUBLIC_SOROBAN_RPC_URL'] ?? 'https://soroban-testnet.stellar.org',
+  horizonUrl: process.env.EXPO_PUBLIC_HORIZON_URL ?? 'https://horizon-testnet.stellar.org',
+  sorobanRpcUrl: process.env.EXPO_PUBLIC_SOROBAN_RPC_URL ?? 'https://soroban-testnet.stellar.org',
   pushProjectId:
-    process.env['EXPO_PUBLIC_EAS_PROJECT_ID'] ??
+    process.env.EXPO_PUBLIC_EAS_PROJECT_ID ??
     (Constants.expoConfig?.extra as { eas?: { projectId?: string } } | undefined)?.eas?.projectId ??
     null,
 };

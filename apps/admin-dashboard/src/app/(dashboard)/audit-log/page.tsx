@@ -2,19 +2,108 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Search, Calendar, ChevronDown, ChevronRight,
-  User, CreditCard, Settings, Shield, Key, Copy, Check,
+  Search,
+  Calendar,
+  ChevronDown,
+  ChevronRight,
+  User,
+  CreditCard,
+  Settings,
+  Shield,
+  Key,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { useState } from 'react';
 
 const auditLogs = [
-  { id: 'log_001', action: 'merchant.verified', resource: 'Merchant', resourceId: 'merch_003', userId: 'admin_001', userName: 'Admin User', details: 'Approved merchant verification for Acme Corp', changes: { status: 'pending → active', verification: 'basic → verified' }, ip: '192.168.1.100', timestamp: '2026-08-05T14:32:00Z' },
-  { id: 'log_002', action: 'payment.refunded', resource: 'Payment', resourceId: 'pay_k1l2', userId: 'admin_001', userName: 'Admin User', details: 'Processed manual refund for payment pay_k1l2', changes: { status: 'completed → refunded', amount: '100 XLM' }, ip: '192.168.1.100', timestamp: '2026-08-05T13:45:00Z' },
-  { id: 'log_003', action: 'api_key.created', resource: 'ApiKey', resourceId: 'key_789', userId: 'merch_001', userName: 'Acme Corp', details: 'Created new production API key', changes: { permissions: 'read:payments, write:payments' }, ip: '10.0.0.55', timestamp: '2026-08-05T12:10:00Z' },
-  { id: 'log_004', action: 'merchant.suspended', resource: 'Merchant', resourceId: 'merch_005', userId: 'admin_001', userName: 'Admin User', details: 'Suspended TokenPay for policy violation', changes: { status: 'active → suspended', reason: 'Policy violation - unauthorized transactions' }, ip: '192.168.1.100', timestamp: '2026-08-05T11:00:00Z' },
-  { id: 'log_005', action: 'system.config_updated', resource: 'Configuration', resourceId: 'fee_rate', userId: 'admin_001', userName: 'Admin User', details: 'Updated default fee rate to 0.5%', changes: { feeBps: '30 → 50' }, ip: '192.168.1.100', timestamp: '2026-08-04T09:30:00Z' },
-  { id: 'log_006', action: 'user.login', resource: 'User', resourceId: 'admin_001', userId: 'admin_001', userName: 'Admin User', details: 'Successful login from admin dashboard', changes: null, ip: '192.168.1.100', timestamp: '2026-08-05T08:00:00Z' },
-  { id: 'log_007', action: 'webhook.failed', resource: 'Webhook', resourceId: 'wh_012', userId: null, userName: 'System', details: 'Webhook delivery failed for merchant CryptoShop after 5 retries', changes: { statusCode: '500', attempts: '5/5' }, ip: null, timestamp: '2026-08-04T22:15:00Z' },
+  {
+    id: 'log_001',
+    action: 'merchant.verified',
+    resource: 'Merchant',
+    resourceId: 'merch_003',
+    userId: 'admin_001',
+    userName: 'Admin User',
+    details: 'Approved merchant verification for Acme Corp',
+    changes: { status: 'pending → active', verification: 'basic → verified' },
+    ip: '192.168.1.100',
+    timestamp: '2026-08-05T14:32:00Z',
+  },
+  {
+    id: 'log_002',
+    action: 'payment.refunded',
+    resource: 'Payment',
+    resourceId: 'pay_k1l2',
+    userId: 'admin_001',
+    userName: 'Admin User',
+    details: 'Processed manual refund for payment pay_k1l2',
+    changes: { status: 'completed → refunded', amount: '100 XLM' },
+    ip: '192.168.1.100',
+    timestamp: '2026-08-05T13:45:00Z',
+  },
+  {
+    id: 'log_003',
+    action: 'api_key.created',
+    resource: 'ApiKey',
+    resourceId: 'key_789',
+    userId: 'merch_001',
+    userName: 'Acme Corp',
+    details: 'Created new production API key',
+    changes: { permissions: 'read:payments, write:payments' },
+    ip: '10.0.0.55',
+    timestamp: '2026-08-05T12:10:00Z',
+  },
+  {
+    id: 'log_004',
+    action: 'merchant.suspended',
+    resource: 'Merchant',
+    resourceId: 'merch_005',
+    userId: 'admin_001',
+    userName: 'Admin User',
+    details: 'Suspended TokenPay for policy violation',
+    changes: {
+      status: 'active → suspended',
+      reason: 'Policy violation - unauthorized transactions',
+    },
+    ip: '192.168.1.100',
+    timestamp: '2026-08-05T11:00:00Z',
+  },
+  {
+    id: 'log_005',
+    action: 'system.config_updated',
+    resource: 'Configuration',
+    resourceId: 'fee_rate',
+    userId: 'admin_001',
+    userName: 'Admin User',
+    details: 'Updated default fee rate to 0.5%',
+    changes: { feeBps: '30 → 50' },
+    ip: '192.168.1.100',
+    timestamp: '2026-08-04T09:30:00Z',
+  },
+  {
+    id: 'log_006',
+    action: 'user.login',
+    resource: 'User',
+    resourceId: 'admin_001',
+    userId: 'admin_001',
+    userName: 'Admin User',
+    details: 'Successful login from admin dashboard',
+    changes: null,
+    ip: '192.168.1.100',
+    timestamp: '2026-08-05T08:00:00Z',
+  },
+  {
+    id: 'log_007',
+    action: 'webhook.failed',
+    resource: 'Webhook',
+    resourceId: 'wh_012',
+    userId: null,
+    userName: 'System',
+    details: 'Webhook delivery failed for merchant CryptoShop after 5 retries',
+    changes: { statusCode: '500', attempts: '5/5' },
+    ip: null,
+    timestamp: '2026-08-04T22:15:00Z',
+  },
 ];
 
 const actionIcons: Record<string, React.ElementType> = {
@@ -44,7 +133,8 @@ export default function AuditLogPage() {
   const [copied, setCopied] = useState<string | null>(null);
 
   const filtered = auditLogs.filter((log) => {
-    const matchSearch = log.action.includes(search.toLowerCase()) ||
+    const matchSearch =
+      log.action.includes(search.toLowerCase()) ||
       log.userName.toLowerCase().includes(search.toLowerCase()) ||
       log.details.toLowerCase().includes(search.toLowerCase());
     const matchAction = actionFilter === 'all' || log.action === actionFilter;
@@ -61,7 +151,9 @@ export default function AuditLogPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Audit Log</h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Immutable record of all platform actions and changes</p>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          Immutable record of all platform actions and changes
+        </p>
       </div>
 
       {/* Filters */}
@@ -77,7 +169,14 @@ export default function AuditLogPage() {
           />
         </div>
         <div className="flex gap-2 flex-wrap">
-          {['all', 'merchant.verified', 'merchant.suspended', 'payment.refunded', 'api_key.created', 'system.config_updated'].map((a) => (
+          {[
+            'all',
+            'merchant.verified',
+            'merchant.suspended',
+            'payment.refunded',
+            'api_key.created',
+            'system.config_updated',
+          ].map((a) => (
             <button
               key={a}
               onClick={() => setActionFilter(a)}
@@ -113,7 +212,9 @@ export default function AuditLogPage() {
                 onClick={() => setExpanded(isExpanded ? null : log.id)}
                 className="w-full flex items-center gap-4 px-5 py-4 text-left"
               >
-                <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${colorClass}`}>
+                <div
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${colorClass}`}
+                >
                   <ActionIcon className="w-4 h-4" />
                 </div>
 
@@ -131,7 +232,11 @@ export default function AuditLogPage() {
                   </p>
                 </div>
 
-                {isExpanded ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
+                {isExpanded ? (
+                  <ChevronDown className="w-4 h-4 text-slate-400" />
+                ) : (
+                  <ChevronRight className="w-4 h-4 text-slate-400" />
+                )}
               </button>
 
               <AnimatePresence>
@@ -145,16 +250,23 @@ export default function AuditLogPage() {
                   >
                     <div className="px-5 pb-4 pt-1 border-t border-slate-100 dark:border-white/5 mx-5 space-y-3">
                       <div>
-                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Details</p>
+                        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+                          Details
+                        </p>
                         <p className="text-sm text-slate-700 dark:text-slate-300">{log.details}</p>
                       </div>
 
                       {log.changes && (
                         <div>
-                          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Changes</p>
+                          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+                            Changes
+                          </p>
                           <div className="flex flex-wrap gap-2">
                             {Object.entries(log.changes).map(([key, value]) => (
-                              <span key={key} className="text-xs px-2 py-1 rounded-lg bg-slate-100 dark:bg-white/5 font-mono">
+                              <span
+                                key={key}
+                                className="text-xs px-2 py-1 rounded-lg bg-slate-100 dark:bg-white/5 font-mono"
+                              >
                                 <span className="text-slate-500">{key}:</span>{' '}
                                 <span className="text-slate-900 dark:text-white">{value}</span>
                               </span>
@@ -165,13 +277,26 @@ export default function AuditLogPage() {
 
                       <div className="flex flex-wrap gap-4 text-xs text-slate-500">
                         <span className="flex items-center gap-1">
-                          <User className="w-3 h-3" /> User ID: <span className="font-mono text-slate-700 dark:text-slate-300">{log.userId ?? 'N/A'}</span>
+                          <User className="w-3 h-3" /> User ID:{' '}
+                          <span className="font-mono text-slate-700 dark:text-slate-300">
+                            {log.userId ?? 'N/A'}
+                          </span>
                         </span>
                         {log.ip && (
                           <span className="flex items-center gap-1">
-                            IP: <span className="font-mono text-slate-700 dark:text-slate-300">{log.ip}</span>
-                            <button onClick={() => copyToClipboard(log.ip!)} className="ml-1 text-slate-400 hover:text-accent-500">
-                              {copied === log.ip ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                            IP:{' '}
+                            <span className="font-mono text-slate-700 dark:text-slate-300">
+                              {log.ip}
+                            </span>
+                            <button
+                              onClick={() => copyToClipboard(log.ip!)}
+                              className="ml-1 text-slate-400 hover:text-accent-500"
+                            >
+                              {copied === log.ip ? (
+                                <Check className="w-3 h-3" />
+                              ) : (
+                                <Copy className="w-3 h-3" />
+                              )}
                             </button>
                           </span>
                         )}

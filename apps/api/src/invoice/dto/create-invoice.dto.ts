@@ -1,6 +1,14 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsString, IsArray, IsOptional, IsInt, Min, IsDateString, ValidateNested } from 'class-validator';
+import {
+  IsString,
+  IsArray,
+  IsOptional,
+  IsInt,
+  Min,
+  IsDateString,
+  ValidateNested,
+} from 'class-validator';
 
 class InvoiceItemDto {
   @ApiProperty({ example: 'Web Development Services' })
@@ -31,7 +39,7 @@ export class CreateInvoiceDto {
   @IsString()
   assetCode: string;
 
-  @ApiProperty({ example: "native", description: "Asset issuer (native for XLM)" })
+  @ApiProperty({ example: 'native', description: 'Asset issuer (native for XLM)' })
   @IsString()
   assetIssuer: string;
 

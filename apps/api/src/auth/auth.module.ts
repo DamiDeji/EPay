@@ -20,8 +20,12 @@ import { WalletStrategy } from './strategies/wallet.strategy';
           signOptions: {
             expiresIn: config.getOrThrow<string>('JWT_EXPIRES_IN', '15m'),
           },
-        }) as Parameters<typeof JwtModule.registerAsync>[0]['useFactory'] extends (...args: any[]) => infer R
-          ? R extends Promise<infer U> ? U : R
+        }) as Parameters<typeof JwtModule.registerAsync>[0]['useFactory'] extends (
+          ...args: any[]
+        ) => infer R
+          ? R extends Promise<infer U>
+            ? U
+            : R
           : never,
     }),
   ],

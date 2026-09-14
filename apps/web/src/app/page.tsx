@@ -115,7 +115,10 @@ export default function HomePage() {
 
         {/* Floating Elements */}
         <div className="absolute top-20 left-10 w-72 h-72 bg-[#0098EA]/5 rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-[#10B981]/5 rounded-full blur-3xl animate-float" style={{ animationDelay: '1.5s' }} />
+        <div
+          className="absolute bottom-20 right-10 w-96 h-96 bg-[#10B981]/5 rounded-full blur-3xl animate-float"
+          style={{ animationDelay: '1.5s' }}
+        />
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div
@@ -123,7 +126,9 @@ export default function HomePage() {
             animate="visible"
             variants={fadeUp}
             transition={{ duration: 0.6 }}
-          >              <Badge variant="primary" className="mb-6 px-4 py-1.5 text-sm">
+          >
+            {' '}
+            <Badge variant="primary" className="mb-6 px-4 py-1.5 text-sm">
               Built on Stellar
             </Badge>
           </motion.div>
@@ -135,8 +140,7 @@ export default function HomePage() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-slate-900 dark:text-white max-w-4xl mx-auto leading-[1.1]"
           >
-            Decentralized Payments,{' '}
-            <span className="gradient-text">Effortless</span>
+            Decentralized Payments, <span className="gradient-text">Effortless</span>
           </motion.h1>
 
           <motion.p
@@ -158,7 +162,10 @@ export default function HomePage() {
             className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4"
           >
             <Link href="/register">
-              <Button size="xl" className="gap-2 shadow-lg shadow-[#0098EA]/25 hover:shadow-xl hover:shadow-[#0098EA]/30 transition-all">
+              <Button
+                size="xl"
+                className="gap-2 shadow-lg shadow-[#0098EA]/25 hover:shadow-xl hover:shadow-[#0098EA]/30 transition-all"
+              >
                 <Wallet className="w-5 h-5" />
                 Start Accepting Payments
                 <ArrowRight className="w-5 h-5" />
@@ -180,7 +187,10 @@ export default function HomePage() {
             className="mt-16 flex flex-wrap items-center justify-center gap-8"
           >
             {TRUST_SIGNALS.map((signal) => (
-              <div key={signal.label} className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+              <div
+                key={signal.label}
+                className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400"
+              >
                 <signal.icon className="w-4 h-4" />
                 <span>{signal.label}</span>
               </div>
@@ -227,7 +237,9 @@ export default function HomePage() {
       <section id="features" className="py-24 sm:py-32">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <Badge variant="default" className="mb-4">Features</Badge>
+            <Badge variant="default" className="mb-4">
+              Features
+            </Badge>
             <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white mb-4">
               Everything you need to accept payments
             </h2>
@@ -248,7 +260,9 @@ export default function HomePage() {
                 transition={{ duration: 0.4, delay: i * 0.1 }}
                 className="group relative p-6 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-[#0098EA]/30 dark:hover:border-[#0098EA]/30 hover:shadow-lg hover:shadow-[#0098EA]/5 transition-all duration-300"
               >
-                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                <div
+                  className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}
+                >
                   <feature.icon className={`w-6 h-6 ${feature.iconColor}`} />
                 </div>
                 <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
@@ -264,10 +278,15 @@ export default function HomePage() {
       </section>
 
       {/* How It Works Section */}
-      <section id="how-it-works" className="py-24 sm:py-32 feature-gradient border-y border-slate-200 dark:border-slate-800">
+      <section
+        id="how-it-works"
+        className="py-24 sm:py-32 feature-gradient border-y border-slate-200 dark:border-slate-800"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <Badge variant="success" className="mb-4">Simple</Badge>
+            <Badge variant="success" className="mb-4">
+              Simple
+            </Badge>
             <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white mb-4">
               Start in under 5 minutes
             </h2>
@@ -317,7 +336,8 @@ export default function HomePage() {
                 Ready to accept crypto payments?
               </h2>
               <p className="text-lg text-white/80 max-w-xl mx-auto mb-8">
-                Join thousands of merchants already using EPay. Free to start, pay only when you earn.
+                Join thousands of merchants already using EPay. Free to start, pay only when you
+                earn.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Link href="/register">

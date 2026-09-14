@@ -1,7 +1,10 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { TreasuryService } from './treasury.service';
-import { PrismaService } from '../database/prisma.service';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
+
 import { createMockPrismaService, mockDate } from '../../test/mocks/prisma.mock';
+import { PrismaService } from '../database/prisma.service';
+
+import { TreasuryService } from './treasury.service';
 
 describe('TreasuryService', () => {
   let service: TreasuryService;
@@ -32,9 +35,19 @@ describe('TreasuryService', () => {
   describe('recordDeposit', () => {
     it('should record a deposit transaction', async () => {
       prisma.treasuryTransaction.create.mockResolvedValue({
-        id: 'tx_1', txType: 'DEPOSIT', amount: BigInt(5000), currency: 'XLM',
-        fromAddress: 'GAD_from', toAddress: null, txHash: '0xdep', status: 'COMPLETED',
-        referenceId: null, referenceType: null, metadata: {}, createdAt: mockDate(), completedAt: mockDate(),
+        id: 'tx_1',
+        txType: 'DEPOSIT',
+        amount: BigInt(5000),
+        currency: 'XLM',
+        fromAddress: 'GAD_from',
+        toAddress: null,
+        txHash: '0xdep',
+        status: 'COMPLETED',
+        referenceId: null,
+        referenceType: null,
+        metadata: {},
+        createdAt: mockDate(),
+        completedAt: mockDate(),
       });
 
       const result = await service.recordDeposit('5000', 'GAD_from', '0xdep');

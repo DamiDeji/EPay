@@ -11,11 +11,11 @@ export const metadata: Metadata = {
 
 const LAST_UPDATED = 'August 19, 2026';
 
-type TermSection = {
+interface TermSection {
   title: string;
   paragraphs?: string[];
   bullets?: string[];
-};
+}
 
 const SECTIONS: TermSection[] = [
   {

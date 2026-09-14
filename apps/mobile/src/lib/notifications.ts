@@ -43,12 +43,12 @@ export async function registerForPushNotifications(): Promise<string | null> {
   }
 
   const existing = await Notifications.getPermissionsAsync();
-  let status = existing.status;
-  if (status !== 'granted') {
+  let status: Notifications.PermissionStatus = existing.status;
+  if (status !== Notifications.PermissionStatus.GRANTED) {
     const requested = await Notifications.requestPermissionsAsync();
     status = requested.status;
   }
-  if (status !== 'granted') return null;
+  if (status !== Notifications.PermissionStatus.GRANTED) return null;
 
   if (!config.pushProjectId) return null;
 
@@ -63,24 +63,22 @@ export async function registerForPushNotifications(): Promise<string | null> {
 
 /** Normalize an incoming notification payload into a receipt. */
 export function parseReceipt(data: Record<string, unknown>): ReceiptNotification | null {
-  const type = data['type'];
+  const type = data.type;
   if (type !== 'payment' && type !== 'settlement' && type !== 'refund') return null;
-  const id = data['id'];
+  const id = data.id;
   if (typeof id !== 'string') return null;
 
   return {
     type,
     id,
-    title: typeof data['title'] === 'string' ? data['title'] : 'EPay',
-    body: typeof data['body'] === 'string' ? data['body'] : '',
-    amount: typeof data['amount'] === 'string' ? data['amount'] : undefined,
-    assetCode: typeof data['assetCode'] === 'string' ? data['assetCode'] : undefined,
+    title: typeof data.title === 'string' ? data.title : 'EPay',
+    body: typeof data.body === 'string' ? data.body : '',
+    amount: typeof data.amount === 'string' ? data.amount : undefined,
+    assetCode: typeof data.assetCode === 'string' ? data.assetCode : undefined,
   };
 }
 
 /** Deep-link path for a tapped receipt. */
 export function receiptLink(receipt: ReceiptNotification): string {
-  return receipt.type === 'settlement'
-    ? `/settlements/${receipt.id}`
-    : `/payments/${receipt.id}`;
+  return receipt.type === 'settlement' ? `/settlements/${receipt.id}` : `/payments/${receipt.id}`;
 }

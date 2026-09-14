@@ -1,12 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import {
-  Counter,
-  Gauge,
-  Histogram,
-  MetricsRegistry,
-  type MetricLabels,
-} from './metrics.registry';
+import { Counter, Gauge, Histogram, MetricsRegistry, type MetricLabels } from './metrics.registry';
 
 /**
  * The API's metric surface.
@@ -26,10 +20,7 @@ export class MetricsService {
 
   /** `epay_http_request_duration_seconds{method,route}` — p50/p95/p99 latency. */
   private readonly httpRequestDuration = this.registry.register(
-    new Histogram(
-      'epay_http_request_duration_seconds',
-      'HTTP request latency in seconds.',
-    ),
+    new Histogram('epay_http_request_duration_seconds', 'HTTP request latency in seconds.'),
   );
 
   /** `epay_db_pool_wait_seconds` — time spent waiting for a Prisma connection. */
@@ -59,6 +50,16 @@ export class MetricsService {
   /** `epay_process_uptime_seconds` — liveness proxy for dashboards. */
   private readonly processUptime = this.registry.register(
     new Gauge('epay_process_uptime_seconds', 'Process uptime in seconds.'),
+  );
+
+  /** `epay_webhook_deliveries_total{outcome}` — feeds the webhook-failure alert. */
+  private readonly webhookDeliveriesTotal = this.registry.register(
+    new Counter('epay_webhook_deliveries_total', 'Webhook delivery attempts, by outcome.'),
+  );
+
+  /** `epay_webhook_dispatch_errors_total` — dispatch passes that blew up entirely. */
+  private readonly webhookDispatchErrors = this.registry.register(
+    new Counter('epay_webhook_dispatch_errors_total', 'Webhook dispatch passes that failed.'),
   );
 
   private readonly buildInfo = this.registry.register(
@@ -96,6 +97,32 @@ export class MetricsService {
 
   recordAiTokens(direction: 'input' | 'output', tokens: number): void {
     this.aiTokensTotal.inc({ direction }, tokens);
+  }
+
+  /**
+   * One dispatch pass's worth of delivery outcomes.
+   *
+   * `dead_lettered` is the one worth alerting on: it means a receiver has been
+   * unreachable for the whole ~8.5h retry schedule.
+   */
+  recordWebhookDeliveries(outcomes: {
+    succeeded: number;
+    retrying: number;
+    deadLettered: number;
+  }): void {
+    if (outcomes.succeeded > 0) {
+      this.webhookDeliveriesTotal.inc({ outcome: 'succeeded' }, outcomes.succeeded);
+    }
+    if (outcomes.retrying > 0) {
+      this.webhookDeliveriesTotal.inc({ outcome: 'retrying' }, outcomes.retrying);
+    }
+    if (outcomes.deadLettered > 0) {
+      this.webhookDeliveriesTotal.inc({ outcome: 'dead_lettered' }, outcomes.deadLettered);
+    }
+  }
+
+  recordWebhookDispatchError(): void {
+    this.webhookDispatchErrors.inc();
   }
 
   /** Refresh gauges that are computed at scrape time. */

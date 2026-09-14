@@ -1,5 +1,5 @@
-import { Link, useRouter } from 'expo-router';
 import type { Payment, PaymentStatus } from '@epay/types';
+import { Link, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -85,7 +85,9 @@ export default function PaymentsScreen(): React.ReactElement {
       <FlatList
         data={payments}
         keyExtractor={(item) => item.id}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void onRefresh()} />}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={() => void onRefresh()} />
+        }
         ListEmptyComponent={
           <View style={styles.centered}>
             <Text style={styles.muted}>Pull to refresh.</Text>

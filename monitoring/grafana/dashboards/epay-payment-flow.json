@@ -24,7 +24,14 @@
         "defaults": {
           "unit": "percentunit",
           "decimals": 3,
-          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "orange", "value": 0.99 }, { "color": "green", "value": 0.995 }] }
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "orange", "value": 0.99 },
+              { "color": "green", "value": 0.995 }
+            ]
+          }
         }
       }
     },
@@ -35,7 +42,11 @@
       "gridPos": { "h": 6, "w": 16, "x": 8, "y": 0 },
       "datasource": { "type": "prometheus", "uid": "epay-prometheus" },
       "targets": [
-        { "expr": "sum by (status) (rate(epay_payments_total[5m]))", "legendFormat": "{{status}}", "refId": "A" }
+        {
+          "expr": "sum by (status) (rate(epay_payments_total[5m]))",
+          "legendFormat": "{{status}}",
+          "refId": "A"
+        }
       ],
       "fieldConfig": { "defaults": { "unit": "ops" } }
     },
@@ -61,7 +72,11 @@
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
       "datasource": { "type": "prometheus", "uid": "epay-prometheus" },
       "targets": [
-        { "expr": "sum by (outcome) (rate(epay_webhook_deliveries_total[5m]))", "legendFormat": "{{outcome}}", "refId": "A" }
+        {
+          "expr": "sum by (outcome) (rate(epay_webhook_deliveries_total[5m]))",
+          "legendFormat": "{{outcome}}",
+          "refId": "A"
+        }
       ],
       "fieldConfig": { "defaults": { "unit": "ops" } }
     },
@@ -98,7 +113,18 @@
           "refId": "B"
         }
       ],
-      "fieldConfig": { "defaults": { "unit": "short", "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 14 }] } } }
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 14 }
+            ]
+          }
+        }
+      }
     }
   ]
 }

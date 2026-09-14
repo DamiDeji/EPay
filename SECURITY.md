@@ -29,14 +29,14 @@ Please do not send a report through both channels — it creates duplicate work.
 These are commitments, not aspirations. If we miss one, escalate by replying
 again on the same advisory thread.
 
-| Stage | Target |
-| --- | --- |
-| Acknowledge receipt | **48 hours** |
-| Initial triage and severity assignment | **5 business days** |
-| Fix deployed — **Critical** (funds at risk, data exposure, auth bypass) | **30 days** |
-| Fix deployed — **High** (privilege escalation, significant DoS) | **60 days** |
-| Fix deployed — **Medium / Low** | **90 days** |
-| Public disclosure | After the fix is deployed, coordinated with the reporter |
+| Stage                                                                   | Target                                                   |
+| ----------------------------------------------------------------------- | -------------------------------------------------------- |
+| Acknowledge receipt                                                     | **48 hours**                                             |
+| Initial triage and severity assignment                                  | **5 business days**                                      |
+| Fix deployed — **Critical** (funds at risk, data exposure, auth bypass) | **30 days**                                              |
+| Fix deployed — **High** (privilege escalation, significant DoS)         | **60 days**                                              |
+| Fix deployed — **Medium / Low**                                         | **90 days**                                              |
+| Public disclosure                                                       | After the fix is deployed, coordinated with the reporter |
 
 Critical findings in `EscrowManager`, `RefundManager`, `TreasuryVault`, and
 `FeeManager` are treated as fund-at-risk and start the 30-day clock immediately.
@@ -44,42 +44,42 @@ We will credit reporters in the advisory unless they ask us not to.
 
 ## Scope
 
-| Component | Scope |
-|-----------|-------|
+| Component                               | Scope       |
+| --------------------------------------- | ----------- |
 | Smart contracts (`packages/contracts/`) | ✅ In scope |
-| REST API (`apps/api/`) | ✅ In scope |
-| SDK (`packages/sdk/`) | ✅ In scope |
-| Blockchain indexer (`apps/indexer/`) | ✅ In scope |
-| Web dashboards | ✅ In scope |
-| CI/CD pipelines | ✅ In scope |
+| REST API (`apps/api/`)                  | ✅ In scope |
+| SDK (`packages/sdk/`)                   | ✅ In scope |
+| Blockchain indexer (`apps/indexer/`)    | ✅ In scope |
+| Web dashboards                          | ✅ In scope |
+| CI/CD pipelines                         | ✅ In scope |
 
 ## Security Model
 
 EPay is a decentralized payment gateway. The security model addresses:
 
-| Threat | Mitigation |
-|--------|-----------|
-| Reentrancy | Checks-effects-interactions pattern in all contracts |
-| Front-running | Nonce-based replay protection |
-| Signature forgery | Stellar wallet message verification |
-| Unauthorized access | RBAC with JWT + API key dual auth |
-| Double spending | Idempotency keys and transaction deduplication |
-| Oracle manipulation | Multi-source price feeds with deviation checks |
-| Flash loan attacks | Time-locked state transitions |
-| Brute force / abuse | Global `ThrottlerGuard` (100 req/min general, 10/min auth, 30/min payments) |
-| Injection / MIME sniffing | Helmet with an explicit Content-Security-Policy, plus a global `ValidationPipe` (`whitelist`, `forbidNonWhitelisted`) |
-| **CSRF** | **Not applicable by design** — the API authenticates with `Authorization: Bearer` / `x-api-key` headers, never ambient cookies, so a cross-site request carries no credentials. If cookie-based sessions are ever introduced, CSRF tokens become mandatory; revisit this row. |
-| Credential leakage | Gitleaks in CI (blocking on push and PR), curated `.gitleaks.toml` |
+| Threat                    | Mitigation                                                                                                                                                                                                                                                                    |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Reentrancy                | Checks-effects-interactions pattern in all contracts                                                                                                                                                                                                                          |
+| Front-running             | Nonce-based replay protection                                                                                                                                                                                                                                                 |
+| Signature forgery         | Stellar wallet message verification                                                                                                                                                                                                                                           |
+| Unauthorized access       | RBAC with JWT + API key dual auth                                                                                                                                                                                                                                             |
+| Double spending           | Idempotency keys and transaction deduplication                                                                                                                                                                                                                                |
+| Oracle manipulation       | Multi-source price feeds with deviation checks                                                                                                                                                                                                                                |
+| Flash loan attacks        | Time-locked state transitions                                                                                                                                                                                                                                                 |
+| Brute force / abuse       | Global `ThrottlerGuard` (100 req/min general, 10/min auth, 30/min payments)                                                                                                                                                                                                   |
+| Injection / MIME sniffing | Helmet with an explicit Content-Security-Policy, plus a global `ValidationPipe` (`whitelist`, `forbidNonWhitelisted`)                                                                                                                                                         |
+| **CSRF**                  | **Not applicable by design** — the API authenticates with `Authorization: Bearer` / `x-api-key` headers, never ambient cookies, so a cross-site request carries no credentials. If cookie-based sessions are ever introduced, CSRF tokens become mandatory; revisit this row. |
+| Credential leakage        | Gitleaks in CI (blocking on push and PR), curated `.gitleaks.toml`                                                                                                                                                                                                            |
 
 ## Audit Status
 
 **No formal third-party audit has been conducted yet.** EPay is in active development (v0.1.x) and has not undergone an external security audit. A comprehensive third-party audit of all 12 Soroban smart contracts — especially the high-risk contracts handling fund custody (`EscrowManager`, `RefundManager`, `TreasuryVault`, `FeeManager`) — is a top priority and is explicitly included in our grant funding request.
 
-| Component | Status | Auditor | Notes |
-|-----------|--------|---------|-------|
-| Smart Contracts | 🔜 Planned | TBD | Audit funding requested in SCF Wave 8 grant application |
-| API Server | 🔜 Planned | TBD | To follow smart contract audit |
-| SDK | 🔜 Planned | TBD | To follow API audit |
+| Component       | Status     | Auditor | Notes                                                   |
+| --------------- | ---------- | ------- | ------------------------------------------------------- |
+| Smart Contracts | 🔜 Planned | TBD     | Audit funding requested in SCF Wave 8 grant application |
+| API Server      | 🔜 Planned | TBD     | To follow smart contract audit                          |
+| SDK             | 🔜 Planned | TBD     | To follow API audit                                     |
 
 ### Internal Security Review
 
@@ -119,8 +119,8 @@ We follow a coordinated disclosure process:
 
 ## Supported Versions
 
-| Version | Supported |
-|---------|-----------|
+| Version | Supported             |
+| ------- | --------------------- |
 | 0.1.x   | ✅ Active development |
 
 ## Bug Bounty

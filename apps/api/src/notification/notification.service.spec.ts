@@ -1,17 +1,27 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { NotificationService } from './notification.service';
-import { PrismaService } from '../database/prisma.service';
 import { NotFoundException } from '@nestjs/common';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
+
 import { createMockPrismaService, mockDate } from '../../test/mocks/prisma.mock';
+import { PrismaService } from '../database/prisma.service';
+
+import { NotificationService } from './notification.service';
 
 describe('NotificationService', () => {
   let service: NotificationService;
   let prisma: ReturnType<typeof createMockPrismaService>;
 
   const mockNotif = {
-    id: 'notif_1', userId: 'user_1', type: 'payment.received', title: 'Payment Received',
-    message: 'You received 100 XLM', channel: 'IN_APP', isRead: false,
-    link: null, metadata: {}, createdAt: mockDate(),
+    id: 'notif_1',
+    userId: 'user_1',
+    type: 'payment.received',
+    title: 'Payment Received',
+    message: 'You received 100 XLM',
+    channel: 'IN_APP',
+    isRead: false,
+    link: null,
+    metadata: {},
+    createdAt: mockDate(),
   };
 
   beforeEach(async () => {
@@ -26,8 +36,10 @@ describe('NotificationService', () => {
     it('should create a notification', async () => {
       prisma.notification.create.mockResolvedValue(mockNotif);
       const result = await service.create({
-        userId: 'user_1', type: 'payment.received',
-        title: 'Payment Received', message: 'You received 100 XLM',
+        userId: 'user_1',
+        type: 'payment.received',
+        title: 'Payment Received',
+        message: 'You received 100 XLM',
       });
       expect(result.id).toBe('notif_1');
       expect(result.isRead).toBe(false);

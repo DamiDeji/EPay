@@ -3,7 +3,12 @@
 //! Tests cover: price updates, price queries, currency conversion,
 //! fee calculation across assets, oracle authorization, and access control.
 
-use soroban_sdk::{testutils::Address as _, Env, Address, String};
+// `Ledger` supplies `env.ledger().with_mut(...)`; without it the suite does not
+// compile (E0599).
+use soroban_sdk::{
+    testutils::{Address as _, Ledger},
+    Address, Env, String,
+};
 
 use super::*;
 
@@ -32,7 +37,7 @@ fn setup_test() -> (Env, PriceOracleClient<'static>, Address, Address) {
 
 #[test]
 fn test_initialize() {
-    let (env, client, owner, initial_oracle) = setup_test();
+    let (_env, client, owner, initial_oracle) = setup_test();
 
     assert_eq!(client.get_owner(), owner);
     assert!(client.is_authorized_oracle(&initial_oracle));
@@ -70,11 +75,12 @@ fn test_update_price() {
         &String::from_str(&env, "test-oracle"),
     );
 
-    let feed = client.get_price_feed(
-        &String::from_str(&env, ASSET_XLM),
-        &String::from_str(&env, ASSET_USDC),
-    )
-    .unwrap();
+    let feed = client
+        .get_price_feed(
+            &String::from_str(&env, ASSET_XLM),
+            &String::from_str(&env, ASSET_USDC),
+        )
+        .unwrap();
 
     assert_eq!(feed.price, price);
     assert_eq!(feed.decimals, 6);
@@ -84,6 +90,7 @@ fn test_update_price() {
 }
 
 #[test]
+#[should_panic(expected = "Price must be positive")]
 fn test_update_price_negative_rejected() {
     let (env, client, _owner, oracle) = setup_test();
 
@@ -157,19 +164,28 @@ fn test_convert_xlm_to_usdc() {
         &String::from_str(&env, "oracle"),
     );
 
-    // Convert 100 XLM (in stroops: 100 * 10^7) to USDC
-    let xlm_stroops = 100_000_000_i128; // 100 XLM
-    let usdc_micro = client.convert(&xlm_stroops, &String::from_str(&env, ASSET_XLM), &String::from_str(&env, ASSET_USDC), &6_u32).unwrap();
+    // Convert 100 XLM (XLM has 7 decimals, so 100 XLM = 100 * 10^7 stroops)
+    let xlm_stroops = 1_000_000_000_i128; // 100 XLM
+    let usdc_micro = client
+        .convert(
+            &xlm_stroops,
+            &String::from_str(&env, ASSET_XLM),
+            &7_u32,
+            &String::from_str(&env, ASSET_USDC),
+            &6_u32,
+        )
+        .unwrap();
 
     // 100 XLM * 2 USDC/XLM = 200 USDC = 200,000,000 micro-USDC
     assert_eq!(usdc_micro, 200_000_000_i128);
 }
 
 #[test]
-fn test_convert_usdc_to_xlm() {
+fn test_convert_unknown_pair_returns_none() {
     let (env, client, _owner, oracle) = setup_test();
 
-    // Set price: 1 XLM = 2 USDC
+    // Only the XLM/USDC feed exists. Converting the other direction requires an
+    // explicit feed for that pair; it must not be silently guessed.
     client.update_price(
         &oracle,
         &String::from_str(&env, ASSET_XLM),
@@ -179,12 +195,31 @@ fn test_convert_usdc_to_xlm() {
         &String::from_str(&env, "oracle"),
     );
 
-    // Convert 100 USDC (in micro: 100 * 10^6) to XLM
     let usdc_micro = 100_000_000_i128; // 100 USDC
-    let xlm_stroops = client.convert(&usdc_micro, &String::from_str(&env, ASSET_USDC), &String::from_str(&env, ASSET_XLM), &7_u32).unwrap();
+    let result = client.convert(
+        &usdc_micro,
+        &String::from_str(&env, ASSET_USDC),
+        &6_u32,
+        &String::from_str(&env, ASSET_XLM),
+        &7_u32,
+    );
 
-    // 100 USDC / 2 USDC/XLM = 50 XLM = 500,000,000 stroops
-    assert_eq!(xlm_stroops, 500_000_000_i128);
+    assert_eq!(result, None);
+}
+
+#[test]
+fn test_convert_rejects_negative_amount() {
+    let (_env, client, _owner, _oracle) = setup_test();
+
+    let result = client.convert(
+        &-1_i128,
+        &String::from_str(&_env, ASSET_XLM),
+        &7_u32,
+        &String::from_str(&_env, ASSET_USDC),
+        &6_u32,
+    );
+
+    assert_eq!(result, None);
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -206,11 +241,12 @@ fn test_calculate_fee_in_different_asset() {
     );
 
     // Calculate 0.5% fee (50 bps) on 100 XLM payment, in USDC
-    let xlm_amount = 100_000_000_i128; // 100 XLM
+    let xlm_amount = 1_000_000_000_i128; // 100 XLM (7 decimals)
     let fee_usdc = client
         .calculate_fee_in_asset(
             &xlm_amount,
             &String::from_str(&env, ASSET_XLM),
+            &7_u32,  // XLM has 7 decimals
             &50_u32, // 0.5%
             &String::from_str(&env, ASSET_USDC),
             &6_u32,
@@ -243,7 +279,7 @@ fn test_add_oracle() {
 
 #[test]
 fn test_remove_oracle() {
-    let (env, client, owner, initial_oracle) = setup_test();
+    let (_env, client, owner, initial_oracle) = setup_test();
 
     assert!(client.is_authorized_oracle(&initial_oracle));
 
@@ -318,11 +354,15 @@ fn test_price_feed_immutable_after_update() {
         &String::from_str(&env, "oracle-v1"),
     );
 
-    let feed1 = client.get_price_feed(
-        &String::from_str(&env, ASSET_XLM),
-        &String::from_str(&env, ASSET_USDC),
-    )
-    .unwrap();
+    let feed1 = client
+        .get_price_feed(
+            &String::from_str(&env, ASSET_XLM),
+            &String::from_str(&env, ASSET_USDC),
+        )
+        .unwrap();
+
+    // Advance the ledger so the second update has a strictly later timestamp.
+    env.ledger().with_mut(|li| li.timestamp += 100);
 
     // Update with new price
     client.update_price(
@@ -334,11 +374,12 @@ fn test_price_feed_immutable_after_update() {
         &String::from_str(&env, "oracle-v2"),
     );
 
-    let feed2 = client.get_price_feed(
-        &String::from_str(&env, ASSET_XLM),
-        &String::from_str(&env, ASSET_USDC),
-    )
-    .unwrap();
+    let feed2 = client
+        .get_price_feed(
+            &String::from_str(&env, ASSET_XLM),
+            &String::from_str(&env, ASSET_USDC),
+        )
+        .unwrap();
 
     assert_eq!(feed1.price, 1_000_000_i128);
     assert_eq!(feed2.price, 2_000_000_i128);

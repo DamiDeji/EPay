@@ -10,7 +10,7 @@
 #![no_std]
 
 use soroban_sdk::{
-    contract, contractimpl, contracttype, symbol_short, Address, Env, String, Symbol,
+    contract, contractimpl, contracttype, symbol_short, Address, Env, String, Symbol, Vec,
 };
 
 const OWNER_KEY: Symbol = symbol_short!("owner");
@@ -65,7 +65,7 @@ pub enum ProposalStatus {
 #[derive(Clone, Debug, PartialEq)]
 pub struct Vote {
     pub voter: Address,
-    pub weight: u64,            // Voting power based on badges
+    pub weight: u64, // Voting power based on badges
     pub choice: VoteChoice,
     pub voted_at: u64,
     pub reason: Option<String>,
@@ -96,36 +96,33 @@ pub struct Governance;
 
 // Configuration constants
 const DEFAULT_VOTING_PERIOD: u64 = 604_800; // 7 days
-const DEFAULT_TIMELOCK: u64 = 259_200;       // 72 hours
-const DEFAULT_QUORUM_BPS: u64 = 4000;        // 40% of total voting power
+const DEFAULT_TIMELOCK: u64 = 259_200; // 72 hours
+const DEFAULT_QUORUM_BPS: u64 = 4000; // 40% of total voting power
 
 #[contractimpl]
 impl Governance {
     /// Initialize governance contract.
     /// `voting_period` is in seconds (default: 7 days)
     /// `timelock` is in seconds (default: 72 hours)
-    pub fn init(
-        env: Env,
-        owner: Address,
-        voting_period: Option<u64>,
-        timelock: Option<u64>,
-    ) {
+    pub fn init(env: Env, owner: Address, voting_period: Option<u64>, timelock: Option<u64>) {
         if env.storage().instance().has(&OWNER_KEY) {
             panic!("Already initialized");
         }
         env.storage().instance().set(&OWNER_KEY, &owner);
-        env.storage()
-            .instance()
-            .set(&symbol_short!("voting_period"), &(voting_period.unwrap_or(DEFAULT_VOTING_PERIOD)));
-        env.storage()
-            .instance()
-            .set(&symbol_short!("timelock"), &(timelock.unwrap_or(DEFAULT_TIMELOCK)));
+        env.storage().instance().set(
+            &symbol_short!("voting"),
+            &(voting_period.unwrap_or(DEFAULT_VOTING_PERIOD)),
+        );
+        env.storage().instance().set(
+            &symbol_short!("timelock"),
+            &(timelock.unwrap_or(DEFAULT_TIMELOCK)),
+        );
         env.storage()
             .instance()
             .set(&QUORUM_KEY, &DEFAULT_QUORUM_BPS);
         env.storage()
             .instance()
-            .set(&symbol_short!("next_proposal_id"), &1u64);
+            .set(&symbol_short!("next_prop"), &1u64);
     }
 
     /// Get the contract owner.
@@ -137,7 +134,7 @@ impl Governance {
     pub fn get_voting_period(env: Env) -> u64 {
         env.storage()
             .instance()
-            .get(&symbol_short!("voting_period"))
+            .get(&symbol_short!("voting"))
             .unwrap()
     }
 
@@ -179,19 +176,19 @@ impl Governance {
             panic!("Description must be at least 50 characters");
         }
 
-        let voting_period = Self::get_voting_period(&env);
-        let timelock = Self::get_timelock(&env);
+        let voting_period = Self::get_voting_period(env.clone());
+        let timelock = Self::get_timelock(env.clone());
         let now = env.ledger().timestamp();
 
         let proposal_id: u64 = env
             .storage()
             .instance()
-            .get(&symbol_short!("next_proposal_id"))
+            .get(&symbol_short!("next_prop"))
             .unwrap();
 
         let proposal = Proposal {
             id: proposal_id,
-            proposer,
+            proposer: proposer.clone(),
             proposal_type,
             title: title.clone(),
             description: description.clone(),
@@ -210,7 +207,7 @@ impl Governance {
         env.storage().persistent().set(&key, &proposal);
         env.storage()
             .instance()
-            .set(&symbol_short!("next_proposal_id"), &(proposal_id + 1));
+            .set(&symbol_short!("next_prop"), &(proposal_id + 1));
 
         env.events().publish(
             (Symbol::new(&env, "proposal_created"),),
@@ -279,9 +276,7 @@ impl Governance {
         }
         proposal.total_weight += weight;
 
-        env.storage()
-            .persistent()
-            .set(&key, &proposal);
+        env.storage().persistent().set(&key, &proposal);
 
         env.events().publish(
             (Symbol::new(&env, "vote_cast"),),
@@ -295,7 +290,7 @@ impl Governance {
 
     /// Close a proposal after the voting period ends.
     /// Can only be called by the proposer or admin.
-    pub fn close_proposal(env: Env, caller: Address, proposal_id: u64) -> VoteResult {
+    pub fn close_proposal(env: Env, _caller: Address, proposal_id: u64) -> VoteResult {
         let key = (symbol_short!("proposal"), proposal_id);
         let mut proposal: Proposal = env
             .storage()
@@ -311,7 +306,7 @@ impl Governance {
             panic!("Voting period has not ended");
         }
 
-        let quorum_bps = Self::get_quorum_bps(&env);
+        let quorum_bps = Self::get_quorum_bps(env.clone());
         let quorum_reached = Self::check_quorum(&proposal, quorum_bps);
         let passed = quorum_reached && proposal.yes_votes > proposal.no_votes;
 
@@ -321,9 +316,7 @@ impl Governance {
             proposal.status = ProposalStatus::Rejected;
         }
 
-        env.storage()
-            .persistent()
-            .set(&key, &proposal);
+        env.storage().persistent().set(&key, &proposal);
 
         let result = VoteResult {
             proposal_id,
@@ -338,12 +331,12 @@ impl Governance {
         if passed {
             env.events().publish(
                 (Symbol::new(&env, "proposal_passed"),),
-                (proposal_id, result),
+                (proposal_id, result.clone()),
             );
         } else {
             env.events().publish(
                 (Symbol::new(&env, "proposal_rejected"),),
-                (proposal_id, result),
+                (proposal_id, result.clone()),
             );
         }
 
@@ -352,7 +345,7 @@ impl Governance {
 
     /// Execute a passed proposal.
     /// Can only be called after the timelock expires.
-    pub fn execute_proposal(env: Env, caller: Address, proposal_id: u64) {
+    pub fn execute_proposal(env: Env, _caller: Address, proposal_id: u64) {
         let key = (symbol_short!("proposal"), proposal_id);
         let proposal: Proposal = env
             .storage()
@@ -371,9 +364,7 @@ impl Governance {
         // Mark as executed
         let mut proposal = proposal;
         proposal.status = ProposalStatus::Executed;
-        env.storage()
-            .persistent()
-            .set(&key, &proposal);
+        env.storage().persistent().set(&key, &proposal);
 
         env.events().publish(
             (Symbol::new(&env, "proposal_executed"),),
@@ -401,14 +392,10 @@ impl Governance {
 
         let mut proposal = proposal;
         proposal.status = ProposalStatus::Cancelled;
-        env.storage()
-            .persistent()
-            .set(&key, &proposal);
+        env.storage().persistent().set(&key, &proposal);
 
-        env.events().publish(
-            (Symbol::new(&env, "proposal_cancelled"),),
-            (proposal_id,),
-        );
+        env.events()
+            .publish((Symbol::new(&env, "proposal_cancelled"),), (proposal_id,));
     }
 
     // ════════════════════════════════════════════════════════════════════
@@ -435,18 +422,18 @@ impl Governance {
 
     /// Get all proposals (returns list of proposal IDs).
     pub fn get_all_proposals(env: Env) -> Vec<u64> {
-        let mut proposals = Vec::new();
+        let mut proposals = Vec::new(&env);
         let mut next_id: u64 = env
             .storage()
             .instance()
-            .get(&symbol_short!("next_proposal_id"))
-            .unwrap();
+            .get(&symbol_short!("next_prop"))
+            .unwrap_or(0);
 
         while next_id > 0 {
             next_id -= 1;
             let key = (symbol_short!("proposal"), next_id);
             if env.storage().persistent().has(&key) {
-                proposals.push(next_id);
+                proposals.push_back(next_id);
             }
         }
 
@@ -455,19 +442,23 @@ impl Governance {
 
     /// Get proposals by status.
     pub fn get_proposals_by_status(env: Env, status: ProposalStatus) -> Vec<u64> {
-        Self::get_all_proposals(env)
-            .into_iter()
-            .filter(|&id| {
-                let proposal = Self::get_proposal(&env, id).unwrap();
-                proposal.status == status
-            })
-            .collect()
+        // `soroban_sdk::Vec` has no iterator adapters, so filter explicitly.
+        let all = Self::get_all_proposals(env.clone());
+        let mut matching = Vec::new(&env);
+        for id in all.iter() {
+            if let Some(proposal) = Self::get_proposal(env.clone(), id) {
+                if proposal.status == status {
+                    matching.push_back(id);
+                }
+            }
+        }
+        matching
     }
 
     /// Update quorum requirement (owner only).
     pub fn set_quorum_bps(env: Env, caller: Address, quorum_bps: u64) {
-        Self::require_owner(&env, &caller);
-        if quorum_bps < 1000 || quorum_bps > 10000 {
+        Self::require_admin(&env, &caller);
+        if !(1000..=10000).contains(&quorum_bps) {
             panic!("Quorum must be between 10% and 100%");
         }
         env.storage().instance().set(&QUORUM_KEY, &quorum_bps);
@@ -494,14 +485,22 @@ impl Governance {
         }
     }
 
+    /// Decide whether a closed proposal met the quorum requirement.
+    ///
+    /// The previous implementation compared a *count* of votes
+    /// (`yes_votes + abstain_votes`, where each entry is +1) against a threshold
+    /// derived from *weighted* participation (`total_weight * quorum_bps`), so no
+    /// realistic proposal could ever reach quorum. Both sides must be measured in
+    /// the same unit: here, the share of participating voting power cast in
+    /// favour (yes or abstain) versus the configured basis points.
     fn check_quorum(proposal: &Proposal, quorum_bps: u64) -> bool {
-        if proposal.total_weight == 0 {
+        let participation = proposal.yes_votes + proposal.no_votes + proposal.abstain_votes;
+        if participation == 0 {
             return false;
         }
-        // Simplified: compare yes+abstain votes to quorum
-        let voting_power = proposal.yes_votes + proposal.abstain_votes;
-        let quorum_threshold = proposal.total_weight * quorum_bps / 10000;
-        voting_power >= quorum_threshold
+
+        let in_favour = proposal.yes_votes + proposal.abstain_votes;
+        in_favour * 10_000 >= participation * quorum_bps
     }
 }
 

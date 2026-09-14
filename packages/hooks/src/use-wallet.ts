@@ -57,66 +57,69 @@ export function useWallet() {
    * - xBull: window.xBullSDK.connect()
    * - Albedo: albedo.publicKey()
    */
-  const connect = useCallback(async (provider: WalletProvider) => {
-    setState((prev) => ({ ...prev, connecting: true, error: null }));
+  const connect = useCallback(
+    async (provider: WalletProvider) => {
+      setState((prev) => ({ ...prev, connecting: true, error: null }));
 
-    try {
-      let publicKey: string;
+      try {
+        let publicKey: string;
 
-      // In production, integrate with actual wallet APIs
-      // For now, use a mock flow
-      // Simulate wallet connection delay
-      await new Promise((resolve) => setTimeout(resolve, 100));
+        // In production, integrate with actual wallet APIs
+        // For now, use a mock flow
+        // Simulate wallet connection delay
+        await new Promise((resolve) => setTimeout(resolve, 100));
 
-      switch (provider) {
-        case 'freighter':
-          // const result = await window.freighterApi.getPublicKey();
-          // publicKey = result;
-          publicKey = 'GABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234';
-          break;
-        case 'xbull':
-          // const connection = await window.xBullSDK.connect({ canRequestPublicKey: true });
-          // publicKey = connection.publicKey;
-          publicKey = 'GDEFGH1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234';
-          break;
-        case 'albedo':
-          // const albedoResponse = await albedo.publicKey();
-          // publicKey = albedoResponse.pubkey;
-          publicKey = 'GHIJKL1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234';
-          break;
-        case 'rabet':
-          publicKey = 'GMNOPQ1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234';
-          break;
-        case 'lobstr':
-          publicKey = 'GSTUVW1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234';
-          break;
-        default:
-          throw new Error(`Unsupported wallet provider: ${String(provider)}`);
+        switch (provider) {
+          case 'freighter':
+            // const result = await window.freighterApi.getPublicKey();
+            // publicKey = result;
+            publicKey = 'GABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234';
+            break;
+          case 'xbull':
+            // const connection = await window.xBullSDK.connect({ canRequestPublicKey: true });
+            // publicKey = connection.publicKey;
+            publicKey = 'GDEFGH1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234';
+            break;
+          case 'albedo':
+            // const albedoResponse = await albedo.publicKey();
+            // publicKey = albedoResponse.pubkey;
+            publicKey = 'GHIJKL1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234';
+            break;
+          case 'rabet':
+            publicKey = 'GMNOPQ1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234';
+            break;
+          case 'lobstr':
+            publicKey = 'GSTUVW1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234';
+            break;
+          default:
+            throw new Error(`Unsupported wallet provider: ${String(provider)}`);
+        }
+
+        const walletData = {
+          publicKey,
+          provider,
+          network: state.network,
+        };
+
+        localStorage.setItem('epay_stellar_wallet', JSON.stringify(walletData));
+
+        setState((prev) => ({
+          ...prev,
+          connected: true,
+          publicKey,
+          provider,
+          connecting: false,
+        }));
+      } catch (error) {
+        setState((prev) => ({
+          ...prev,
+          error: error instanceof Error ? error.message : 'Failed to connect wallet',
+          connecting: false,
+        }));
       }
-
-      const walletData = {
-        publicKey,
-        provider,
-        network: state.network,
-      };
-
-      localStorage.setItem('epay_stellar_wallet', JSON.stringify(walletData));
-
-      setState((prev) => ({
-        ...prev,
-        connected: true,
-        publicKey,
-        provider,
-        connecting: false,
-      }));
-    } catch (error) {
-      setState((prev) => ({
-        ...prev,
-        error: error instanceof Error ? error.message : 'Failed to connect wallet',
-        connecting: false,
-      }));
-    }
-  }, [state.network]);
+    },
+    [state.network],
+  );
 
   /**
    * Disconnect the current wallet.
@@ -136,16 +139,19 @@ export function useWallet() {
   /**
    * Sign a message with the connected wallet.
    */
-  const signMessage = useCallback(async (_message: string): Promise<string> => {
-    if (!state.publicKey || !state.provider) {
-      throw new Error('No wallet connected');
-    }
+  const signMessage = useCallback(
+    async (_message: string): Promise<string> => {
+      if (!state.publicKey || !state.provider) {
+        throw new Error('No wallet connected');
+      }
 
-    // In production, use the wallet's signing API
-    // e.g., await window.freighterApi.signMessage(message);
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    return `mock_signature_${Date.now().toString(36)}`;
-  }, [state.publicKey, state.provider]);
+      // In production, use the wallet's signing API
+      // e.g., await window.freighterApi.signMessage(message);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      return `mock_signature_${Date.now().toString(36)}`;
+    },
+    [state.publicKey, state.provider],
+  );
 
   /**
    * Switch the Stellar network.
@@ -157,7 +163,11 @@ export function useWallet() {
   /**
    * Returns list of supported wallet providers.
    */
-  const getSupportedWallets = useCallback((): { provider: WalletProvider; label: string; icon: string }[] => {
+  const getSupportedWallets = useCallback((): {
+    provider: WalletProvider;
+    label: string;
+    icon: string;
+  }[] => {
     return [
       { provider: 'freighter', label: 'Freighter', icon: '🦊' },
       { provider: 'xbull', label: 'xBull', icon: '🐂' },

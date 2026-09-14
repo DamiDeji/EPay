@@ -47,7 +47,11 @@ export class BlockScanner {
         this.checkpoint.advance(endLedger);
 
         log.debug(
-          { scanned: endLedger, totalLedgers: toLedger - fromLedger, eventsFound: ledgerEvents.length },
+          {
+            scanned: endLedger,
+            totalLedgers: toLedger - fromLedger,
+            eventsFound: ledgerEvents.length,
+          },
           'Ledger batch scanned',
         );
       } catch (error) {
@@ -87,11 +91,7 @@ export class BlockScanner {
 
         for (const tx of records) {
           // Check if transaction involves our contracts
-          const contractEvents = await this.extractContractEvents(
-            horizonUrl,
-            tx,
-            ledger,
-          );
+          const contractEvents = await this.extractContractEvents(horizonUrl, tx, ledger);
           events.push(...contractEvents);
         }
       } catch (error) {

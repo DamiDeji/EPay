@@ -31,7 +31,7 @@ transfer_admin(new_admin)   // pending_admin = new_admin, emit AdminTransferProp
 accept_admin()              // caller must be pending_admin → admin = pending_admin
 ```
 
-No ownership change takes effect until the *recipient* accepts. A typo in the
+No ownership change takes effect until the _recipient_ accepts. A typo in the
 new admin address cannot strand a contract, and a compromised admin key cannot
 silently hand control to an attacker who never has to prove control of the target.
 
@@ -50,8 +50,8 @@ to zero and used immediately.
 ### 3. Circuit breaker
 
 `pause_contract` / `unpause_contract` (extending the existing `EmergencyPause`
-surface) halt value movement without requiring an upgrade. Pausing is *fast* and
-*reversible*; upgrading is slow and irreversible. Separating them means the
+surface) halt value movement without requiring an upgrade. Pausing is _fast_ and
+_reversible_; upgrading is slow and irreversible. Separating them means the
 emergency response to an exploit is a pause, not a rushed upgrade.
 
 ## Rationale

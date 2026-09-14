@@ -7,7 +7,9 @@ use soroban_sdk::{
 
 use super::*;
 
-fn setup_test() -> (Env, TreasuryVaultClient<'static>, Address, Address) {
+/// Returns the registered vault contract address so token-balance assertions can
+/// be made against the vault itself (rather than the test's own context).
+fn setup_test() -> (Env, TreasuryVaultClient<'static>, Address, Address, Address) {
     let env = Env::default();
     env.mock_all_auths();
 
@@ -26,7 +28,7 @@ fn setup_test() -> (Env, TreasuryVaultClient<'static>, Address, Address) {
     let client = TreasuryVaultClient::new(&env, &contract_id);
     client.init(&owner, &token_address);
 
-    (env, client, owner, token_admin)
+    (env, client, owner, token_admin, contract_id)
 }
 
 fn fund_address(env: &Env, token_address: &Address, recipient: &Address, amount: i128) {
@@ -40,7 +42,7 @@ fn get_balance(env: &Env, token_address: &Address, addr: &Address) -> i128 {
 
 #[test]
 fn test_initialize() {
-    let (_env, client, _owner, _token_admin) = setup_test();
+    let (_env, client, _owner, _token_admin, _contract_id) = setup_test();
     let _ = client.get_token_address();
     assert_eq!(client.get_tx_count(), 0);
 }
@@ -65,7 +67,7 @@ fn test_cannot_reinitialize() {
 
 #[test]
 fn test_deposit() {
-    let (env, client, owner, _token_admin) = setup_test();
+    let (env, client, owner, _token_admin, _contract_id) = setup_test();
 
     let from = Address::generate(&env);
     let token_address = client.get_token_address();
@@ -83,14 +85,13 @@ fn test_deposit() {
 
 #[test]
 fn test_deposit_moves_tokens() {
-    let (env, client, owner, _token_admin) = setup_test();
+    let (env, client, owner, _token_admin, contract_id) = setup_test();
 
     let from = Address::generate(&env);
     let token_address = client.get_token_address();
     let asset_code = String::from_str(&env, "native");
     fund_address(&env, &token_address, &from, 5_000_000);
 
-    let contract_id = env.current_contract_address();
     let from_before = get_balance(&env, &token_address, &from);
     let vault_before = get_balance(&env, &token_address, &contract_id);
 
@@ -109,7 +110,7 @@ fn test_deposit_moves_tokens() {
 
 #[test]
 fn test_withdraw() {
-    let (env, client, owner, _token_admin) = setup_test();
+    let (env, client, owner, _token_admin, _contract_id) = setup_test();
 
     let from = Address::generate(&env);
     let to = Address::generate(&env);
@@ -131,7 +132,7 @@ fn test_withdraw() {
 
 #[test]
 fn test_withdraw_moves_tokens() {
-    let (env, client, owner, _token_admin) = setup_test();
+    let (env, client, owner, _token_admin, contract_id) = setup_test();
 
     let from = Address::generate(&env);
     let to = Address::generate(&env);
@@ -140,7 +141,6 @@ fn test_withdraw_moves_tokens() {
     fund_address(&env, &token_address, &from, 5_000_000);
     client.deposit(&owner, &from, &5_000_000_i128, &asset_code);
 
-    let contract_id = env.current_contract_address();
     let vault_before = get_balance(&env, &token_address, &contract_id);
     let to_before = get_balance(&env, &token_address, &to);
 
@@ -160,7 +160,7 @@ fn test_withdraw_moves_tokens() {
 #[test]
 #[should_panic(expected = "Only owner can perform this action")]
 fn test_withdraw_not_owner() {
-    let (env, client, owner, _token_admin) = setup_test();
+    let (env, client, owner, _token_admin, _contract_id) = setup_test();
 
     let from = Address::generate(&env);
     let token_address = client.get_token_address();
@@ -177,7 +177,7 @@ fn test_withdraw_not_owner() {
 #[test]
 #[should_panic]
 fn test_withdraw_insufficient_balance() {
-    let (env, client, owner, _token_admin) = setup_test();
+    let (env, client, owner, _token_admin, _contract_id) = setup_test();
 
     let to = Address::generate(&env);
     let asset_code = String::from_str(&env, "native");
@@ -188,7 +188,7 @@ fn test_withdraw_insufficient_balance() {
 
 #[test]
 fn test_record_tx() {
-    let (env, client, owner, _token_admin) = setup_test();
+    let (env, client, owner, _token_admin, _contract_id) = setup_test();
 
     let asset_code = String::from_str(&env, "native");
     let ref_id = String::from_str(&env, "pay_1");
@@ -209,7 +209,7 @@ fn test_record_tx() {
 #[test]
 #[should_panic(expected = "Only owner can perform this action")]
 fn test_record_tx_not_owner() {
-    let (env, client, _owner, _token_admin) = setup_test();
+    let (env, client, _owner, _token_admin, _contract_id) = setup_test();
 
     let attacker = Address::generate(&env);
     let asset_code = String::from_str(&env, "native");
@@ -227,7 +227,7 @@ fn test_record_tx_not_owner() {
 #[test]
 #[should_panic(expected = "Only owner can perform this action")]
 fn test_deposit_not_owner() {
-    let (env, client, _owner, _token_admin) = setup_test();
+    let (env, client, _owner, _token_admin, _contract_id) = setup_test();
 
     let from = Address::generate(&env);
     let not_owner = Address::generate(&env);
@@ -239,7 +239,7 @@ fn test_deposit_not_owner() {
 
 #[test]
 fn test_get_tx_count() {
-    let (env, client, owner, _token_admin) = setup_test();
+    let (env, client, owner, _token_admin, _contract_id) = setup_test();
 
     let asset_code = String::from_str(&env, "native");
 

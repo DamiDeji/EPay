@@ -5,18 +5,18 @@ take a payment, and handle the edge cases that decide whether an integration is
 production-grade.
 
 > **Terminology.** "Contract integration" here means integrating with the EPay
-> *platform contract* (its API and on-chain contracts) from your application. If
+> _platform contract_ (its API and on-chain contracts) from your application. If
 > you are a **merchant**, you may not need any code at all — payment links and the
 > merchant dashboard cover most cases.
 
 ## Choose a path
 
-| Path | Best for | Status |
-| --- | --- | --- |
-| **[TypeScript SDK](#typescript-sdk)** (`@epay/sdk`) | Node services, Next.js apps, scripts | ✅ Available |
-| **[REST API](#rest-api)** + [webhooks](./webhook-receiver.md) | Any language, minimal dependencies | ✅ Available |
-| **Wallet + Soroban directly** | Non-custodial flows where you sign transactions yourself | ✅ Contracts are public; see [`packages/contracts/README.md`](../packages/contracts/README.md) |
-| **Go / Python SDKs** | — | 🔜 **Not provided.** Use the REST API; the wire format is documented and the webhook verifier is ~20 lines in any language. See [ROADMAP](../ROADMAP.md). |
+| Path                                                          | Best for                                                 | Status                                                                                                                                                    |
+| ------------------------------------------------------------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **[TypeScript SDK](#typescript-sdk)** (`@epay/sdk`)           | Node services, Next.js apps, scripts                     | ✅ Available                                                                                                                                              |
+| **[REST API](#rest-api)** + [webhooks](./webhook-receiver.md) | Any language, minimal dependencies                       | ✅ Available                                                                                                                                              |
+| **Wallet + Soroban directly**                                 | Non-custodial flows where you sign transactions yourself | ✅ Contracts are public; see [`packages/contracts/README.md`](../packages/contracts/README.md)                                                            |
+| **Go / Python SDKs**                                          | —                                                        | 🔜 **Not provided.** Use the REST API; the wire format is documented and the webhook verifier is ~20 lines in any language. See [ROADMAP](../ROADMAP.md). |
 
 Everything below is tested against the public testnet and the local stack from
 [getting-started.md](./getting-started.md).
@@ -34,25 +34,25 @@ import { EPayClient, PaymentStatus } from '@epay/sdk';
 
 const epay = new EPayClient({
   apiUrl: process.env.EPAY_API_URL ?? 'https://api.epay.dev',
-  apiKey: process.env.EPAY_API_KEY!,   // server-side only — never ship this to a browser
+  apiKey: process.env.EPAY_API_KEY!, // server-side only — never ship this to a browser
 });
 ```
 
 ### Take a payment
 
-The three steps are *create → customer pays → confirm*. The middle step happens in
+The three steps are _create → customer pays → confirm_. The middle step happens in
 the customer's wallet; your server never holds a key.
 
 ```ts
 // 1. Create the payment request.
 const payment = await epay.payments.create({
   merchantId: 'merch_abc123',
-  amount: '5000000000',                     // stroops: 5 XLM (1 XLM = 10^7)
+  amount: '5000000000', // stroops: 5 XLM (1 XLM = 10^7)
   currency: 'XLM',
-  recipientAddress: 'GAD...',               // your merchant settlement address
+  recipientAddress: 'GAD...', // your merchant settlement address
   description: 'Order #1234',
   expiresIn: 3600,
-  metadata: { orderId: 'ord_1234' },        // returned to you on every webhook
+  metadata: { orderId: 'ord_1234' }, // returned to you on every webhook
 });
 
 // 2. Hand `payment.paymentId` to your client, which builds and signs the
@@ -64,7 +64,7 @@ await epay.payments.confirm(payment.paymentId, txHash);
 
 Do **not** poll for confirmation in a request handler. Subscribe to the
 `payment.completed` webhook instead (below), and treat `confirm` as the point at
-which you *told* EPay about the transaction, not proof that it settled.
+which you _told_ EPay about the transaction, not proof that it settled.
 
 ### Invoice a business customer
 
@@ -81,7 +81,7 @@ const invoice = await epay.invoices.create({
   customerId: 'cust_789',
 });
 
-await epay.invoices.issue(invoice.id);   // draft → issued, now payable
+await epay.invoices.issue(invoice.id); // draft → issued, now payable
 ```
 
 ### Escrow a milestone-based engagement
@@ -97,8 +97,8 @@ const escrow = await epay.escrows.create({
   currency: 'XLM',
   milestones: [
     { index: 0, description: 'Discovery', amount: '3000000000' },
-    { index: 1, description: 'Build',     amount: '4000000000' },
-    { index: 2, description: 'Handover',  amount: '3000000000' },
+    { index: 1, description: 'Build', amount: '4000000000' },
+    { index: 2, description: 'Handover', amount: '3000000000' },
   ],
 });
 
@@ -114,7 +114,7 @@ A dispute (`escrow.dispute(id)`) must be resolved by an EPay admin
 ```ts
 const refund = await epay.refunds.request({
   paymentId: 'pay_abc123',
-  amount: '1000000000',        // partial; omit or set equal to the original for a full refund
+  amount: '1000000000', // partial; omit or set equal to the original for a full refund
   reason: 'Item returned',
 });
 // Admin approval is required; watch `refund.completed`.
@@ -171,7 +171,7 @@ curl -s -X POST "$EPAY_API_URL/payments" \
   -d '{ "merchantId": "merch_abc123", "amount": "5000000000", "currency": "XLM" }'
 ```
 
-Generate the key from the *business* operation (`{orderId}-create`), not from a
+Generate the key from the _business_ operation (`{orderId}-create`), not from a
 random value per attempt — a random key on each retry defeats the purpose.
 
 ### Errors
@@ -185,14 +185,14 @@ random value per attempt — a random key on each retry defeats the purpose.
 }
 ```
 
-| Status | Meaning | Retry? |
-| --- | --- | --- |
-| `400` | Validation error — fix the request | No |
-| `401` / `403` | Missing or invalid credentials, or insufficient role | No |
-| `404` | Unknown id | No |
-| `409` | Conflict (already completed, duplicate idempotency key) | No |
-| `429` | Rate limited — honour `Retry-After` | Yes, with backoff |
-| `5xx` | Server error | Yes, with backoff + idempotency key |
+| Status        | Meaning                                                 | Retry?                              |
+| ------------- | ------------------------------------------------------- | ----------------------------------- |
+| `400`         | Validation error — fix the request                      | No                                  |
+| `401` / `403` | Missing or invalid credentials, or insufficient role    | No                                  |
+| `404`         | Unknown id                                              | No                                  |
+| `409`         | Conflict (already completed, duplicate idempotency key) | No                                  |
+| `429`         | Rate limited — honour `Retry-After`                     | Yes, with backoff                   |
+| `5xx`         | Server error                                            | Yes, with backoff + idempotency key |
 
 Every response carries an `x-request-id`. **Log it.** It is the fastest way to get
 a useful answer from EPay support.
@@ -209,7 +209,7 @@ idempotency — is in **[webhook-receiver.md](./webhook-receiver.md)**.
 The three rules that matter most:
 
 1. **Verify the signature against the raw body bytes.** Re-serialising JSON breaks it.
-2. **Deduplicate on `X-EPay-Event-Id`.** You *will* see an event twice.
+2. **Deduplicate on `X-EPay-Event-Id`.** You _will_ see an event twice.
 3. **Persist before responding `200`.** A fast `200` with nothing stored is data loss.
 
 ---
@@ -228,14 +228,14 @@ success as evidence of a production-correct integration.
 
 ### The failure paths to test before launch
 
-| Scenario | What you should observe |
-| --- | --- |
-| Duplicate webhook delivery (replay it by hand) | Your handler is idempotent; no second refund/shipment |
-| Webhook signature tampered | Your handler returns 401 and does nothing |
-| Receiver down for 30 minutes | EPay retries; you receive the event once back up |
-| Receiver down for a day | The delivery is dead-lettered; you can replay it from `GET /webhooks/deliveries` |
-| API returns `429` | Your client backs off instead of hammering |
-| Payment expires unpaid | You see `payment.failed` and cancel the order |
+| Scenario                                       | What you should observe                                                          |
+| ---------------------------------------------- | -------------------------------------------------------------------------------- |
+| Duplicate webhook delivery (replay it by hand) | Your handler is idempotent; no second refund/shipment                            |
+| Webhook signature tampered                     | Your handler returns 401 and does nothing                                        |
+| Receiver down for 30 minutes                   | EPay retries; you receive the event once back up                                 |
+| Receiver down for a day                        | The delivery is dead-lettered; you can replay it from `GET /webhooks/deliveries` |
+| API returns `429`                              | Your client backs off instead of hammering                                       |
+| Payment expires unpaid                         | You see `payment.failed` and cancel the order                                    |
 
 ## Support
 

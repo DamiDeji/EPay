@@ -1,7 +1,10 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { AnalyticsService } from './analytics.service';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
+
+import { createMockPrismaService } from '../../test/mocks/prisma.mock';
 import { PrismaService } from '../database/prisma.service';
-import { createMockPrismaService, mockDate } from '../../test/mocks/prisma.mock';
+
+import { AnalyticsService } from './analytics.service';
 
 describe('AnalyticsService', () => {
   let service: AnalyticsService;
@@ -48,9 +51,7 @@ describe('AnalyticsService', () => {
   describe('getPlatformAnalytics', () => {
     it('should return platform stats', async () => {
       prisma.merchant.count.mockResolvedValue(10);
-      prisma.payment.findMany.mockResolvedValue([
-        mockPayment('COMPLETED', '1000000000'),
-      ]);
+      prisma.payment.findMany.mockResolvedValue([mockPayment('COMPLETED', '1000000000')]);
       prisma.merchant.count.mockResolvedValue(5);
 
       const result = await service.getPlatformAnalytics(30);
@@ -61,9 +62,7 @@ describe('AnalyticsService', () => {
 
   describe('getMerchantRevenue', () => {
     it('should calculate revenue and fees', async () => {
-      prisma.payment.findMany.mockResolvedValue([
-        mockPayment('COMPLETED', '1000000000'),
-      ]);
+      prisma.payment.findMany.mockResolvedValue([mockPayment('COMPLETED', '1000000000')]);
 
       const result = await service.getMerchantRevenue('merch_1', 30);
       expect(result.totalRevenue).toBe('1000000000');

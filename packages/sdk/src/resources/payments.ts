@@ -1,5 +1,9 @@
 import type {
-  Payment, CreatePaymentRequest, PaymentStatus, PaginatedResponse, PaginationQuery,
+  Payment,
+  CreatePaymentRequest,
+  PaymentStatus,
+  PaginatedResponse,
+  PaginationQuery,
 } from '@epay/types';
 
 import { BaseResource } from './base';
@@ -35,11 +39,15 @@ export class PaymentsResource extends BaseResource {
   /**
    * List payments with optional filters.
    */
-  async list(params?: PaginationQuery & {
-    merchantId?: string;
-    status?: PaymentStatus;
-  }): Promise<PaginatedResponse<Payment>> {
-    return this.client.get<PaginatedResponse<Payment>>(`/payments${this.buildQuery(params as Record<string, unknown>)}`);
+  async list(
+    params?: PaginationQuery & {
+      merchantId?: string;
+      status?: PaymentStatus;
+    },
+  ): Promise<PaginatedResponse<Payment>> {
+    return this.client.get<PaginatedResponse<Payment>>(
+      `/payments${this.buildQuery(params as Record<string, unknown>)}`,
+    );
   }
 
   /**

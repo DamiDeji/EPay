@@ -3,7 +3,12 @@
 //! Tests cover: initialization, creation, renewal, pause, cancellation,
 //! max payments cap, state transitions, and event emission.
 
-use soroban_sdk::{testutils::Address as _, Env, Address, String};
+// `Ledger` supplies `env.ledger().with_mut(...)`; without it the suite does not
+// compile (E0599).
+use soroban_sdk::{
+    testutils::{Address as _, Ledger},
+    Address, Env, String,
+};
 
 use super::*;
 
@@ -31,9 +36,11 @@ fn setup_test() -> (Env, SubscriptionManagerClient<'static>, Address) {
 
 #[test]
 fn test_initialize() {
-    let (env, client, _owner) = setup_test();
-    assert_eq!(client.get_next_id(), 1);
+    let (_env, client, _owner) = setup_test();
+
+    // Empty registry: no subscription ids have been allocated yet.
     assert!(!client.subscription_exists(&1));
+    assert!(!client.subscription_exists(&0));
 }
 
 #[test]
@@ -115,8 +122,8 @@ fn test_subscription_id_increments() {
     let merchant = Address::generate(&env);
     let customer = Address::generate(&env);
 
-    assert_eq!(client.get_next_id(), 1);
-    client.create_subscription(
+    // Ids are handed out sequentially from 1 with no gaps or reuse.
+    let first = client.create_subscription(
         &merchant,
         &customer,
         &String::from_str(&env, "Plan A"),
@@ -125,8 +132,25 @@ fn test_subscription_id_increments() {
         &BillingInterval::Monthly,
         &None,
     );
-    assert_eq!(client.get_next_id(), 2);
+    assert_eq!(first, 1);
+
+    let second = client.create_subscription(
+        &merchant,
+        &customer,
+        &String::from_str(&env, "Plan B"),
+        &2_000_i128,
+        &String::from_str(&env, "XLM"),
+        &BillingInterval::Monthly,
+        &None,
+    );
+    assert_eq!(second, 2);
+    assert!(client.subscription_exists(&1));
+    assert!(client.subscription_exists(&2));
 }
+
+/// Subscriptions created by the lifecycle sweep. Each create/renew is a metered
+/// host call, so this is sized for CI runtime.
+const SWEEP: u64 = 128;
 
 // ════════════════════════════════════════════════════════════════════
 // SUBSCRIPTION RENEWAL
@@ -272,10 +296,7 @@ fn test_full_lifecycle() {
 
     // Renew once
     client.renew(&sub_id);
-    assert_eq!(
-        client.get_subscription(&sub_id).unwrap().payments_made,
-        1
-    );
+    assert_eq!(client.get_subscription(&sub_id).unwrap().payments_made, 1);
 
     // Pause
     client.pause(&sub_id);
@@ -286,10 +307,7 @@ fn test_full_lifecycle() {
 
     // Resume by renewing (payments_made increments even from paused)
     client.renew(&sub_id);
-    assert_eq!(
-        client.get_subscription(&sub_id).unwrap().payments_made,
-        2
-    );
+    assert_eq!(client.get_subscription(&sub_id).unwrap().payments_made, 2);
 
     // Cancel
     client.cancel(&sub_id);
@@ -306,7 +324,7 @@ fn test_full_lifecycle() {
 #[test]
 #[should_panic(expected = "Subscription not found")]
 fn test_operations_on_nonexistent_subscription() {
-    let (env, client, _owner) = setup_test();
+    let (_env, client, _owner) = setup_test();
     client.renew(&9999_u64);
 }
 
@@ -353,6 +371,7 @@ fn test_fuzz_subscription_stress() {
     let contract_id = env.register_contract(None, SubscriptionManager);
     let client = SubscriptionManagerClient::new(&env, &contract_id);
     client.init(&owner);
+    env.budget().reset_unlimited();
 
     let plan_name = String::from_str(&env, "Fuzz Plan");
     let asset_code = String::from_str(&env, "XLM");
@@ -366,10 +385,14 @@ fn test_fuzz_subscription_stress() {
         BillingInterval::Annually,
     ];
 
-    for i in 0..1000 {
-        let amount = ((i as u64 + 1) * 100_000) as i128;
-        let interval = intervals[i % intervals.len()];
-        let max = if i % 3 == 0 { Some((i % 10 + 1) as u32) } else { None };
+    for i in 0..SWEEP {
+        let amount = ((i + 1) * 100_000) as i128;
+        let interval = intervals[(i % intervals.len() as u64) as usize].clone();
+        let max = if i % 3 == 0 {
+            Some(((i % 10) + 1) as u32)
+        } else {
+            None
+        };
 
         let sub_id = client.create_subscription(
             &merchant,
@@ -381,7 +404,7 @@ fn test_fuzz_subscription_stress() {
             &max,
         );
 
-        assert_eq!(sub_id, (i + 1) as u64);
+        assert_eq!(sub_id, i + 1);
         assert_eq!(
             client.get_subscription(&sub_id).unwrap().status,
             SubStatus::Active

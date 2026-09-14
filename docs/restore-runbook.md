@@ -184,9 +184,9 @@ A failed restore is recoverable; a promoted bad restore is not.
 
 ## Escalation
 
-| Situation | Action |
-| --- | --- |
-| Checksum fails on all recent archives | Escalate to critical — treat the backup chain as broken |
-| `pg_restore` errors on schema objects | Check the target's PostgreSQL major version matches the source |
-| Restore exceeds 4h | Page the platform on-call; consider restoring the previous night's archive |
-| Data loss extends beyond the newest archive | Begin indexer rebuild from an earlier ledger checkpoint |
+| Situation                                   | Action                                                                     |
+| ------------------------------------------- | -------------------------------------------------------------------------- |
+| Checksum fails on all recent archives       | Escalate to critical — treat the backup chain as broken                    |
+| `pg_restore` errors on schema objects       | Check the target's PostgreSQL major version matches the source             |
+| Restore exceeds 4h                          | Page the platform on-call; consider restoring the previous night's archive |
+| Data loss extends beyond the newest archive | Begin indexer rebuild from an earlier ledger checkpoint                    |

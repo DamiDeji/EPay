@@ -59,17 +59,19 @@ export class RealtimeSync {
   private scheduleNextPoll(): void {
     if (this.stopRequested) return;
 
-    this.pollTimer = setTimeout(() => { void (async () => {
-      try {
-        await this.poll();
-      } catch (error) {
-        log.error({ error }, 'Unhandled error in poll cycle');
-      }
+    this.pollTimer = setTimeout(() => {
+      void (async () => {
+        try {
+          await this.poll();
+        } catch (error) {
+          log.error({ error }, 'Unhandled error in poll cycle');
+        }
 
-      if (!this.stopRequested) {
-        this.scheduleNextPoll();
-      }
-    })(); }, this.config.pollIntervalMs);
+        if (!this.stopRequested) {
+          this.scheduleNextPoll();
+        }
+      })();
+    }, this.config.pollIntervalMs);
   }
 
   private async poll(): Promise<void> {
@@ -85,7 +87,10 @@ export class RealtimeSync {
       const targetBlock = Math.max(currentBlock, chainTip - confirmationBuffer);
 
       if (targetBlock <= currentBlock) {
-        log.debug({ currentBlock, chainTip, lag: chainTip - currentBlock }, 'No new blocks to process');
+        log.debug(
+          { currentBlock, chainTip, lag: chainTip - currentBlock },
+          'No new blocks to process',
+        );
         return;
       }
 
@@ -120,7 +125,10 @@ export class RealtimeSync {
       );
 
       if (this.consecutiveErrors >= this.maxConsecutiveErrors) {
-        log.error({ consecutiveErrors: this.consecutiveErrors }, 'Too many consecutive errors, pausing');
+        log.error(
+          { consecutiveErrors: this.consecutiveErrors },
+          'Too many consecutive errors, pausing',
+        );
         await this.sleep(Math.min(this.config.pollIntervalMs * 4, 120_000));
       }
     }

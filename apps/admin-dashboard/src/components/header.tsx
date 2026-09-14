@@ -19,13 +19,19 @@ export function Header() {
     router.push('/login');
   }, [router]);
 
-  const handleSearch = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
-    // TODO: Implement global search — navigate to search results page
-    if (searchQuery.trim()) {
-      console.log('Search:', searchQuery);
-    }
-  }, [searchQuery]);
+  // Global search jumps to the merchants list, which already filters on `?q=`.
+  // Previously this was a TODO that only logged to the console, so the input
+  // looked functional but did nothing.
+  const handleSearch = useCallback(
+    (e: React.SyntheticEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      const query = searchQuery.trim();
+      if (query) {
+        router.push(`/merchants?q=${encodeURIComponent(query)}`);
+      }
+    },
+    [router, searchQuery],
+  );
 
   return (
     <header className="sticky top-0 z-30 h-16 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-200 dark:border-white/5 flex items-center justify-between px-6">
@@ -68,7 +74,9 @@ export function Header() {
             <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-white text-xs font-bold ring-2 ring-white dark:ring-slate-900">
               A
             </div>
-            <span className="text-sm font-medium text-slate-700 dark:text-slate-300 hidden sm:block">Admin</span>
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-300 hidden sm:block">
+              Admin
+            </span>
             <ChevronDown className="w-3 h-3 text-slate-400 hidden sm:block" />
           </button>
 

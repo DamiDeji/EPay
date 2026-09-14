@@ -43,9 +43,7 @@ export default function ScanScreen(): React.ReactElement {
   if (!permission.granted) {
     return (
       <View style={styles.centered}>
-        <Text style={styles.message}>
-          EPay needs camera access to scan payment QR codes.
-        </Text>
+        <Text style={styles.message}>EPay needs camera access to scan payment QR codes.</Text>
         <Pressable
           accessibilityRole="button"
           style={styles.button}

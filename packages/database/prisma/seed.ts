@@ -75,7 +75,7 @@ async function main(): Promise<void> {
 }
 
 main()
-  .catch((error) => {
+  .catch((error: unknown) => {
     console.error('Seed error:', error);
     process.exit(1);
   })

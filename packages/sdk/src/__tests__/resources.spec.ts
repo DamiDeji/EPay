@@ -1,8 +1,4 @@
-import {
-  MerchantStatus,
-  PaymentStatus,
-  SubscriptionBillingInterval,
-} from '@epay/types';
+import { MerchantStatus, PaymentStatus, SubscriptionBillingInterval } from '@epay/types';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { EPayClient } from '../client';
@@ -30,7 +26,10 @@ describe('Resource Modules', () => {
     it('create should POST to /payments', async () => {
       (client.post as any).mockResolvedValue({ paymentId: 'pay_1', amount: '1000000' });
       const result = await client.payments.create({
-        merchantId: 'merch_1', amount: '1000000', asset: XLM_ASSET, recipientPublicKey: 'GABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234',
+        merchantId: 'merch_1',
+        amount: '1000000',
+        asset: XLM_ASSET,
+        recipientPublicKey: 'GABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234',
       });
       expect(result.paymentId).toBe('pay_1');
       expect(client.post).toHaveBeenCalledWith('/payments', expect.any(Object));
@@ -79,7 +78,9 @@ describe('Resource Modules', () => {
     it('create should POST to /invoices', async () => {
       (client.post as any).mockResolvedValue({ invoiceNumber: 'INV-1', amount: '5000000000' });
       const result = await client.invoices.create({
-        merchantId: 'merch_1', amount: '5000000000', asset: XLM_ASSET,
+        merchantId: 'merch_1',
+        amount: '5000000000',
+        asset: XLM_ASSET,
         items: [{ description: 'Item', quantity: 1, unitPrice: '5000000000', total: '5000000000' }],
       });
       expect(result.invoiceNumber).toBe('INV-1');
@@ -95,7 +96,9 @@ describe('Resource Modules', () => {
       (client.patch as any).mockResolvedValue({ status: 'PAID' });
       const result = await client.invoices.markPaid('inv_1', 'pay_1');
       expect(result.status).toBe('PAID');
-      expect(client.patch).toHaveBeenCalledWith('/invoices/inv_1/mark-paid', { paymentId: 'pay_1' });
+      expect(client.patch).toHaveBeenCalledWith('/invoices/inv_1/mark-paid', {
+        paymentId: 'pay_1',
+      });
     });
 
     it('cancel should PATCH /invoices/:id/cancel', async () => {
@@ -109,7 +112,10 @@ describe('Resource Modules', () => {
     it('create should POST to /escrows', async () => {
       (client.post as any).mockResolvedValue({ escrowId: 'esc_1' });
       const result = await client.escrows.create({
-        merchantId: 'merch_1', customerId: 'cust_1', amount: '1000000000', asset: XLM_ASSET,
+        merchantId: 'merch_1',
+        customerId: 'cust_1',
+        amount: '1000000000',
+        asset: XLM_ASSET,
         milestones: [{ index: 0, description: 'Milestone 1', amount: '1000000000' }],
       });
       expect(result.escrowId).toBe('esc_1');
@@ -125,7 +131,9 @@ describe('Resource Modules', () => {
       (client.patch as any).mockResolvedValue({ status: 'IN_PROGRESS' });
       const result = await client.escrows.completeMilestone('esc_1', 1, '0xrel');
       expect(result.status).toBe('IN_PROGRESS');
-      expect(client.patch).toHaveBeenCalledWith('/escrows/esc_1/milestones/1/complete', { releaseTxHash: '0xrel' });
+      expect(client.patch).toHaveBeenCalledWith('/escrows/esc_1/milestones/1/complete', {
+        releaseTxHash: '0xrel',
+      });
     });
 
     it('dispute should PATCH /escrows/:id/dispute', async () => {
@@ -151,7 +159,9 @@ describe('Resource Modules', () => {
     it('request should POST to /refunds', async () => {
       (client.post as any).mockResolvedValue({ refundId: 'ref_1', status: 'REQUESTED' });
       const result = await client.refunds.request({
-        paymentId: 'pay_1', amount: '500000000', reason: 'Customer request',
+        paymentId: 'pay_1',
+        amount: '500000000',
+        reason: 'Customer request',
       });
       expect(result.status).toBe('REQUESTED');
     });
@@ -179,8 +189,12 @@ describe('Resource Modules', () => {
     it('create should POST to /subscriptions', async () => {
       (client.post as any).mockResolvedValue({ subscriptionId: 'sub_1' });
       const result = await client.subscriptions.create({
-        merchantId: 'merch_1', customerId: 'cust_1', planName: 'Premium',
-        amount: '1000000000', asset: XLM_ASSET, interval: SubscriptionBillingInterval.MONTHLY,
+        merchantId: 'merch_1',
+        customerId: 'cust_1',
+        planName: 'Premium',
+        amount: '1000000000',
+        asset: XLM_ASSET,
+        interval: SubscriptionBillingInterval.MONTHLY,
       });
       expect(result.subscriptionId).toBe('sub_1');
     });
@@ -208,7 +222,10 @@ describe('Resource Modules', () => {
     it('register should POST to /merchants', async () => {
       (client.post as any).mockResolvedValue({ id: 'merch_1', businessName: 'Store' });
       const result = await client.merchants.register({
-        businessName: 'Store', businessEmail: 'm@store.com', supportedAssets: [XLM_ASSET], settlementPublicKey: 'GABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234',
+        businessName: 'Store',
+        businessEmail: 'm@store.com',
+        supportedAssets: [XLM_ASSET],
+        settlementPublicKey: 'GABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234',
       });
       expect(result.businessName).toBe('Store');
     });
@@ -242,16 +259,25 @@ describe('Resource Modules', () => {
 
     it('process should PATCH with txHash and publicKey', async () => {
       (client.patch as any).mockResolvedValue({ status: 'COMPLETED' });
-      const result = await client.settlements.process('set_1', '0xsettle', 'GABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234');
+      const result = await client.settlements.process(
+        'set_1',
+        '0xsettle',
+        'GABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234',
+      );
       expect(result.status).toBe('COMPLETED');
     });
   });
 
   describe('PaymentLinksResource', () => {
     it('create should POST to /payment-links', async () => {
-      (client.post as any).mockResolvedValue({ code: 'test123', url: 'https://epay.dev/pay/test123' });
+      (client.post as any).mockResolvedValue({
+        code: 'test123',
+        url: 'https://epay.dev/pay/test123',
+      });
       const result = await client.paymentLinks.create({
-        merchantId: 'merch_1', amount: '1000', asset: XLM_ASSET,
+        merchantId: 'merch_1',
+        amount: '1000',
+        asset: XLM_ASSET,
       });
       expect(result.code).toBe('test123');
     });

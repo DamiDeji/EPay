@@ -1,19 +1,39 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { RefundService } from './refund.service';
-import { PrismaService } from '../database/prisma.service';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { BadRequestException } from '@nestjs/common';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
+
 import { createMockPrismaService, mockDate } from '../../test/mocks/prisma.mock';
+import { PrismaService } from '../database/prisma.service';
+
+import { RefundService } from './refund.service';
 
 describe('RefundService', () => {
   let service: RefundService;
   let prisma: ReturnType<typeof createMockPrismaService>;
 
-  const mockPayment = { id: 'pay_1', merchantId: 'merch_1', amount: BigInt(1000000000), currency: 'XLM', status: 'COMPLETED' };
+  const mockPayment = {
+    id: 'pay_1',
+    merchantId: 'merch_1',
+    amount: BigInt(1000000000),
+    currency: 'XLM',
+    status: 'COMPLETED',
+  };
   const mockRefund = {
-    id: 'ref_1', refundId: 'ref_abc', paymentId: 'pay_1', merchantId: 'merch_1',
-    amount: BigInt(1000000000), originalAmount: BigInt(1000000000), currency: 'XLM',
-    status: 'REQUESTED', reason: 'Customer request', isPartial: false,
-    txHash: null, processedAt: null, metadata: {}, createdAt: mockDate(), updatedAt: mockDate(),
+    id: 'ref_1',
+    refundId: 'ref_abc',
+    paymentId: 'pay_1',
+    merchantId: 'merch_1',
+    amount: BigInt(1000000000),
+    originalAmount: BigInt(1000000000),
+    currency: 'XLM',
+    status: 'REQUESTED',
+    reason: 'Customer request',
+    isPartial: false,
+    txHash: null,
+    processedAt: null,
+    metadata: {},
+    createdAt: mockDate(),
+    updatedAt: mockDate(),
   };
 
   beforeEach(async () => {
@@ -31,7 +51,9 @@ describe('RefundService', () => {
       prisma.refund.create.mockResolvedValue(mockRefund);
 
       const result = await service.request({
-        paymentId: 'pay_1', amount: '1000000000', reason: 'Customer request',
+        paymentId: 'pay_1',
+        amount: '1000000000',
+        reason: 'Customer request',
       });
       expect(result.refundId).toMatch(/^ref_/);
       expect(result.isPartial).toBe(false);
@@ -40,27 +62,41 @@ describe('RefundService', () => {
     it('should mark as partial if amount < original', async () => {
       prisma.payment.findUnique.mockResolvedValue(mockPayment);
       prisma.refund.findFirst.mockResolvedValue(null);
-      prisma.refund.create.mockResolvedValue({ ...mockRefund, amount: BigInt(500000000), isPartial: true });
+      prisma.refund.create.mockResolvedValue({
+        ...mockRefund,
+        amount: BigInt(500000000),
+        isPartial: true,
+      });
 
       const result = await service.request({
-        paymentId: 'pay_1', amount: '500000000', reason: 'Partial refund',
+        paymentId: 'pay_1',
+        amount: '500000000',
+        reason: 'Partial refund',
       });
       expect(result.isPartial).toBe(true);
     });
 
     it('should throw if payment not completed', async () => {
       prisma.payment.findUnique.mockResolvedValue({ ...mockPayment, status: 'PENDING' });
-      await expect(service.request({
-        paymentId: 'pay_1', amount: '1000000000', reason: 'test',
-      })).rejects.toThrow(BadRequestException);
+      await expect(
+        service.request({
+          paymentId: 'pay_1',
+          amount: '1000000000',
+          reason: 'test',
+        }),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should throw if refund already exists', async () => {
       prisma.payment.findUnique.mockResolvedValue(mockPayment);
       prisma.refund.findFirst.mockResolvedValue(mockRefund);
-      await expect(service.request({
-        paymentId: 'pay_1', amount: '500', reason: 'test',
-      })).rejects.toThrow(BadRequestException);
+      await expect(
+        service.request({
+          paymentId: 'pay_1',
+          amount: '500',
+          reason: 'test',
+        }),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -76,7 +112,11 @@ describe('RefundService', () => {
   describe('process', () => {
     it('should process an approved refund', async () => {
       prisma.refund.findUnique.mockResolvedValue({ ...mockRefund, status: 'APPROVED' });
-      prisma.refund.update.mockResolvedValue({ ...mockRefund, status: 'COMPLETED', txHash: '0xabc' });
+      prisma.refund.update.mockResolvedValue({
+        ...mockRefund,
+        status: 'COMPLETED',
+        txHash: '0xabc',
+      });
       prisma.payment.update.mockResolvedValue({ ...mockPayment, status: 'REFUNDED' });
 
       const result = await service.process('ref_1', '0xabc');

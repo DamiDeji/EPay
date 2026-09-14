@@ -1,5 +1,9 @@
 import type {
-  Invoice, CreateInvoiceRequest, InvoiceStatus, PaginatedResponse, PaginationQuery,
+  Invoice,
+  CreateInvoiceRequest,
+  InvoiceStatus,
+  PaginatedResponse,
+  PaginationQuery,
 } from '@epay/types';
 
 import { BaseResource } from './base';
@@ -35,11 +39,15 @@ export class InvoicesResource extends BaseResource {
   /**
    * List invoices with optional filters.
    */
-  async list(params?: PaginationQuery & {
-    merchantId?: string;
-    status?: InvoiceStatus;
-  }): Promise<PaginatedResponse<Invoice>> {
-    return this.client.get<PaginatedResponse<Invoice>>(`/invoices${this.buildQuery(params as Record<string, unknown>)}`);
+  async list(
+    params?: PaginationQuery & {
+      merchantId?: string;
+      status?: InvoiceStatus;
+    },
+  ): Promise<PaginatedResponse<Invoice>> {
+    return this.client.get<PaginatedResponse<Invoice>>(
+      `/invoices${this.buildQuery(params as Record<string, unknown>)}`,
+    );
   }
 
   /**

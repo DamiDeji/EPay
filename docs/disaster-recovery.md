@@ -4,17 +4,17 @@ How EPay recovers from data loss, and what we promise about how long that takes.
 
 ## Recovery objectives
 
-| Objective | Target | How it is achieved |
-| --- | --- | --- |
-| **RPO** (max data loss) | **24 hours** | Nightly `pg_dump` at 02:17 UTC (`.github/workflows/backup.yml`) |
-| **RTO** (time to restore service) | **4 hours** | Restore from the latest archive into a fresh Postgres, then roll the API |
-| **Backup retention** | **30 days** | `BACKUP_RETENTION_DAYS=30`, pruned by `scripts/backup-postgres.sh` |
-| **Drill cadence** | **Monthly** | `.github/workflows/restore-drill.yml` runs on the 1st at 06:00 UTC |
+| Objective                         | Target       | How it is achieved                                                       |
+| --------------------------------- | ------------ | ------------------------------------------------------------------------ |
+| **RPO** (max data loss)           | **24 hours** | Nightly `pg_dump` at 02:17 UTC (`.github/workflows/backup.yml`)          |
+| **RTO** (time to restore service) | **4 hours**  | Restore from the latest archive into a fresh Postgres, then roll the API |
+| **Backup retention**              | **30 days**  | `BACKUP_RETENTION_DAYS=30`, pruned by `scripts/backup-postgres.sh`       |
+| **Drill cadence**                 | **Monthly**  | `.github/workflows/restore-drill.yml` runs on the 1st at 06:00 UTC       |
 
 ### Why RPO is 24 hours and not zero
 
 On-chain state is the source of truth for payments. Funds, payment records, and
-settlement state live on Stellar, so the database is a *read-model* that the
+settlement state live on Stellar, so the database is a _read-model_ that the
 indexer can rebuild from the chain. What is genuinely irreplaceable in Postgres
 is off-chain metadata: users, merchant profiles, API keys, audit logs, and
 webhook delivery history.
@@ -26,13 +26,13 @@ change, only the restore step does.
 
 ## What is backed up
 
-| Asset | Mechanism | Frequency | Retention |
-| --- | --- | --- | --- |
-| PostgreSQL (all 21 models) | `pg_dump --format=custom` + SHA-256 | Nightly | 30 days |
-| Soroban contracts | Git (WASM rebuildable) | Every commit | — |
-| Kubernetes manifests | Git (`k8s/`, `helm/epay/`) | Every commit | — |
-| Secrets | External secret manager / Sealed Secrets | Managed outside Git | Provider policy |
-| On-chain state | Stellar ledger itself | Continuous | Permanent |
+| Asset                      | Mechanism                                | Frequency           | Retention       |
+| -------------------------- | ---------------------------------------- | ------------------- | --------------- |
+| PostgreSQL (all 21 models) | `pg_dump --format=custom` + SHA-256      | Nightly             | 30 days         |
+| Soroban contracts          | Git (WASM rebuildable)                   | Every commit        | —               |
+| Kubernetes manifests       | Git (`k8s/`, `helm/epay/`)               | Every commit        | —               |
+| Secrets                    | External secret manager / Sealed Secrets | Managed outside Git | Provider policy |
+| On-chain state             | Stellar ledger itself                    | Continuous          | Permanent       |
 
 Deliberately **not** backed up: container images (rebuildable from Git), the
 Redis queue (transient — the indexer replays from its checkpoint), and any
@@ -51,6 +51,7 @@ recovery: under 4 hours for a 100 GB database.
 
 **Detect:** all targets down, `up == 0` across every job.
 **Respond:**
+
 1. Restore Postgres into a new cluster from the most recent archive.
 2. Apply `k8s/manifests.yaml` (or sync the Argo CD Application) into the new
    cluster.
@@ -92,14 +93,14 @@ recovery action — a backup does not undo a leaked key.
 Secrets are never restored from backup: the archive may predate the leak, and
 restoring it would reinstate a compromised credential.
 
-| Secret | Rotation | Blast radius if leaked | Notes |
-| --- | --- | --- | --- |
-| `JWT_SECRET` | Regenerate, roll API pods | All sessions invalidated — users re-authenticate | Rotation is a forced global logout; announce it |
-| `WEBHOOK_SECRET` | Regenerate, notify merchants | Forged webhooks to merchant endpoints | Coordinate per-merchant |
-| `METRICS_TOKEN` | Regenerate, update Prometheus | Metrics exposure only | Low severity, still rotate |
-| `ANTHROPIC_API_KEY` | Revoke in console, set new key | Billing abuse; no data access | Check spend anomalies |
-| `DATABASE_URL` password | `ALTER ROLE epay WITH PASSWORD`, roll pods | Full data read/write | Assume data exfiltration; review audit log |
-| AWS backup credentials | Rotate the OIDC trust / keys | Backup bucket read — full data copy | Verify object access logs |
+| Secret                  | Rotation                                   | Blast radius if leaked                           | Notes                                           |
+| ----------------------- | ------------------------------------------ | ------------------------------------------------ | ----------------------------------------------- |
+| `JWT_SECRET`            | Regenerate, roll API pods                  | All sessions invalidated — users re-authenticate | Rotation is a forced global logout; announce it |
+| `WEBHOOK_SECRET`        | Regenerate, notify merchants               | Forged webhooks to merchant endpoints            | Coordinate per-merchant                         |
+| `METRICS_TOKEN`         | Regenerate, update Prometheus              | Metrics exposure only                            | Low severity, still rotate                      |
+| `ANTHROPIC_API_KEY`     | Revoke in console, set new key             | Billing abuse; no data access                    | Check spend anomalies                           |
+| `DATABASE_URL` password | `ALTER ROLE epay WITH PASSWORD`, roll pods | Full data read/write                             | Assume data exfiltration; review audit log      |
+| AWS backup credentials  | Rotate the OIDC trust / keys               | Backup bucket read — full data copy              | Verify object access logs                       |
 
 ### Procedure
 
@@ -120,11 +121,11 @@ only remediation.
 
 ## Rehearsal
 
-| Cadence | What | Evidence |
-| --- | --- | --- |
-| Nightly | Backup runs and verifies archive readability | `Database Backup` workflow, `epay_backup_*` metrics |
-| Monthly | Full restore into ephemeral Postgres + integrity assertions | `Restore Drill` workflow artifact, `epay_restore_drill_last_status` |
-| Quarterly | Tabletop: region loss, secret compromise | Incident review notes |
+| Cadence   | What                                                        | Evidence                                                            |
+| --------- | ----------------------------------------------------------- | ------------------------------------------------------------------- |
+| Nightly   | Backup runs and verifies archive readability                | `Database Backup` workflow, `epay_backup_*` metrics                 |
+| Monthly   | Full restore into ephemeral Postgres + integrity assertions | `Restore Drill` workflow artifact, `epay_restore_drill_last_status` |
+| Quarterly | Tabletop: region loss, secret compromise                    | Incident review notes                                               |
 
 The monthly drill is automated precisely so it is not skipped. A manual
 restore can be rehearsed any time with `scripts/restore-drill.sh` pointed at a

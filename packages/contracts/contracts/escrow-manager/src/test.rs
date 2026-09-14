@@ -7,7 +7,7 @@ use soroban_sdk::{
 
 use super::*;
 
-fn setup_test() -> (Env, EscrowManagerClient<'static>, Address, Address) {
+fn setup_test() -> (Env, EscrowManagerClient<'static>, Address, Address, Address) {
     let env = Env::default();
     env.mock_all_auths();
 
@@ -26,7 +26,7 @@ fn setup_test() -> (Env, EscrowManagerClient<'static>, Address, Address) {
     let client = EscrowManagerClient::new(&env, &contract_id);
     client.init(&owner, &token_address);
 
-    (env, client, owner, token_admin)
+    (env, client, owner, token_admin, contract_id)
 }
 
 fn fund_address(env: &Env, token_address: &Address, recipient: &Address, amount: i128) {
@@ -59,7 +59,7 @@ fn create_funded_escrow(
 
 #[test]
 fn test_initialize() {
-    let (_env, client, _owner, _token_admin) = setup_test();
+    let (_env, client, _owner, _token_admin, _contract_id) = setup_test();
     let _ = client.get_token_address();
 }
 
@@ -83,7 +83,7 @@ fn test_cannot_reinitialize() {
 
 #[test]
 fn test_create_escrow() {
-    let (env, client, _owner, _token_admin) = setup_test();
+    let (env, client, _owner, _token_admin, _contract_id) = setup_test();
 
     let merchant = Address::generate(&env);
     let customer = Address::generate(&env);
@@ -100,7 +100,7 @@ fn test_create_escrow() {
 
 #[test]
 fn test_fund_escrow() {
-    let (env, client, _owner, _token_admin) = setup_test();
+    let (env, client, _owner, _token_admin, _contract_id) = setup_test();
 
     let merchant = Address::generate(&env);
     let customer = Address::generate(&env);
@@ -121,7 +121,7 @@ fn test_fund_escrow() {
 #[test]
 #[should_panic(expected = "Caller is not the escrow customer")]
 fn test_fund_escrow_wrong_customer() {
-    let (env, client, _owner, _token_admin) = setup_test();
+    let (env, client, _owner, _token_admin, _contract_id) = setup_test();
 
     let merchant = Address::generate(&env);
     let customer = Address::generate(&env);
@@ -139,7 +139,7 @@ fn test_fund_escrow_wrong_customer() {
 #[test]
 #[should_panic(expected = "Escrow not in created state")]
 fn test_fund_escrow_already_funded() {
-    let (env, client, _owner, _token_admin) = setup_test();
+    let (env, client, _owner, _token_admin, _contract_id) = setup_test();
     let (escrow_id, _merchant, customer) = create_funded_escrow(&env, &client, 10_000_000);
 
     // The same customer attempting to fund the (already funded) escrow again must fail
@@ -149,7 +149,7 @@ fn test_fund_escrow_already_funded() {
 #[test]
 #[should_panic(expected = "Escrow not found")]
 fn test_fund_escrow_not_found() {
-    let (env, client, _owner, _token_admin) = setup_test();
+    let (env, client, _owner, _token_admin, _contract_id) = setup_test();
 
     let customer = Address::generate(&env);
     let token_address = client.get_token_address();
@@ -159,7 +159,7 @@ fn test_fund_escrow_not_found() {
 
 #[test]
 fn test_fund_escrow_moves_tokens() {
-    let (env, client, _owner, _token_admin) = setup_test();
+    let (env, client, _owner, _token_admin, contract_id) = setup_test();
 
     let merchant = Address::generate(&env);
     let customer = Address::generate(&env);
@@ -167,7 +167,6 @@ fn test_fund_escrow_moves_tokens() {
 
     let escrow_id = client.create_escrow(&merchant, &customer, &10_000_000_i128, &asset_code);
     let token_address = client.get_token_address();
-    let contract_id = env.current_contract_address();
     fund_address(&env, &token_address, &customer, 10_000_000);
 
     let customer_before = get_balance(&env, &token_address, &customer);
@@ -188,7 +187,7 @@ fn test_fund_escrow_moves_tokens() {
 
 #[test]
 fn test_dispute_escrow() {
-    let (env, client, _owner, _token_admin) = setup_test();
+    let (env, client, _owner, _token_admin, _contract_id) = setup_test();
 
     let merchant = Address::generate(&env);
     let customer = Address::generate(&env);
@@ -213,7 +212,7 @@ fn test_dispute_escrow() {
 #[test]
 #[should_panic(expected = "Only participants can dispute")]
 fn test_dispute_escrow_by_third_party() {
-    let (env, client, _owner, _token_admin) = setup_test();
+    let (env, client, _owner, _token_admin, _contract_id) = setup_test();
     let (escrow_id, _merchant, _customer) = create_funded_escrow(&env, &client, 10_000_000);
 
     let stranger = Address::generate(&env);
@@ -224,7 +223,7 @@ fn test_dispute_escrow_by_third_party() {
 #[test]
 #[should_panic(expected = "Escrow not found")]
 fn test_dispute_escrow_not_found() {
-    let (env, client, _owner, _token_admin) = setup_test();
+    let (env, client, _owner, _token_admin, _contract_id) = setup_test();
 
     let stranger = Address::generate(&env);
     let reason = String::from_str(&env, "Ghost escrow");
@@ -233,7 +232,7 @@ fn test_dispute_escrow_not_found() {
 
 #[test]
 fn test_complete_escrow() {
-    let (env, client, owner, _token_admin) = setup_test();
+    let (env, client, owner, _token_admin, _contract_id) = setup_test();
 
     let merchant = Address::generate(&env);
     let customer = Address::generate(&env);
@@ -256,7 +255,7 @@ fn test_complete_escrow() {
 #[test]
 #[should_panic(expected = "Only owner can perform this action")]
 fn test_complete_escrow_not_owner() {
-    let (env, client, _owner, _token_admin) = setup_test();
+    let (env, client, _owner, _token_admin, _contract_id) = setup_test();
     let (escrow_id, _merchant, _customer) = create_funded_escrow(&env, &client, 10_000_000);
 
     let attacker = Address::generate(&env);
@@ -266,7 +265,7 @@ fn test_complete_escrow_not_owner() {
 #[test]
 #[should_panic(expected = "Escrow not funded")]
 fn test_complete_escrow_not_funded() {
-    let (env, client, owner, _token_admin) = setup_test();
+    let (env, client, owner, _token_admin, _contract_id) = setup_test();
 
     let merchant = Address::generate(&env);
     let customer = Address::generate(&env);
@@ -281,13 +280,13 @@ fn test_complete_escrow_not_funded() {
 #[test]
 #[should_panic(expected = "Escrow not found")]
 fn test_complete_escrow_not_found() {
-    let (env, client, owner, _token_admin) = setup_test();
+    let (_env, client, owner, _token_admin, _contract_id) = setup_test();
     client.complete_escrow(&owner, &999);
 }
 
 #[test]
 fn test_complete_escrow_pays_merchant() {
-    let (env, client, owner, _token_admin) = setup_test();
+    let (env, client, owner, _token_admin, contract_id) = setup_test();
     let (escrow_id, merchant, _customer) = create_funded_escrow(&env, &client, 10_000_000);
 
     let token_address = client.get_token_address();
@@ -300,15 +299,12 @@ fn test_complete_escrow_pays_merchant() {
         get_balance(&env, &token_address, &merchant),
         merchant_before + 10_000_000
     );
-    assert_eq!(
-        get_balance(&env, &token_address, &env.current_contract_address()),
-        0
-    );
+    assert_eq!(get_balance(&env, &token_address, &contract_id), 0);
 }
 
 #[test]
 fn test_cancel_and_refund_escrow() {
-    let (env, client, owner, _token_admin) = setup_test();
+    let (env, client, owner, _token_admin, _contract_id) = setup_test();
 
     let merchant = Address::generate(&env);
     let customer = Address::generate(&env);
@@ -341,7 +337,7 @@ fn test_cancel_and_refund_escrow() {
 #[test]
 #[should_panic(expected = "Only owner can perform this action")]
 fn test_cancel_escrow_by_third_party() {
-    let (env, client, _owner, _token_admin) = setup_test();
+    let (env, client, _owner, _token_admin, _contract_id) = setup_test();
 
     let merchant = Address::generate(&env);
     let customer = Address::generate(&env);
@@ -356,7 +352,7 @@ fn test_cancel_escrow_by_third_party() {
 #[test]
 #[should_panic(expected = "Cannot cancel in current state")]
 fn test_cancel_escrow_in_funded_state() {
-    let (env, client, _owner, _token_admin) = setup_test();
+    let (env, client, _owner, _token_admin, _contract_id) = setup_test();
     let (escrow_id, _merchant, customer) = create_funded_escrow(&env, &client, 10_000_000);
 
     // Participants cannot cancel a funded (non-disputed) escrow
@@ -364,9 +360,9 @@ fn test_cancel_escrow_in_funded_state() {
 }
 
 #[test]
-#[should_panic(expected = "Cannot refund — escrow must be cancelled or disputed")]
+#[should_panic(expected = "Cannot refund: escrow must be cancelled or disputed")]
 fn test_refund_escrow_in_completed_state() {
-    let (env, client, owner, _token_admin) = setup_test();
+    let (env, client, owner, _token_admin, _contract_id) = setup_test();
     let (escrow_id, _merchant, _customer) = create_funded_escrow(&env, &client, 10_000_000);
 
     client.complete_escrow(&owner, &escrow_id);
@@ -377,7 +373,7 @@ fn test_refund_escrow_in_completed_state() {
 #[test]
 #[should_panic(expected = "Only owner can perform this action")]
 fn test_refund_escrow_not_owner() {
-    let (env, client, _owner, _token_admin) = setup_test();
+    let (env, client, _owner, _token_admin, _contract_id) = setup_test();
 
     let merchant = Address::generate(&env);
     let customer = Address::generate(&env);
@@ -391,7 +387,7 @@ fn test_refund_escrow_not_owner() {
 
 #[test]
 fn test_refund_escrow_returns_funds() {
-    let (env, client, owner, _token_admin) = setup_test();
+    let (env, client, owner, _token_admin, contract_id) = setup_test();
     let (escrow_id, _merchant, customer) = create_funded_escrow(&env, &client, 10_000_000);
 
     let token_address = client.get_token_address();
@@ -407,16 +403,13 @@ fn test_refund_escrow_returns_funds() {
         get_balance(&env, &token_address, &customer),
         customer_before + 10_000_000
     );
-    assert_eq!(
-        get_balance(&env, &token_address, &env.current_contract_address()),
-        0
-    );
+    assert_eq!(get_balance(&env, &token_address, &contract_id), 0);
 }
 
 #[test]
-#[should_panic(expected = "Cannot refund — escrow must be cancelled or disputed")]
+#[should_panic(expected = "Cannot refund: escrow must be cancelled or disputed")]
 fn test_double_refund_rejected() {
-    let (env, client, owner, _token_admin) = setup_test();
+    let (env, client, owner, _token_admin, _contract_id) = setup_test();
     let (escrow_id, _merchant, customer) = create_funded_escrow(&env, &client, 10_000_000);
 
     let reason = String::from_str(&env, "Refund twice");
@@ -429,7 +422,7 @@ fn test_double_refund_rejected() {
 
 #[test]
 fn test_resolve_dispute() {
-    let (env, client, owner, _token_admin) = setup_test();
+    let (env, client, owner, _token_admin, _contract_id) = setup_test();
     let (escrow_id, _merchant, customer) = create_funded_escrow(&env, &client, 10_000_000);
 
     let reason = String::from_str(&env, "Resolved amicably");
@@ -443,7 +436,7 @@ fn test_resolve_dispute() {
 #[test]
 #[should_panic(expected = "Only owner can perform this action")]
 fn test_resolve_dispute_not_owner() {
-    let (env, client, _owner, _token_admin) = setup_test();
+    let (env, client, _owner, _token_admin, _contract_id) = setup_test();
     let (escrow_id, _merchant, customer) = create_funded_escrow(&env, &client, 10_000_000);
 
     let reason = String::from_str(&env, "Dispute");
@@ -456,7 +449,7 @@ fn test_resolve_dispute_not_owner() {
 #[test]
 #[should_panic(expected = "Escrow not disputed")]
 fn test_resolve_dispute_not_disputed() {
-    let (env, client, owner, _token_admin) = setup_test();
+    let (env, client, owner, _token_admin, _contract_id) = setup_test();
     let (escrow_id, _merchant, _customer) = create_funded_escrow(&env, &client, 10_000_000);
 
     // Owner cannot resolve an escrow that was never disputed
@@ -465,7 +458,7 @@ fn test_resolve_dispute_not_disputed() {
 
 #[test]
 fn test_escrow_exists() {
-    let (env, client, _owner, _token_admin) = setup_test();
+    let (env, client, _owner, _token_admin, _contract_id) = setup_test();
 
     assert!(!client.escrow_exists(&1));
 

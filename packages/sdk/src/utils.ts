@@ -107,8 +107,7 @@ export class EPayError extends Error {
   }
 
   static fromResponse(status: number, body: Record<string, unknown>): EPayError {
-    const message =
-      (body.message as string | undefined) ?? `EPay API error: ${String(status)}`;
+    const message = (body.message as string | undefined) ?? `EPay API error: ${String(status)}`;
     const errors = body.errors as { code: string; message: string; field?: string }[] | undefined;
     return new EPayError(message, status, errors);
   }

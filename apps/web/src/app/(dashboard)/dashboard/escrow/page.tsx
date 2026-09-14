@@ -36,7 +36,10 @@ const ESCROWS = [
   },
 ];
 
-const statusConfig: Record<string, { badge: 'success' | 'warning' | 'destructive' | 'slate'; icon: React.ElementType }> = {
+const statusConfig: Record<
+  string,
+  { badge: 'success' | 'warning' | 'destructive' | 'slate'; icon: React.ElementType }
+> = {
   IN_PROGRESS: { badge: 'slate', icon: Clock },
   COMPLETED: { badge: 'success', icon: CheckCircle2 },
   FUNDED: { badge: 'warning', icon: ShieldCheck },
@@ -50,7 +53,9 @@ export default function EscrowPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">Escrow</h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">Protected transactions with milestone-based release.</p>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">
+            Protected transactions with milestone-based release.
+          </p>
         </div>
         <Button className="gap-2">
           <Plus className="w-4 h-4" />
@@ -77,7 +82,9 @@ export default function EscrowPage() {
                 </div>
 
                 {/* Title & Amount */}
-                <h3 className="font-semibold text-slate-900 dark:text-white mb-1">{escrow.description}</h3>
+                <h3 className="font-semibold text-slate-900 dark:text-white mb-1">
+                  {escrow.description}
+                </h3>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
                   {escrow.customer} &middot; {escrow.amount}
                 </p>

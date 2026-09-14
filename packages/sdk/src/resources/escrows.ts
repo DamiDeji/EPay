@@ -1,5 +1,9 @@
 import type {
-  Escrow, CreateEscrowRequest, EscrowStatus, PaginatedResponse, PaginationQuery,
+  Escrow,
+  CreateEscrowRequest,
+  EscrowStatus,
+  PaginatedResponse,
+  PaginationQuery,
 } from '@epay/types';
 
 import { BaseResource } from './base';
@@ -38,12 +42,16 @@ export class EscrowsResource extends BaseResource {
   /**
    * List escrows with optional filters.
    */
-  async list(params?: PaginationQuery & {
-    merchantId?: string;
-    customerId?: string;
-    status?: EscrowStatus;
-  }): Promise<PaginatedResponse<Escrow>> {
-    return this.client.get<PaginatedResponse<Escrow>>(`/escrows${this.buildQuery(params as Record<string, unknown>)}`);
+  async list(
+    params?: PaginationQuery & {
+      merchantId?: string;
+      customerId?: string;
+      status?: EscrowStatus;
+    },
+  ): Promise<PaginatedResponse<Escrow>> {
+    return this.client.get<PaginatedResponse<Escrow>>(
+      `/escrows${this.buildQuery(params as Record<string, unknown>)}`,
+    );
   }
 
   /**

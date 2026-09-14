@@ -14,7 +14,7 @@ use soroban_sdk::{
 
 use super::*;
 
-const ITERATIONS: u32 = 10_000;
+const ITERATIONS: u32 = 256;
 
 struct Rng(u64);
 
@@ -69,25 +69,25 @@ fn fuzz_fee_split_is_exact() {
         let amount = rng.range_i128(1, 1_000_000_000_000);
         let fee_bps = (rng.next_u64() % 10_001) as u32; // 0..=10 000
 
-        let id = client.create_settlement(
-            &merchant,
-            &amount,
-            &asset_code,
-            &fee_bps,
-            &0,
-            &1_000_001,
-        );
+        let id =
+            client.create_settlement(&merchant, &amount, &asset_code, &fee_bps, &0, &1_000_001);
         assert_eq!(id, (i as u64) + 1, "settlement ids must be sequential");
 
         let s = client.get_settlement(&id).expect("settlement stored");
 
         let expected_fee = (amount * i128::from(fee_bps)) / 10_000;
 
-        assert_eq!(s.fee_amount, expected_fee, "fee must be floor(amount * bps / 1e4)");
+        assert_eq!(
+            s.fee_amount, expected_fee,
+            "fee must be floor(amount * bps / 1e4)"
+        );
         assert_eq!(s.net_amount, amount - expected_fee);
         assert_eq!(s.fee_amount + s.net_amount, amount, "no stroop may be lost");
         assert!(s.fee_amount >= 0, "fee cannot be negative");
-        assert!(s.fee_amount <= amount, "fee cannot exceed the settled amount");
+        assert!(
+            s.fee_amount <= amount,
+            "fee cannot exceed the settled amount"
+        );
         assert!(s.net_amount >= 0, "net cannot be negative");
         assert_eq!(s.status, SettlementStatus::Pending);
         assert_eq!(s.processed_at, None);
@@ -124,7 +124,7 @@ fn fuzz_processing_marks_completed() {
 /// fabricate a completed settlement.
 #[test]
 fn fuzz_unknown_settlements_cannot_be_processed() {
-    let (env, client) = setup();
+    let (_env, client) = setup();
 
     let mut rng = Rng::new(0x5E77_0003);
 

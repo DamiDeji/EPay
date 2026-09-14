@@ -14,7 +14,22 @@ interface ApiState<T> {
   isLoading: boolean;
 }
 
-export function useApi<T = unknown>(options: UseApiOptions = {}) {
+/**
+ * The hook's public surface. Declared explicitly so `T` participates in the
+ * signature rather than only narrowing internal state, and so consumers get an
+ * autocompleted result type instead of an inferred one.
+ */
+export interface UseApiResult<T> {
+  data: T | null;
+  error: string | null;
+  isLoading: boolean;
+  get: <R = T>(path: string) => Promise<R>;
+  post: <R = T>(path: string, body?: unknown) => Promise<R>;
+  patch: <R = T>(path: string, body?: unknown) => Promise<R>;
+  request: <R = T>(path: string, config?: RequestInit) => Promise<R>;
+}
+
+export function useApi<T = unknown>(options: UseApiOptions = {}): UseApiResult<T> {
   const [state, setState] = useState<ApiState<T>>({
     data: null,
     error: null,
@@ -27,10 +42,7 @@ export function useApi<T = unknown>(options: UseApiOptions = {}) {
   }, []);
 
   const request = useCallback(
-    async <R = T>(
-      path: string,
-      config: RequestInit = {},
-    ): Promise<R> => {
+    async <R = T>(path: string, config: RequestInit = {}): Promise<R> => {
       setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
       try {
@@ -52,7 +64,9 @@ export function useApi<T = unknown>(options: UseApiOptions = {}) {
 
         if (!response.ok) {
           // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-          const body: { message?: string } = await response.json().catch(() => ({ message: 'Unknown error' }));
+          const body: { message?: string } = await response
+            .json()
+            .catch(() => ({ message: 'Unknown error' }));
           throw new Error(body.message ?? `Request failed: ${String(response.status)}`);
         }
 

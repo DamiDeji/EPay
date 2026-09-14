@@ -142,14 +142,14 @@ merchants, settlements, and analytics.
 
 ## Testing
 
-| Package     | Framework  | Coverage                                         |
-| ----------- | ---------- | ------------------------------------------------ |
+| Package     | Framework  | Coverage                                                         |
+| ----------- | ---------- | ---------------------------------------------------------------- |
 | `contracts` | Cargo test | 16 suites + property/fuzz tests on the 4 funds-at-risk contracts |
-| `api`       | Jest       | 16 suites, 105 tests (~50% lines; services ~76%) |
-| `sdk`       | Vitest     | 4 suites, 91 tests (87% statements/lines)        |
-| `shared`    | Vitest     | webhook signing, verification, and retry policy  |
-| `tests/e2e` | Playwright | customer web + dashboards, with axe-core a11y checks |
-| `tests/k6`  | k6         | load profile; SLOs in [`performance.md`](./performance.md) |
+| `api`       | Jest       | 16 suites, 105 tests (~50% lines; services ~76%)                 |
+| `sdk`       | Vitest     | 4 suites, 91 tests (87% statements/lines)                        |
+| `shared`    | Vitest     | webhook signing, verification, and retry policy                  |
+| `tests/e2e` | Playwright | customer web + dashboards, with axe-core a11y checks             |
+| `tests/k6`  | k6         | load profile; SLOs in [`performance.md`](./performance.md)       |
 
 Run `pnpm test` for the full suite, or scope with `pnpm --filter <package> test`.
 
@@ -157,7 +157,7 @@ Run `pnpm test` for the full suite, or scope with `pnpm --filter <package> test`
 
 ## Rationale — why these choices
 
-The tree above describes *what* exists. This section records *why*, so a future
+The tree above describes _what_ exists. This section records _why_, so a future
 maintainer can tell an intentional constraint from an accident. Longer-form
 decisions with alternatives and consequences live in [`docs/adr/`](./adr/).
 
@@ -189,8 +189,8 @@ leak. See [ADR 0003](./adr/0003-auth-model.md) for the auth decision.
 ### Why twelve discrete contracts instead of one monolith
 
 See [ADR 0005](./adr/0005-contract-decomposition.md) for the full argument. In
-short: a single contract would hold every fund, so a bug in *any* code path
-threatens *all* funds, and an upgrade to fix a fee calculation would require
+short: a single contract would hold every fund, so a bug in _any_ code path
+threatens _all_ funds, and an upgrade to fix a fee calculation would require
 re-auditing escrow and treasury. Splitting by responsibility gives each contract
 one storage layout, one owner, and one blast radius — and it lets the audit, the
 pause switch, and the fee cap be scoped to the contracts that actually touch
@@ -234,7 +234,7 @@ reconciles by construction rather than by comparison:
 
 This is why the API never mutates payment status directly: an endpoint changing a
 row the indexer owns would be silently reverted on the next replay, and the two
-writers would disagree. The API writes *requests*; the chain writes *facts*; the
+writers would disagree. The API writes _requests_; the chain writes _facts_; the
 indexer translates.
 
 ### Why three dashboards instead of one role-gated app

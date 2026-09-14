@@ -1,17 +1,29 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { WebhookService } from './webhook.service';
-import { PrismaService } from '../database/prisma.service';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
+
 import { createMockPrismaService, mockDate } from '../../test/mocks/prisma.mock';
+import { PrismaService } from '../database/prisma.service';
+
+import { WebhookService } from './webhook.service';
 
 describe('WebhookService', () => {
   let service: WebhookService;
   let prisma: ReturnType<typeof createMockPrismaService>;
 
   const mockDelivery = {
-    id: 'del_1', merchantId: 'merch_1', eventType: 'payment.completed',
-    url: 'https://test.com/webhook', payload: { paymentId: 'pay_1' },
-    statusCode: null, response: null, attempts: 0, maxAttempts: 5,
-    lastAttemptAt: null, succeededAt: null, failedAt: null, createdAt: mockDate(),
+    id: 'del_1',
+    merchantId: 'merch_1',
+    eventType: 'payment.completed',
+    url: 'https://test.com/webhook',
+    payload: { paymentId: 'pay_1' },
+    statusCode: null,
+    response: null,
+    attempts: 0,
+    maxAttempts: 5,
+    lastAttemptAt: null,
+    succeededAt: null,
+    failedAt: null,
+    createdAt: mockDate(),
   };
 
   beforeEach(async () => {
@@ -26,8 +38,10 @@ describe('WebhookService', () => {
     it('should create a webhook delivery', async () => {
       prisma.webhookDelivery.create.mockResolvedValue(mockDelivery);
       const result = await service.createDelivery({
-        merchantId: 'merch_1', eventType: 'payment.completed',
-        url: 'https://test.com/webhook', payload: { paymentId: 'pay_1' },
+        merchantId: 'merch_1',
+        eventType: 'payment.completed',
+        url: 'https://test.com/webhook',
+        payload: { paymentId: 'pay_1' },
       });
       expect(result.id).toBe('del_1');
       expect(result.eventType).toBe('payment.completed');

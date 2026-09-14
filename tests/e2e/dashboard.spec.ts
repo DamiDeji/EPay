@@ -11,14 +11,14 @@ test.describe('EPay Dashboard Accessibility', () => {
     await expect(page).toHaveTitle(/EPay/);
 
     const errors: string[] = [];
-    page.on('console', msg => {
+    page.on('console', (msg) => {
       if (msg.type() === 'error') errors.push(msg.text());
     });
 
     await page.reload();
     await page.waitForLoadState('networkidle');
 
-    expect(errors.filter(e => !e.includes('favicon'))).toHaveLength(0);
+    expect(errors.filter((e) => !e.includes('favicon'))).toHaveLength(0);
   });
 
   test('landing page has no accessibility violations', async ({ page }) => {

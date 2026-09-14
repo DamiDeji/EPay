@@ -1,0 +1,17 @@
+{
+  // `tsconfig.json` deliberately excludes `**/*.spec.ts` and `test/` so they are
+  // not emitted into `dist`. That also means they were absent from the compiler's
+  // program — the specs were neither type-checked by `pnpm typecheck` nor
+  // lintable with type information. `pnpm typecheck` and ESLint both use this
+  // project, which brings the specs back into a program and emits nothing.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": ".",
+    // TypeScript 7 defaults `types` to `[]`, so the Jest globals the specs rely
+    // on have to be listed explicitly now that the specs are in the program.
+    "types": ["node", "jest"]
+  },
+  "include": ["src/**/*", "test/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

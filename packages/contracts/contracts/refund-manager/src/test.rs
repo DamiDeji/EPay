@@ -204,7 +204,7 @@ fn test_approve_refund_twice_rejected() {
 #[test]
 #[should_panic(expected = "Refund not found")]
 fn test_approve_refund_not_found() {
-    let (env, client, _contract_id, owner, _token_admin) = setup_test();
+    let (_env, client, _contract_id, owner, _token_admin) = setup_test();
     client.approve_refund(&owner, &999);
 }
 

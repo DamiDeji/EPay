@@ -1,0 +1,12 @@
+{
+  // `tsconfig.json` only includes `src/**/*`, so `prisma/seed.ts` never entered
+  // the compiler's program — it was neither type-checked nor lintable with type
+  // information. This project brings the seed script in, and emits nothing.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": "."
+  },
+  "include": ["src/**/*", "prisma/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}

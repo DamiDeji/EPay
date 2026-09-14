@@ -5,10 +5,10 @@ the SDK, and the dashboards.
 
 ## Two ways to run it
 
-| Path | Time | Use it for |
-| --- | --- | --- |
+| Path                                                       | Time   | Use it for                                                     |
+| ---------------------------------------------------------- | ------ | -------------------------------------------------------------- |
 | **[Docker Compose](#option-a-docker-compose-recommended)** | ~3 min | A full stack — API, indexer, three dashboards, Postgres, Redis |
-| **[Local processes](#option-b-local-processes)** | ~5 min | Editing code with hot reload |
+| **[Local processes](#option-b-local-processes)**           | ~5 min | Editing code with hot reload                                   |
 
 ---
 
@@ -33,13 +33,13 @@ docker compose up -d api indexer web merchant-dashboard admin-dashboard
 
 Wait ~30 seconds for the API health check to pass, then open:
 
-| Service | URL |
-| --- | --- |
-| API | http://localhost:4000 |
+| Service            | URL                            |
+| ------------------ | ------------------------------ |
+| API                | http://localhost:4000          |
 | API docs (Swagger) | http://localhost:4000/api/docs |
-| Customer web app | http://localhost:3000 |
-| Merchant dashboard | http://localhost:3001 |
-| Admin dashboard | http://localhost:3002 |
+| Customer web app   | http://localhost:3000          |
+| Merchant dashboard | http://localhost:3001          |
+| Admin dashboard    | http://localhost:3002          |
 
 Confirm it is alive:
 
@@ -160,14 +160,14 @@ If the indexer appears stuck, it is almost always Redis or Horizon connectivity:
 
 ## Troubleshooting
 
-| Symptom | Likely cause | Fix |
-| --- | --- | --- |
-| `pnpm install` fails on a native module | Node version too old | Use Node 20+; `node --version` |
-| `prisma migrate` can't connect | Postgres not up, or wrong `DATABASE_URL` | `docker compose up -d postgres`, check `.env` |
-| API 502s / health check red | migrations not applied | `docker compose --profile setup up db-migrate` |
-| API starts, every request hangs | Redis missing — BullMQ blocks on connect | `docker compose up -d redis` |
-| Dashboards show empty data | indexer not running or still backfilling | `docker compose logs -f indexer` |
-| `@epay/hooks` fails to build | stale `tsbuildinfo` | `pnpm clean && pnpm build` |
+| Symptom                                 | Likely cause                             | Fix                                            |
+| --------------------------------------- | ---------------------------------------- | ---------------------------------------------- |
+| `pnpm install` fails on a native module | Node version too old                     | Use Node 20+; `node --version`                 |
+| `prisma migrate` can't connect          | Postgres not up, or wrong `DATABASE_URL` | `docker compose up -d postgres`, check `.env`  |
+| API 502s / health check red             | migrations not applied                   | `docker compose --profile setup up db-migrate` |
+| API starts, every request hangs         | Redis missing — BullMQ blocks on connect | `docker compose up -d redis`                   |
+| Dashboards show empty data              | indexer not running or still backfilling | `docker compose logs -f indexer`               |
+| `@epay/hooks` fails to build            | stale `tsbuildinfo`                      | `pnpm clean && pnpm build`                     |
 
 ### Known issues
 

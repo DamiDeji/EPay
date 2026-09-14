@@ -1,14 +1,7 @@
 'use client';
 
 import { Button } from '@epay/ui';
-import {
-  Menu,
-  X,
-  Sun,
-  Moon,
-  Zap,
-  Wallet,
-} from 'lucide-react';
+import { Menu, X, Sun, Moon, Zap, Wallet } from 'lucide-react';
 import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { useState, useEffect } from 'react';
@@ -28,17 +21,19 @@ export function Navbar() {
 
   useEffect(() => {
     setMounted(true);
-    const handleScroll = () => { setIsScrolled(window.scrollY > 10); };
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
     window.addEventListener('scroll', handleScroll);
-    return () => { window.removeEventListener('scroll', handleScroll); };
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
   }, []);
 
   return (
     <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled
-          ? 'glass shadow-sm py-3'
-          : 'bg-transparent py-5'
+        isScrolled ? 'glass shadow-sm py-3' : 'bg-transparent py-5'
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
@@ -84,7 +79,9 @@ export function Navbar() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => { setTheme(theme === 'dark' ? 'light' : 'dark'); }}
+              onClick={() => {
+                setTheme(theme === 'dark' ? 'light' : 'dark');
+              }}
               aria-label="Toggle theme"
             >
               {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
@@ -109,12 +106,20 @@ export function Navbar() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => { setTheme(theme === 'dark' ? 'light' : 'dark'); }}
+              onClick={() => {
+                setTheme(theme === 'dark' ? 'light' : 'dark');
+              }}
             >
               {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </Button>
           )}
-          <Button variant="ghost" size="icon" onClick={() => { setIsMobileOpen(!isMobileOpen); }}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              setIsMobileOpen(!isMobileOpen);
+            }}
+          >
             {isMobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </Button>
         </div>
@@ -132,7 +137,9 @@ export function Navbar() {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm font-medium px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
-                  onClick={() => { setIsMobileOpen(false); }}
+                  onClick={() => {
+                    setIsMobileOpen(false);
+                  }}
                 >
                   {link.label}
                 </a>
@@ -141,19 +148,31 @@ export function Navbar() {
                   key={link.href}
                   href={link.href}
                   className="text-sm font-medium px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
-                  onClick={() => { setIsMobileOpen(false); }}
+                  onClick={() => {
+                    setIsMobileOpen(false);
+                  }}
                 >
                   {link.label}
                 </a>
               ),
             )}
             <hr className="border-slate-200 dark:border-slate-700" />
-            <Link href="/login" onClick={() => { setIsMobileOpen(false); }}>
+            <Link
+              href="/login"
+              onClick={() => {
+                setIsMobileOpen(false);
+              }}
+            >
               <Button variant="ghost" className="w-full justify-start">
                 Sign In
               </Button>
             </Link>
-            <Link href="/register" onClick={() => { setIsMobileOpen(false); }}>
+            <Link
+              href="/register"
+              onClick={() => {
+                setIsMobileOpen(false);
+              }}
+            >
               <Button className="w-full gap-2">
                 <Wallet className="w-4 h-4" />
                 Get Started

@@ -49,11 +49,7 @@ export class WalletStrategy extends PassportStrategy(Strategy, 'wallet') {
   /**
    * Verify an Ed25519 signature against a Stellar public key.
    */
-  private verifyStellarSignature(
-    publicKey: string,
-    message: string,
-    signature: string,
-  ): boolean {
+  private verifyStellarSignature(publicKey: string, message: string, signature: string): boolean {
     try {
       const keypair = Keypair.fromPublicKey(publicKey);
       const dataBuffer = Buffer.from(message, 'utf-8');

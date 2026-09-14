@@ -43,9 +43,9 @@ Without them, examples default to `http://localhost:4000` with a test key.
 
 ## Example Index
 
-| File | Topics |
-|------|--------|
-| [`basic-usage.ts`](./basic-usage.ts) | Client setup, payments, invoices, pagination, error handling |
-| [`escrow-workflow.ts`](./escrow-workflow.ts) | Multi-milestone escrow lifecycle, subscription plans |
-| [`wallet-integration.ts`](./wallet-integration.ts) | Stellar wallet auth, balance, stroops conversion, fees |
-| [`advanced-flows.ts`](./advanced-flows.ts) | Refunds, settlements, analytics, merchant management, payment links |
+| File                                               | Topics                                                              |
+| -------------------------------------------------- | ------------------------------------------------------------------- |
+| [`basic-usage.ts`](./basic-usage.ts)               | Client setup, payments, invoices, pagination, error handling        |
+| [`escrow-workflow.ts`](./escrow-workflow.ts)       | Multi-milestone escrow lifecycle, subscription plans                |
+| [`wallet-integration.ts`](./wallet-integration.ts) | Stellar wallet auth, balance, stroops conversion, fees              |
+| [`advanced-flows.ts`](./advanced-flows.ts)         | Refunds, settlements, analytics, merchant management, payment links |

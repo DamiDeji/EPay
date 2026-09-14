@@ -1,6 +1,4 @@
-import type {
-  Settlement, SettlementStatus, PaginatedResponse, PaginationQuery,
-} from '@epay/types';
+import type { Settlement, SettlementStatus, PaginatedResponse, PaginationQuery } from '@epay/types';
 
 import { BaseResource } from './base';
 
@@ -25,10 +23,12 @@ export class SettlementsResource extends BaseResource {
   /**
    * List settlements with optional filters.
    */
-  async list(params?: PaginationQuery & {
-    merchantId?: string;
-    status?: SettlementStatus;
-  }): Promise<PaginatedResponse<Settlement>> {
+  async list(
+    params?: PaginationQuery & {
+      merchantId?: string;
+      status?: SettlementStatus;
+    },
+  ): Promise<PaginatedResponse<Settlement>> {
     return this.client.get<PaginatedResponse<Settlement>>(
       `/settlements${this.buildQuery(params as Record<string, unknown>)}`,
     );

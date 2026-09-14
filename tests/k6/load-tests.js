@@ -32,10 +32,10 @@ export const options = {
     },
   },
   thresholds: {
-    'payment_success': ['rate>0.95'],
-    'request_duration': ['p(95)<500'],
-    'http_req_duration': ['p(90)<300', 'p(99)<1000'],
-    'http_req_failed': ['rate<0.05'],
+    payment_success: ['rate>0.95'],
+    request_duration: ['p(95)<500'],
+    http_req_duration: ['p(90)<300', 'p(99)<1000'],
+    http_req_failed: ['rate<0.05'],
   },
 };
 

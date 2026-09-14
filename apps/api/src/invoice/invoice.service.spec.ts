@@ -1,8 +1,11 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { InvoiceService } from './invoice.service';
-import { PrismaService } from '../database/prisma.service';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { BadRequestException } from '@nestjs/common';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
+
 import { createMockPrismaService, mockDate } from '../../test/mocks/prisma.mock';
+import { PrismaService } from '../database/prisma.service';
+
+import { InvoiceService } from './invoice.service';
 
 describe('InvoiceService', () => {
   let service: InvoiceService;
@@ -24,7 +27,16 @@ describe('InvoiceService', () => {
     metadata: {},
     createdAt: mockDate(),
     updatedAt: mockDate(),
-    items: [{ id: 'item_1', invoiceId: 'inv_1', description: 'Item', quantity: 1, unitPrice: BigInt(5000000000), total: BigInt(5000000000) }],
+    items: [
+      {
+        id: 'item_1',
+        invoiceId: 'inv_1',
+        description: 'Item',
+        quantity: 1,
+        unitPrice: BigInt(5000000000),
+        total: BigInt(5000000000),
+      },
+    ],
   };
 
   beforeEach(async () => {
@@ -40,7 +52,8 @@ describe('InvoiceService', () => {
       prisma.invoice.create.mockResolvedValue(mockInvoice);
       const result = await service.create({
         merchantId: 'merch_1',
-        currency: 'XLM',
+        assetCode: 'XLM',
+        assetIssuer: 'native',
         items: [{ description: 'Item', quantity: 1, unitPrice: '5000000000' }],
       });
       expect(result.invoiceNumber).toMatch(/^INV-/);
@@ -74,7 +87,11 @@ describe('InvoiceService', () => {
   describe('markPaid', () => {
     it('should mark issued invoice as paid', async () => {
       prisma.invoice.findUnique.mockResolvedValue({ ...mockInvoice, status: 'ISSUED' });
-      prisma.invoice.update.mockResolvedValue({ ...mockInvoice, status: 'PAID', paymentId: 'pay_1' });
+      prisma.invoice.update.mockResolvedValue({
+        ...mockInvoice,
+        status: 'PAID',
+        paymentId: 'pay_1',
+      });
       const result = await service.markPaid('inv_1', 'pay_1');
       expect(result.status).toBe('PAID');
     });

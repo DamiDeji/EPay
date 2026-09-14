@@ -127,12 +127,12 @@ const client = new EPayClient({ apiKey: 'ep_live_...' });
 // ── Create a payment ────────────────────────────────────────────
 const payment = await client.payments.create({
   merchantId: 'merch_abc123',
-  amount: '5000000000',     // 5 XLM in stroops
+  amount: '5000000000', // 5 XLM in stroops
   currency: 'XLM',
   recipientAddress: 'GAD...',
   description: 'Order #1234',
   memo: 'Thank you for your purchase',
-  expiresIn: 3600,          // expires in 1 hour (seconds)
+  expiresIn: 3600, // expires in 1 hour (seconds)
   metadata: { orderId: 'ord_1234' },
 });
 
@@ -148,9 +148,7 @@ const { data, total, page, totalPages } = await client.payments.list({
 });
 
 // ── Confirm a payment with blockchain tx ────────────────────────
-const confirmed = await client.payments.confirm('pay_abc123',
-  '0x1234567890abcdef...',
-);
+const confirmed = await client.payments.confirm('pay_abc123', '0x1234567890abcdef...');
 
 // ── Complete / Fail / Cancel ────────────────────────────────────
 await client.payments.complete('pay_abc123');
@@ -170,7 +168,7 @@ const link = await client.paymentLinks.create({
   currency: 'XLM',
   description: 'Community donation',
   maxPayments: 100,
-  expiresIn: 86400 * 7,   // 7 days
+  expiresIn: 86400 * 7, // 7 days
 });
 
 console.log(`Pay here: https://epay.dev/pay/${link.code}`);
@@ -232,28 +230,24 @@ import { EPayClient, EscrowStatus, MilestoneStatus } from '@epay/sdk';
 const escrow = await client.escrows.create({
   merchantId: 'merch_abc123',
   customerId: 'cust_789',
-  amount: '10000000000',  // 10 XLM
+  amount: '10000000000', // 10 XLM
   currency: 'XLM',
   milestones: [
     { index: 0, description: 'Requirements phase', amount: '3000000000' },
     { index: 1, description: 'Development phase', amount: '4000000000' },
-    { index: 2, description: 'Delivery & QA',    amount: '3000000000' },
+    { index: 2, description: 'Delivery & QA', amount: '3000000000' },
   ],
 });
 
 // ── Customer funds the escrow ───────────────────────────────────
-await client.escrows.fund(escrow.id,
-  '0xfunding_transaction_hash...',
-);
+await client.escrows.fund(escrow.id, '0xfunding_transaction_hash...');
 
 // ── Complete a milestone (merchant submits work) ─────────────────
-await client.escrows.completeMilestone(escrow.id, 0,
-  '0xrelease_tx_hash...',
-);
+await client.escrows.completeMilestone(escrow.id, 0, '0xrelease_tx_hash...');
 
 // ── Dispute resolution ──────────────────────────────────────────
 await client.escrows.dispute(escrow.id);
-await client.escrows.resolve(escrow.id);     // admin only
+await client.escrows.resolve(escrow.id); // admin only
 await client.escrows.cancel(escrow.id);
 
 // ── List escrows ────────────────────────────────────────────────
@@ -284,9 +278,7 @@ const partial = await client.refunds.request({
 
 // ── Approve / process / reject ──────────────────────────────────
 await client.refunds.approve(refund.id);
-await client.refunds.process(refund.id,
-  '0xblockchain_refund_tx_hash...',
-);
+await client.refunds.process(refund.id, '0xblockchain_refund_tx_hash...');
 await client.refunds.reject(refund.id);
 
 // ── List refunds ────────────────────────────────────────────────
@@ -299,15 +291,14 @@ const { data: refunds } = await client.refunds.list({
 ### Subscriptions
 
 ```ts
-import { EPayClient, SubscriptionBillingInterval,
-  SubscriptionStatus } from '@epay/sdk';
+import { EPayClient, SubscriptionBillingInterval, SubscriptionStatus } from '@epay/sdk';
 
 // ── Create a monthly subscription ───────────────────────────────
 const sub = await client.subscriptions.create({
   merchantId: 'merch_abc123',
   customerId: 'cust_789',
   planName: 'Premium Plan',
-  amount: '1000000000',      // 1 XLM / month
+  amount: '1000000000', // 1 XLM / month
   currency: 'XLM',
   interval: SubscriptionBillingInterval.MONTHLY,
   trialDays: 7,
@@ -374,7 +365,8 @@ console.log(`Fee:   ${settlement.feeAmount}`);
 console.log(`Net:   ${settlement.netAmount}`);
 
 // ── Process the settlement on-chain ─────────────────────────────
-await client.settlements.process(settlement.id,
+await client.settlements.process(
+  settlement.id,
   '0xsettlement_tx_hash...',
   'GAD_merchant_wallet...',
 );
@@ -401,10 +393,7 @@ console.log(`Success rate:   ${analytics.successRate}%`);
 console.log(`Refund rate:    ${analytics.refundRate}%`);
 
 // ── Revenue breakdown ───────────────────────────────────────────
-const revenue = await client.analytics.getMerchantRevenue(
-  'merch_abc123',
-  30,
-);
+const revenue = await client.analytics.getMerchantRevenue('merch_abc123', 30);
 
 // ── Platform analytics (admin) ──────────────────────────────────
 const platform = await client.analytics.getPlatformAnalytics(30);
@@ -425,13 +414,11 @@ const wallet = new WalletClient({
 });
 
 // ── Validate a Stellar address ──────────────────────────────────
-wallet.validateAddress('GAD_valid_address...');      // true
-wallet.validateAddress('bad_address');                 // false
+wallet.validateAddress('GAD_valid_address...'); // true
+wallet.validateAddress('bad_address'); // false
 
 // ── Generate an auth message ────────────────────────────────────
-const message = wallet.generateAuthMessage(
-  'GAD_your_wallet_address...',
-);
+const message = wallet.generateAuthMessage('GAD_your_wallet_address...');
 // => "EPay Authentication: Sign this message to prove you own
 //     GAD_your_wallet_address...
 //     Nonce: lz8xkq3a
@@ -489,19 +476,24 @@ const client = new EPayClient({ apiUrl: 'https://api.epay.dev' });
 
 ```ts
 import {
-  stroopsToXlm, xlmToStroops, isValidStellarPublicKey,
-  formatAddress, getExplorerUrl, calculateFee,
-  calculateNetAmount, StellarNetwork,
+  stroopsToXlm,
+  xlmToStroops,
+  isValidStellarPublicKey,
+  formatAddress,
+  getExplorerUrl,
+  calculateFee,
+  calculateNetAmount,
+  StellarNetwork,
 } from '@epay/sdk';
 
 // ── stroops ↔ XLM conversion ────────────────────────────────────
-stroopsToXlm('1000000000');    // "100"
-stroopsToXlm('1500000000');    // "150"
-stroopsToXlm('100');           // "0.00001"
+stroopsToXlm('1000000000'); // "100"
+stroopsToXlm('1500000000'); // "150"
+stroopsToXlm('100'); // "0.00001"
 
-xlmToStroops('100');           // "1000000000"
-xlmToStroops('150');           // "1500000000"
-xlmToStroops('0.00001');       // "100"
+xlmToStroops('100'); // "1000000000"
+xlmToStroops('150'); // "1500000000"
+xlmToStroops('0.00001'); // "100"
 
 // ── Address utilities ───────────────────────────────────────────
 isValidStellarPublicKey('GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMAU');
@@ -517,8 +509,8 @@ getExplorerUrl('account', 'GAD...', 'testnet');
 // => "https://stellar.expert/explorer/testnet/account/GAD..."
 
 // ── Fee calculation ─────────────────────────────────────────────
-calculateFee('1000000000', 50);   // "5000000"   (0.5% fee)
-calculateFee('1000000000', 200);  // "20000000"  (2% fee)
+calculateFee('1000000000', 50); // "5000000"   (0.5% fee)
+calculateFee('1000000000', 200); // "20000000"  (2% fee)
 
 calculateNetAmount('1000000000', 50); // "995000000" (after 0.5% fee)
 ```
@@ -588,10 +580,10 @@ while (true) {
 
 ## Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `EPAY_API_URL` | API base URL | `http://localhost:4000` |
-| `EPAY_API_KEY` | Server-side API key | — |
+| Variable       | Description         | Default                 |
+| -------------- | ------------------- | ----------------------- |
+| `EPAY_API_URL` | API base URL        | `http://localhost:4000` |
+| `EPAY_API_KEY` | Server-side API key | —                       |
 
 Use these in your app to avoid hardcoding:
 
@@ -610,18 +602,37 @@ The SDK is written in TypeScript and provides full type definitions. All request
 
 ```ts
 import type {
-  Payment, Invoice, Escrow, Refund, Subscription,
-  Merchant, Settlement, PaymentAnalytics,
-  PaginatedResponse, PaginationQuery,
-  ApiResponse, AuthTokens, WalletAuth, User,
+  Payment,
+  Invoice,
+  Escrow,
+  Refund,
+  Subscription,
+  Merchant,
+  Settlement,
+  PaymentAnalytics,
+  PaginatedResponse,
+  PaginationQuery,
+  ApiResponse,
+  AuthTokens,
+  WalletAuth,
+  User,
 } from '@epay/sdk';
 
 import {
-  PaymentStatus, InvoiceStatus, EscrowStatus,
-  RefundStatus, SubscriptionStatus, MerchantStatus,
-  SettlementStatus, SubscriptionBillingInterval,
-  StellarNetwork, MilestoneStatus, ApiPermission,
-  NotificationChannel, TreasuryTxType, TreasuryTxStatus,
+  PaymentStatus,
+  InvoiceStatus,
+  EscrowStatus,
+  RefundStatus,
+  SubscriptionStatus,
+  MerchantStatus,
+  SettlementStatus,
+  SubscriptionBillingInterval,
+  StellarNetwork,
+  MilestoneStatus,
+  ApiPermission,
+  NotificationChannel,
+  TreasuryTxType,
+  TreasuryTxStatus,
 } from '@epay/sdk';
 ```
 
@@ -631,132 +642,132 @@ import {
 
 ### Client
 
-| Method | Signature |
-|--------|-----------|
-| `setApiKey(apiKey)` | Set API key for authentication |
-| `setAccessToken(token)` | Set JWT access token |
-| `clearAuth()` | Clear all authentication |
-| `request<T>(method, path, body?, retries?)` | Low-level HTTP request |
-| `get<T>(path)` | GET request |
-| `post<T>(path, body?)` | POST request |
-| `patch<T>(path, body?)` | PATCH request |
-| `put<T>(path, body?)` | PUT request |
-| `delete<T>(path)` | DELETE request |
+| Method                                      | Signature                      |
+| ------------------------------------------- | ------------------------------ |
+| `setApiKey(apiKey)`                         | Set API key for authentication |
+| `setAccessToken(token)`                     | Set JWT access token           |
+| `clearAuth()`                               | Clear all authentication       |
+| `request<T>(method, path, body?, retries?)` | Low-level HTTP request         |
+| `get<T>(path)`                              | GET request                    |
+| `post<T>(path, body?)`                      | POST request                   |
+| `patch<T>(path, body?)`                     | PATCH request                  |
+| `put<T>(path, body?)`                       | PUT request                    |
+| `delete<T>(path)`                           | DELETE request                 |
 
 ### PaymentsResource
 
-| Method | Description |
-|--------|-------------|
-| `create(request)` | Create a new payment |
-| `getById(id)` | Get payment by ID |
-| `list(params?)` | List payments (paginated, filterable) |
-| `confirm(id, txHash)` | Confirm payment with blockchain tx |
-| `complete(id)` | Mark payment as completed |
-| `fail(id)` | Mark payment as failed |
-| `cancel(id)` | Cancel pending payment |
+| Method                | Description                           |
+| --------------------- | ------------------------------------- |
+| `create(request)`     | Create a new payment                  |
+| `getById(id)`         | Get payment by ID                     |
+| `list(params?)`       | List payments (paginated, filterable) |
+| `confirm(id, txHash)` | Confirm payment with blockchain tx    |
+| `complete(id)`        | Mark payment as completed             |
+| `fail(id)`            | Mark payment as failed                |
+| `cancel(id)`          | Cancel pending payment                |
 
 ### PaymentLinksResource
 
-| Method | Description |
-|--------|-------------|
-| `create(request)` | Create shareable payment link |
-| `getByCode(code)` | Look up link by short code |
+| Method                       | Description                   |
+| ---------------------------- | ----------------------------- |
+| `create(request)`            | Create shareable payment link |
+| `getByCode(code)`            | Look up link by short code    |
 | `listByMerchant(merchantId)` | List all links for a merchant |
 
 ### InvoicesResource
 
-| Method | Description |
-|--------|-------------|
-| `create(request)` | Create draft invoice |
-| `getById(id)` | Get invoice by ID |
-| `list(params?)` | List invoices (paginated, filterable) |
-| `issue(id)` | Issue draft invoice |
-| `markPaid(id, paymentId)` | Mark invoice as paid |
-| `cancel(id)` | Cancel invoice |
+| Method                    | Description                           |
+| ------------------------- | ------------------------------------- |
+| `create(request)`         | Create draft invoice                  |
+| `getById(id)`             | Get invoice by ID                     |
+| `list(params?)`           | List invoices (paginated, filterable) |
+| `issue(id)`               | Issue draft invoice                   |
+| `markPaid(id, paymentId)` | Mark invoice as paid                  |
+| `cancel(id)`              | Cancel invoice                        |
 
 ### EscrowsResource
 
-| Method | Description |
-|--------|-------------|
-| `create(request)` | Create escrow with milestones |
-| `getById(id)` | Get escrow by ID |
-| `list(params?)` | List escrows (paginated, filterable) |
-| `fund(id, txHash)` | Fund escrow with blockchain tx |
-| `completeMilestone(id, index, releaseTxHash?)` | Complete a milestone |
-| `dispute(id)` | File a dispute |
-| `resolve(id)` | Resolve a dispute (admin) |
-| `cancel(id)` | Cancel escrow |
+| Method                                         | Description                          |
+| ---------------------------------------------- | ------------------------------------ |
+| `create(request)`                              | Create escrow with milestones        |
+| `getById(id)`                                  | Get escrow by ID                     |
+| `list(params?)`                                | List escrows (paginated, filterable) |
+| `fund(id, txHash)`                             | Fund escrow with blockchain tx       |
+| `completeMilestone(id, index, releaseTxHash?)` | Complete a milestone                 |
+| `dispute(id)`                                  | File a dispute                       |
+| `resolve(id)`                                  | Resolve a dispute (admin)            |
+| `cancel(id)`                                   | Cancel escrow                        |
 
 ### RefundsResource
 
-| Method | Description |
-|--------|-------------|
-| `request(request)` | Request a refund |
-| `getById(id)` | Get refund by ID |
-| `list(params?)` | List refunds (paginated, filterable) |
-| `approve(id)` | Approve refund request |
-| `process(id, txHash)` | Process refund on-chain |
-| `reject(id)` | Reject refund request |
+| Method                | Description                          |
+| --------------------- | ------------------------------------ |
+| `request(request)`    | Request a refund                     |
+| `getById(id)`         | Get refund by ID                     |
+| `list(params?)`       | List refunds (paginated, filterable) |
+| `approve(id)`         | Approve refund request               |
+| `process(id, txHash)` | Process refund on-chain              |
+| `reject(id)`          | Reject refund request                |
 
 ### SubscriptionsResource
 
-| Method | Description |
-|--------|-------------|
-| `create(request)` | Create subscription |
-| `getById(id)` | Get subscription by ID |
-| `list(params?)` | List subscriptions (paginated, filterable) |
-| `pause(id)` | Pause active subscription |
-| `resume(id)` | Resume paused subscription |
-| `cancel(id)` | Cancel subscription |
+| Method            | Description                                |
+| ----------------- | ------------------------------------------ |
+| `create(request)` | Create subscription                        |
+| `getById(id)`     | Get subscription by ID                     |
+| `list(params?)`   | List subscriptions (paginated, filterable) |
+| `pause(id)`       | Pause active subscription                  |
+| `resume(id)`      | Resume paused subscription                 |
+| `cancel(id)`      | Cancel subscription                        |
 
 ### MerchantsResource
 
-| Method | Description |
-|--------|-------------|
-| `register(request)` | Register new merchant |
-| `getMyMerchant()` | Get authenticated merchant |
-| `getById(id)` | Get merchant by ID |
-| `list(params?)` | List merchants (admin) |
-| `update(id, data)` | Update merchant profile |
-| `verify(id, approve, level?)` | Verify merchant (admin) |
+| Method                        | Description                |
+| ----------------------------- | -------------------------- |
+| `register(request)`           | Register new merchant      |
+| `getMyMerchant()`             | Get authenticated merchant |
+| `getById(id)`                 | Get merchant by ID         |
+| `list(params?)`               | List merchants (admin)     |
+| `update(id, data)`            | Update merchant profile    |
+| `verify(id, approve, level?)` | Verify merchant (admin)    |
 
 ### SettlementsResource
 
-| Method | Description |
-|--------|-------------|
-| `create(merchantId)` | Create settlement |
-| `getById(id)` | Get settlement by ID |
-| `list(params?)` | List settlements (paginated, filterable) |
-| `process(id, txHash, address)` | Process settlement on-chain |
+| Method                         | Description                              |
+| ------------------------------ | ---------------------------------------- |
+| `create(merchantId)`           | Create settlement                        |
+| `getById(id)`                  | Get settlement by ID                     |
+| `list(params?)`                | List settlements (paginated, filterable) |
+| `process(id, txHash, address)` | Process settlement on-chain              |
 
 ### AnalyticsResource
 
-| Method | Description |
-|--------|-------------|
-| `getMerchantAnalytics(merchantId, days?)` | Merchant payment analytics |
-| `getMerchantRevenue(merchantId, days?)` | Merchant revenue breakdown |
-| `getPlatformAnalytics(days?)` | Platform-wide analytics (admin) |
+| Method                                    | Description                     |
+| ----------------------------------------- | ------------------------------- |
+| `getMerchantAnalytics(merchantId, days?)` | Merchant payment analytics      |
+| `getMerchantRevenue(merchantId, days?)`   | Merchant revenue breakdown      |
+| `getPlatformAnalytics(days?)`             | Platform-wide analytics (admin) |
 
 ### WalletClient
 
-| Method | Description |
-|--------|-------------|
-| `generateAuthMessage(address)` | Generate auth message to sign |
-| `buildWalletAuth(signature)` | Build WalletAuth from signature |
-| `validateAddress(address)` | Validate Stellar address |
-| `getBalance(address)` | Get wallet balance (stroops) |
+| Method                         | Description                     |
+| ------------------------------ | ------------------------------- |
+| `generateAuthMessage(address)` | Generate auth message to sign   |
+| `buildWalletAuth(signature)`   | Build WalletAuth from signature |
+| `validateAddress(address)`     | Validate Stellar address        |
+| `getBalance(address)`          | Get wallet balance (stroops)    |
 
 ### Utilities
 
-| Function | Description |
-|----------|-------------|
-| `stroopsToXlm(stroops)` | Convert stroops → human XLM |
-| `xlmToStroops(xlm)` | Convert human XLM → stroops |
-| `isValidStellarPublicKey(addr)` | Validate Stellar address format |
-| `formatAddress(addr, prefix?, suffix?)` | Truncate address for display |
-| `getExplorerUrl(type, value, network?)` | Get Stellar Expert URL |
-| `calculateFee(amount, feeBps?)` | Calculate EPay fee |
-| `calculateNetAmount(amount, feeBps?)` | Calculate net after fee |
+| Function                                | Description                     |
+| --------------------------------------- | ------------------------------- |
+| `stroopsToXlm(stroops)`                 | Convert stroops → human XLM     |
+| `xlmToStroops(xlm)`                     | Convert human XLM → stroops     |
+| `isValidStellarPublicKey(addr)`         | Validate Stellar address format |
+| `formatAddress(addr, prefix?, suffix?)` | Truncate address for display    |
+| `getExplorerUrl(type, value, network?)` | Get Stellar Expert URL          |
+| `calculateFee(amount, feeBps?)`         | Calculate EPay fee              |
+| `calculateNetAmount(amount, feeBps?)`   | Calculate net after fee         |
 
 ---
 

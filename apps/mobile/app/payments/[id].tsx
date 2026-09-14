@@ -1,8 +1,16 @@
 import { getExplorerUrl } from '@epay/sdk';
-import { useLocalSearchParams } from 'expo-router';
 import type { Payment } from '@epay/types';
+import { useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Linking,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 
 import { api } from '../../src/lib/api';
 import { config } from '../../src/lib/config';
@@ -39,9 +47,7 @@ export default function PaymentDetailScreen(): React.ReactElement {
     );
   }
 
-  const explorerUrl = payment.txHash
-    ? getExplorerUrl('tx', payment.txHash, config.network)
-    : null;
+  const explorerUrl = payment.txHash ? getExplorerUrl('tx', payment.txHash, config.network) : null;
 
   return (
     <ScrollView contentContainerStyle={styles.container}>

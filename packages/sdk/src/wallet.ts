@@ -85,7 +85,9 @@ export class WalletClient {
   /**
    * Get the balance of a Stellar account via Horizon API.
    */
-  async getBalance(publicKey: string): Promise<{ assetCode: string; assetIssuer: string; balance: string }[]> {
+  async getBalance(
+    publicKey: string,
+  ): Promise<{ assetCode: string; assetIssuer: string; balance: string }[]> {
     const response = await fetch(
       `${this.config.horizonUrl ?? 'https://horizon-testnet.stellar.org'}/accounts/${publicKey}`,
     );
@@ -95,7 +97,12 @@ export class WalletClient {
     }
 
     const data = (await response.json()) as {
-      balances?: { asset_code?: string; asset_issuer?: string; balance: string; asset_type: string }[];
+      balances?: {
+        asset_code?: string;
+        asset_issuer?: string;
+        balance: string;
+        asset_type: string;
+      }[];
     };
 
     return (data.balances ?? []).map((b) => ({

@@ -5,8 +5,12 @@
     "types": ["node", "chrome"],
     "declaration": false,
     "declarationMap": false,
-    "noEmit": true
+    "noEmit": true,
+    // Required now that the popup's `.tsx` sources are part of the program.
+    "jsx": "react-jsx"
   },
-  "include": ["src/**/*.ts"],
+  // `src/**/*.tsx` was missing here, so none of the extension's React popup code
+  // (`Popup.tsx`, `main.tsx`) was ever type-checked by `pnpm typecheck`.
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
   "exclude": ["node_modules", "dist", "coverage"]
 }

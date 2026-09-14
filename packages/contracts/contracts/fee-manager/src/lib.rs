@@ -21,7 +21,7 @@ impl FeeManager {
         if env.storage().instance().has(&OWNER_KEY) {
             panic!("Already initialized");
         }
-        if default_fee_bps < 10 || default_fee_bps > 500 {
+        if !(10..=500).contains(&default_fee_bps) {
             panic!("Fee outside allowed bounds");
         }
         env.storage().instance().set(&OWNER_KEY, &owner);

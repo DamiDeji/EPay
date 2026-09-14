@@ -1,10 +1,6 @@
 import { generateId } from '@epay/shared';
 import type { Subscription, PaginatedResponse } from '@epay/types';
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 
 import { PrismaService } from '../database/prisma.service';
 
@@ -26,9 +22,7 @@ export class SubscriptionService {
     const subscriptionId = generateId('sub');
     const intervalSeconds = INTERVAL_SECONDS[dto.interval] ?? 2592000;
     const now = new Date();
-    const trialEnd = dto.trialDays
-      ? new Date(now.getTime() + dto.trialDays * 86400_000)
-      : null;
+    const trialEnd = dto.trialDays ? new Date(now.getTime() + dto.trialDays * 86400_000) : null;
 
     const subscription = await this.prisma.subscription.create({
       data: {

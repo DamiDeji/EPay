@@ -2,8 +2,16 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  BarChart3, Building2, ChevronLeft, ChevronRight,
-  CreditCard, LayoutDashboard, LogOut, ScrollText, Settings, Shield,
+  BarChart3,
+  Building2,
+  ChevronLeft,
+  ChevronRight,
+  CreditCard,
+  LayoutDashboard,
+  LogOut,
+  ScrollText,
+  Settings,
+  Shield,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -37,10 +45,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
     <>
       {/* Mobile overlay */}
       {!collapsed && (
-        <div
-          className="fixed inset-0 z-30 bg-black/50 lg:hidden"
-          onClick={onToggle}
-        />
+        <div className="fixed inset-0 z-30 bg-black/50 lg:hidden" onClick={onToggle} />
       )}
 
       <aside
@@ -70,9 +75,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
         {/* Navigation */}
         <nav className="flex-1 py-4 px-2 space-y-0.5 overflow-y-auto">
           {navItems.map((item) => {
-            const isActive = item.href === '/'
-              ? pathname === '/'
-              : pathname.startsWith(item.href);
+            const isActive = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
             const Icon = item.icon;
 
             return (

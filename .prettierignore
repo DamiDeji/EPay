@@ -1,0 +1,27 @@
+# Prettier is a *formatter*, not a linter: anything it cannot parse has to be
+# excluded here or `pnpm format:check` fails on files that are perfectly valid.
+# CI runs `pnpm format:check`, so this file is load-bearing.
+
+# Helm templates contain Go template actions (`{{ ... }}`) and therefore are not
+# valid YAML. `helm lint` / `helm template` validate them instead.
+helm/
+
+# Build outputs and dependencies
+node_modules/
+dist/
+build/
+.next/
+.turbo/
+coverage/
+
+# Smart contract build artefacts
+packages/contracts/target/
+packages/contracts/build/
+packages/contracts/artifacts/
+
+# Generated from the Helm chart by scripts/render-k8s-manifests.sh
+k8s/manifests.yaml
+
+# Test artefacts
+test-results/
+playwright-report/

@@ -12,16 +12,23 @@ import {
   StellarNetwork,
   stroopsToXlm,
   xlmToStroops,
-  isValidStellarPublicKey,
   formatStellarAddress,
   getExplorerUrl,
   calculateFee,
   calculateNetAmount,
 } from '../src';
 
-const VALID_PUBLIC_KEY = 'GABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234';
+/**
+ * A format-valid Stellar public key (the all-zero Ed25519 key). The previous
+ * value in this example was 59 characters and contained non-base32 digits, so
+ * `validatePublicKey` returned `false` for a constant named "valid".
+ *
+ * It is valid in *format* only — it holds no funds and will never appear on
+ * chain — which is all these pure client-side helpers need.
+ */
+const SAMPLE_PUBLIC_KEY = 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF';
 
-async function main() {
+function main() {
   console.log('👛 EPay SDK — Stellar Wallet Integration Example\n');
 
   // ══════════════════════════════════════════════════════════════════
@@ -38,18 +45,18 @@ async function main() {
 
   // 1. Validate public keys
   console.log('1. Public key validation:');
-  console.log(`   ${VALID_PUBLIC_KEY}: ${wallet.validatePublicKey(VALID_PUBLIC_KEY)}`);
+  console.log(`   ${SAMPLE_PUBLIC_KEY}: ${wallet.validatePublicKey(SAMPLE_PUBLIC_KEY)}`);
   console.log(`   "invalid_key": ${wallet.validatePublicKey('invalid_key')}\n`);
 
   // 2. Generate an auth message
   console.log('2. Auth message generation:');
-  const authMessage = wallet.generateAuthMessage(VALID_PUBLIC_KEY);
+  const authMessage = wallet.generateAuthMessage(SAMPLE_PUBLIC_KEY);
   console.log(`   ${authMessage.replace(/\n/g, '\n   ')}\n`);
 
   // 3. Build a WalletAuth payload
   console.log('3. Building WalletAuth payload:');
   const auth = wallet.buildWalletAuth({
-    publicKey: VALID_PUBLIC_KEY,
+    publicKey: SAMPLE_PUBLIC_KEY,
     signature: '0xsignature...',
     message: authMessage,
     provider: 'freighter',
@@ -79,18 +86,26 @@ async function main() {
   console.log(`   xlmToStroops('1')         = "${xlmToStroops('1')}"`);
   console.log(`   xlmToStroops('1.5')       = "${xlmToStroops('1.5')}"`);
   console.log(`   xlmToStroops('0.0000001') = "${xlmToStroops('0.0000001')}"`);
-  console.log(`   Roundtrip: stroopsToXlm(xlmToStroops('1')) = "${stroopsToXlm(xlmToStroops('1'))}"\n`);
+  console.log(
+    `   Roundtrip: stroopsToXlm(xlmToStroops('1')) = "${stroopsToXlm(xlmToStroops('1'))}"\n`,
+  );
 
   // 6. Address formatting
   console.log('6. Address formatting:');
-  console.log(`   formatStellarAddress("${VALID_PUBLIC_KEY}")     = "${formatStellarAddress(VALID_PUBLIC_KEY)}"`);
-  console.log(`   formatStellarAddress("${VALID_PUBLIC_KEY}", 4, 6) = "${formatStellarAddress(VALID_PUBLIC_KEY, 4, 6)}"\n`);
+  console.log(
+    `   formatStellarAddress("${SAMPLE_PUBLIC_KEY}")     = "${formatStellarAddress(SAMPLE_PUBLIC_KEY)}"`,
+  );
+  console.log(
+    `   formatStellarAddress("${SAMPLE_PUBLIC_KEY}", 4, 6) = "${formatStellarAddress(SAMPLE_PUBLIC_KEY, 4, 6)}"\n`,
+  );
 
   // 7. Explorer URLs
   console.log('7. Explorer URLs:');
   console.log(`   Public tx:      ${getExplorerUrl('tx', '0xhash...', StellarNetwork.PUBLIC)}`);
   console.log(`   Testnet tx:     ${getExplorerUrl('tx', '0xhash...', StellarNetwork.TESTNET)}`);
-  console.log(`   Public account: ${getExplorerUrl('account', 'GABCDEF...', StellarNetwork.PUBLIC)}\n`);
+  console.log(
+    `   Public account: ${getExplorerUrl('account', 'GABCDEF...', StellarNetwork.PUBLIC)}\n`,
+  );
 
   // 8. Fee calculation
   console.log('8. Fee calculation (0.5% = 50 bps):');
@@ -107,4 +122,4 @@ async function main() {
   console.log('✨ Stellar wallet integration examples completed!');
 }
 
-main().catch(console.error);
+main();

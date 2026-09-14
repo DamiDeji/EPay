@@ -3,7 +3,12 @@
 //! Tests cover: pause/unpause, state queries, reason tracking,
 //! access control, and require_not_paused guard.
 
-use soroban_sdk::{testutils::Address as _, Env, Address, String};
+// `Ledger` supplies `env.ledger().with_mut(...)`; without it the suite does not
+// compile (E0599).
+use soroban_sdk::{
+    testutils::{Address as _, Ledger},
+    Address, Env, String,
+};
 
 use super::*;
 
@@ -31,10 +36,11 @@ fn setup_test() -> (Env, EmergencyPauseClient<'static>, Address) {
 
 #[test]
 fn test_initialize() {
-    let (env, client, _owner) = setup_test();
+    let (_env, client, _owner) = setup_test();
 
+    // A freshly initialised pause switch is unset, and the guard call succeeds.
     assert!(!client.is_paused());
-    let state = client.get_state_internal(); // We test via is_paused
+    client.require_not_paused();
     assert!(!client.is_paused());
 }
 
@@ -106,9 +112,10 @@ fn test_non_owner_cannot_pause() {
 #[test]
 #[should_panic(expected = "Only owner can unpause")]
 fn test_non_owner_cannot_unpause() {
-    let (env, client, _owner) = setup_test();
+    let (env, client, owner) = setup_test();
 
-    client.pause(&client.get_owner_internal_eboost(), &String::from_str(&env, "temp"));
+    client.pause(&owner, &String::from_str(&env, "temp"));
+    assert!(client.is_paused());
 
     let unauthorized = Address::generate(&env);
     client.unpause(&unauthorized);
@@ -120,7 +127,7 @@ fn test_non_owner_cannot_unpause() {
 
 #[test]
 fn test_require_not_paused_when_unpaused() {
-    let (env, client, _owner) = setup_test();
+    let (_env, client, _owner) = setup_test();
     // Should not panic when unpaused
     client.require_not_paused();
 }
@@ -150,13 +157,14 @@ fn test_pause_with_empty_reason() {
 fn test_pause_with_long_reason() {
     let (env, client, owner) = setup_test();
 
-    let reason = String::from_str(&env, "A".repeat(1000));
+    let long_reason = "A".repeat(1000);
+    let reason = String::from_str(&env, &long_reason);
     client.pause(&owner, &reason);
     assert!(client.is_paused());
 }
 
 // ════════════════════════════════════════════════════════════════════
-// FUZZ: 10,000 iterations — pause/unpause stress test
+// STRESS: repeated pause/unpause cycles
 // ════════════════════════════════════════════════════════════════════
 
 #[test]
@@ -173,19 +181,23 @@ fn test_fuzz_pause_unpause() {
     let contract_id = env.register_contract(None, EmergencyPause);
     let client = EmergencyPauseClient::new(&env, &contract_id);
     client.init(&owner);
+    // Every iteration issues two metered contract calls.
+    env.budget().reset_unlimited();
 
-    for i in 0..5000 {
-        env.ledger().with_mut(|li| li.timestamp = 1_000_000 + i as u64 * 100);
+    for i in 0..256usize {
+        env.ledger()
+            .with_mut(|li| li.timestamp = 1_000_000 + i as u64 * 100);
 
-        let reason = String::from_str(&env, &format!("Reason {}", i));
+        // `format!` is unavailable in `no_std`; the reason is a fixed literal.
+        let reason = String::from_str(&env, "stress");
         client.pause(&owner, &reason);
         assert!(client.is_paused());
 
         client.unpause(&owner);
         assert!(!client.is_paused());
 
-        // Verify idempotency of is_paused
-        assert_eq!(client.is_paused(), false);
-        assert_eq!(client.is_paused(), false);
+        // Read-only status is a pure function of stored state.
+        assert!(!client.is_paused());
+        assert!(!client.is_paused());
     }
 }

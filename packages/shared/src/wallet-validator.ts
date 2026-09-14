@@ -11,11 +11,6 @@
 /** Stellar public key regex: G followed by 55 base32 chars */
 const STELLAR_PUBLIC_KEY_REGEX = /^G[A-Z2-7]{55}$/;
 
-/** Base32 alphabet used by Stellar */
-const BASE32_ALPHABET = new Set(
-  'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'.split(''),
-);
-
 /**
  * Validates a Stellar public key (G-address) format.
  *
@@ -79,7 +74,7 @@ export function looksLikeStellarAddress(address: string): boolean {
 export function stroopsToXlm(stroops: bigint | number): number {
   const divisor = 10_000_000n;
   const s = typeof stroops === 'bigint' ? stroops : BigInt(stroops);
-  return Number(s) / 10_000_000;
+  return Number(s) / Number(divisor);
 }
 
 /**

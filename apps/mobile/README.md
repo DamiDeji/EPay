@@ -8,14 +8,14 @@ duplicated API logic and no separate API surface to keep in sync.
 
 ## Features
 
-| Capability | Implementation |
-| --- | --- |
-| QR-code payment scanning | `expo-camera` (`CameraView` + barcode scanner) → `src/lib/payment-payload.ts` |
+| Capability                  | Implementation                                                                                                          |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| QR-code payment scanning    | `expo-camera` (`CameraView` + barcode scanner) → `src/lib/payment-payload.ts`                                           |
 | Biometric gate for payments | `expo-local-authentication` via `src/lib/biometrics.ts` (`disableDeviceFallback` so a stolen unlocked phone cannot pay) |
-| Secure token storage | `expo-secure-store` (Keychain / EncryptedSharedPreferences) in `src/lib/storage.ts` |
-| Push receipts | `expo-notifications` in `src/lib/notifications.ts` |
-| Offline-tolerant caching | AsyncStorage TTL cache + `withCache()` fallback in `src/lib/storage.ts` |
-| Wallet connect | `useWallet`-equivalent flows through `@epay/sdk`'s `WalletClient` |
+| Secure token storage        | `expo-secure-store` (Keychain / EncryptedSharedPreferences) in `src/lib/storage.ts`                                     |
+| Push receipts               | `expo-notifications` in `src/lib/notifications.ts`                                                                      |
+| Offline-tolerant caching    | AsyncStorage TTL cache + `withCache()` fallback in `src/lib/storage.ts`                                                 |
+| Wallet connect              | `useWallet`-equivalent flows through `@epay/sdk`'s `WalletClient`                                                       |
 
 Both iOS and Android ship from this single codebase.
 
@@ -63,7 +63,7 @@ Phase 8 rather than snapshot-tested here.
 
 ## Design notes
 
-- **Non-custodial by construction.** The app links a *public* key for balance
+- **Non-custodial by construction.** The app links a _public_ key for balance
   display and payment matching; it never asks for or stores a secret key.
 - **Fail closed.** When biometric hardware is missing or unenrolled, the payment
   action refuses rather than silently downgrading to no auth.

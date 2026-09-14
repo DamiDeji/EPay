@@ -52,7 +52,11 @@ describe('MetricsRegistry', () => {
 
   describe('Histogram', () => {
     it('counts observations cumulatively across buckets', () => {
-      const histogram = new Histogram('epay_http_request_duration_seconds', 'latency', [0.1, 1, 10]);
+      const histogram = new Histogram(
+        'epay_http_request_duration_seconds',
+        'latency',
+        [0.1, 1, 10],
+      );
 
       histogram.observe({}, 0.05);
       histogram.observe({}, 0.5);

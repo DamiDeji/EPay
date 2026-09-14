@@ -31,9 +31,7 @@ export const WEBHOOK_TIMESTAMP_TOLERANCE_SECONDS = 300;
  * hours absorbs a receiver's deploy window without hammering it during an
  * outage.
  */
-export const WEBHOOK_RETRY_SCHEDULE_SECONDS: readonly number[] = [
-  30, 120, 600, 1800, 7200, 21600,
-];
+export const WEBHOOK_RETRY_SCHEDULE_SECONDS: readonly number[] = [30, 120, 600, 1800, 7200, 21600];
 
 /** Total number of attempts (initial + retries) before dead-lettering. */
 export const WEBHOOK_MAX_ATTEMPTS = WEBHOOK_RETRY_SCHEDULE_SECONDS.length + 1;

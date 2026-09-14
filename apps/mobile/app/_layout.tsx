@@ -25,10 +25,7 @@ export default function RootLayout(): React.ReactElement {
             name="pay/[code]"
             options={{ headerShown: true, title: 'Confirm payment' }}
           />
-          <Stack.Screen
-            name="payments/[id]"
-            options={{ headerShown: true, title: 'Payment' }}
-          />
+          <Stack.Screen name="payments/[id]" options={{ headerShown: true, title: 'Payment' }} />
         </Stack>
       </AuthProvider>
     </SafeAreaProvider>

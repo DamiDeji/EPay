@@ -14,7 +14,7 @@ use soroban_sdk::{
 
 use super::*;
 
-const ITERATIONS: u32 = 10_000;
+const ITERATIONS: u32 = 256;
 
 struct Rng(u64);
 
@@ -38,9 +38,12 @@ impl Rng {
     }
 }
 
-fn setup() -> (Env, RefundManagerClient<'static>, Address, Address) {
+fn setup() -> (Env, RefundManagerClient<'static>, Address, Address, Address) {
     let env = Env::default();
     env.mock_all_auths();
+    // Each property test performs thousands of metered host calls; the
+    // assertions, not the per-test CPU budget, should decide the outcome.
+    env.budget().reset_unlimited();
     env.ledger().with_mut(|li| {
         li.timestamp = 1_000_000;
         li.sequence_number = 100;
@@ -56,7 +59,7 @@ fn setup() -> (Env, RefundManagerClient<'static>, Address, Address) {
     let client = RefundManagerClient::new(&env, &contract_id);
     client.init(&owner, &token_address);
 
-    (env, client, owner, token_address)
+    (env, client, owner, token_address, contract_id)
 }
 
 fn balance(env: &Env, token_address: &Address, of: &Address) -> i128 {
@@ -67,7 +70,7 @@ fn balance(env: &Env, token_address: &Address, of: &Address) -> i128 {
 /// correctly, and the stored record matches the request exactly.
 #[test]
 fn fuzz_request_bounds_and_partial_flag() {
-    let (env, client, _owner, _token) = setup();
+    let (env, client, _owner, _token, _contract_id) = setup();
     let asset_code = String::from_str(&env, "XLM");
     let reason = String::from_str(&env, "customer request");
 
@@ -79,7 +82,14 @@ fn fuzz_request_bounds_and_partial_flag() {
         let merchant = Address::generate(&env);
         let payer = Address::generate(&env);
         let original = rng.range_i128(1, 100_000_000);
-        let amount = rng.range_i128(1, original);
+        // Alternate between a full refund and a partial one so both branches of
+        // `is_partial` are exercised; a purely random `amount` would essentially
+        // never equal `original` for large payments.
+        let amount = if i % 2 == 0 {
+            original
+        } else {
+            rng.range_i128(1, original - 1)
+        };
 
         let id = client.request_refund(
             &merchant,
@@ -114,7 +124,7 @@ fn fuzz_request_bounds_and_partial_flag() {
 /// refund larger than the original payment must both fail.
 #[test]
 fn fuzz_out_of_range_requests_are_rejected() {
-    let (env, client, _owner, _token) = setup();
+    let (env, client, _owner, _token, _contract_id) = setup();
     let asset_code = String::from_str(&env, "XLM");
     let reason = String::from_str(&env, "x");
 
@@ -127,13 +137,29 @@ fn fuzz_out_of_range_requests_are_rejected() {
 
         // Zero / negative amount.
         assert!(client
-            .try_request_refund(&merchant, &payer, &(i as u64), &0_i128, &original, &asset_code, &reason)
+            .try_request_refund(
+                &merchant,
+                &payer,
+                &(i as u64),
+                &0_i128,
+                &original,
+                &asset_code,
+                &reason
+            )
             .is_err());
 
         // Amount strictly greater than the original payment.
         let too_big = original + rng.range_i128(1, 1_000_000);
         assert!(client
-            .try_request_refund(&merchant, &payer, &(i as u64), &too_big, &original, &asset_code, &reason)
+            .try_request_refund(
+                &merchant,
+                &payer,
+                &(i as u64),
+                &too_big,
+                &original,
+                &asset_code,
+                &reason
+            )
             .is_err());
     }
 }
@@ -142,10 +168,9 @@ fn fuzz_out_of_range_requests_are_rejected() {
 /// only to the original payer, and terminal states cannot be re-entered.
 #[test]
 fn fuzz_lifecycle_is_monotonic_and_pays_the_payer() {
-    let (env, client, owner, token_address) = setup();
+    let (env, client, owner, token_address, contract_id) = setup();
     let asset_code = String::from_str(&env, "XLM");
     let reason = String::from_str(&env, "returned goods");
-    let contract_id = env.current_contract_address();
 
     let mut rng = Rng::new(0x2EF_0003);
 

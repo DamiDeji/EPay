@@ -84,6 +84,10 @@ impl PaymentRouter {
         if env.storage().instance().has(&OWNER_KEY) {
             panic!("Already initialized");
         }
+        // The owner must authorise their own installation. Without this anyone
+        // could front-run the deployer's `init` and become the owner of a router
+        // that is about to be wired into the rest of the deployment.
+        owner.require_auth();
         env.storage().instance().set(&OWNER_KEY, &owner);
         env.storage().instance().set(&CONFIG_KEY, &config_manager);
         env.storage().instance().set(&FEE_KEY, &fee_manager);
@@ -92,9 +96,23 @@ impl PaymentRouter {
         env.storage().instance().set(&NEXT_ID_KEY, &1u64);
     }
 
-    /// Create a new payment record. The payer must transfer tokens to this contract's address
-    /// (atomically in the same transaction or via a prior approval + transfer_from call)
-    /// before the payment can be completed.
+    /// Create a new payment and move the payer's tokens into this contract.
+    ///
+    /// The payer authorises the call and `amount` is transferred from the payer to
+    /// the router in the same invocation, so a stored payment is always backed by
+    /// funds the contract actually holds:
+    ///
+    /// ```text
+    /// contract balance  >=  sum(amount for every non-terminal payment)
+    ///                    +  sum(fee  for every completed payment)
+    /// ```
+    ///
+    /// That invariant is what makes `complete_payment` safe. Previously
+    /// `create_payment` was unauthenticated and moved no tokens, and
+    /// `confirm_payment` accepted the caller's word for the payment having been
+    /// funded — so any address could create a payment naming itself as merchant,
+    /// confirm it, and complete it, paying itself out of the fees the router holds
+    /// for *other* merchants' completed payments.
     #[allow(clippy::too_many_arguments)]
     pub fn create_payment(
         env: Env,
@@ -106,6 +124,19 @@ impl PaymentRouter {
         memo: Option<String>,
         expires_in: Option<u64>,
     ) -> u64 {
+        // Validate before touching storage so a rejected call does not consume a
+        // payment id.
+        if amount < MIN_PAYMENT_AMOUNT {
+            panic!("Amount below minimum");
+        }
+
+        // Authenticate and collect the funds up front (checks-effects-interactions:
+        // the external call happens before any state is written).
+        payer.require_auth();
+        let contract_address = env.current_contract_address();
+        let token_client = get_token_client(&env);
+        token_client.transfer(&payer, &contract_address, &amount);
+
         let payment_id: u64 = env.storage().instance().get(&NEXT_ID_KEY).unwrap_or(1);
         env.storage()
             .instance()
@@ -114,10 +145,6 @@ impl PaymentRouter {
         let now = env.ledger().timestamp();
         let expiry = expires_in.unwrap_or(DEFAULT_EXPIRY_SECONDS);
         let fee: i128 = (amount * DEFAULT_FEE_BPS) / 10000;
-
-        if amount < MIN_PAYMENT_AMOUNT {
-            panic!("Amount below minimum");
-        }
 
         let payment = PaymentData {
             payment_id,
@@ -175,8 +202,8 @@ impl PaymentRouter {
     /// The fee is retained in the contract for later treasury settlement.
     /// Only the stored merchant or the owner can complete.
     ///
-    /// The contract must already hold the full payment amount (transferred by the payer
-    /// in the same or a prior transaction).
+    /// The full amount is already held by the contract, because `create_payment`
+    /// collected it from the payer under the payer's authorisation.
     pub fn complete_payment(env: Env, caller: Address, payment_id: u64) {
         caller.require_auth();
 
@@ -241,8 +268,21 @@ impl PaymentRouter {
             .publish((Symbol::new(&env, "payment_failed"),), (payment_id,));
     }
 
-    /// Refund a completed payment. Transfers the full original amount back to the payer.
+    /// Refund the balance this router still holds for a completed payment.
     /// Only the owner (admin) can initiate refunds.
+    ///
+    /// **What is refunded, and why it is not the full amount.** Once a payment is
+    /// completed, `complete_payment` has already paid `amount - fee` out to the
+    /// recipient and retained `fee`. A `Completed` payment is therefore worth
+    /// exactly `fee` to this contract, and that is what is returned to the payer
+    /// here. Refunding `amount` — as this function used to, requiring a second
+    /// top-up of the contract in the process — drew the difference from fees the
+    /// router holds for *other* merchants' payments, which would later make their
+    /// own `complete_payment` calls fail for lack of balance.
+    ///
+    /// A full refund of a settled payment is a new transfer from the merchant and
+    /// belongs to `RefundManager`, which has the request/approve/complete flow and
+    /// the accounting for it.
     pub fn refund_payment(env: Env, admin: Address, payment_id: u64) {
         admin.require_auth();
         Self::require_owner(&env, &admin);
@@ -257,18 +297,26 @@ impl PaymentRouter {
             panic!("Can only refund completed");
         }
 
+        // The router's remaining liability for a completed payment is the fee it
+        // kept back; the net amount left the contract when the payment completed.
+        let refundable = payment.fee;
+
         // CHECKS-EFFECTS-INTERACTIONS: Update state BEFORE external transfer
         payment.status = PaymentStatus::Refunded;
         env.storage().persistent().set(&payment_id, &payment);
 
         // Emit event before external call
-        env.events()
-            .publish((Symbol::new(&env, "payment_refunded"),), (payment_id,));
+        env.events().publish(
+            (Symbol::new(&env, "payment_refunded"),),
+            (payment_id, refundable),
+        );
 
-        // INTERACTION: Transfer full amount back to payer (external call last)
+        // INTERACTION: Transfer the retained balance back to the payer (external call last)
         let contract_address = env.current_contract_address();
-        let token_client = get_token_client(&env);
-        token_client.transfer(&contract_address, &payment.payer, &payment.amount);
+        if refundable > 0 {
+            let token_client = get_token_client(&env);
+            token_client.transfer(&contract_address, &payment.payer, &refundable);
+        }
     }
 
     /// Retrieve a payment by ID.

@@ -1,8 +1,11 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { MerchantService } from './merchant.service';
-import { PrismaService } from '../database/prisma.service';
 import { ConflictException, NotFoundException, ForbiddenException } from '@nestjs/common';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
+
 import { createMockPrismaService, mockDate } from '../../test/mocks/prisma.mock';
+import { PrismaService } from '../database/prisma.service';
+
+import { MerchantService } from './merchant.service';
 
 describe('MerchantService', () => {
   let service: MerchantService;
@@ -128,9 +131,9 @@ describe('MerchantService', () => {
       prisma.merchant.findUnique.mockResolvedValue({ ...mockMerchant, userId: 'other_user' });
       prisma.merchant.update.mockResolvedValue(mockMerchant);
 
-      await expect(
-        service.update('merch_1', 'user_1', { businessName: 'New' }),
-      ).rejects.toThrow(ForbiddenException);
+      await expect(service.update('merch_1', 'user_1', { businessName: 'New' })).rejects.toThrow(
+        ForbiddenException,
+      );
     });
   });
 

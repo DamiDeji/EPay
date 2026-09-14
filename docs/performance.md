@@ -12,17 +12,17 @@ so a regression is detected before a customer reports it.
 
 ## SLOs
 
-| Surface | SLI | Target | Window | Alert |
-| --- | --- | --- | --- | --- |
-| **API availability** | non-5xx / total requests | **≥ 99.9%** | 30d | `EpayApiHigh5xxRate` (> 2% for 5m) |
-| **API latency (read)** | server-side p95 | **< 300 ms** | 30d | — |
-| **API latency (read)** | server-side p99 | **< 1 s** | 30d | `EpayApiP99LatencyHigh` (> 2s for 10m) |
-| **Payment write** | server-side p95 | **< 500 ms** | 30d | — |
-| **DB pool wait** | p99 wait to acquire a connection | **< 500 ms** | 30d | `EpayDbPoolWaitHigh` (> 500ms for 10m) |
-| **Query latency** | p99 per query | **< 1 s** | 30d | `EpaySlowQueryP99High` (> 1s for 10m) |
-| **Indexer lag** | ledger head − checkpoint | **< 30 ledgers** | 7d | `EpayQueueLagHigh` (waiting jobs > 1000 for 10m) |
-| **Webhook delivery** | delivered within the schedule | **≥ 99%** | 7d | — (dead letters surfaced in the DB) |
-| **Readiness** | replicas passing `/health/ready` | **100%** | 1h | `EpayReadinessProbeFailing` |
+| Surface                | SLI                              | Target           | Window | Alert                                            |
+| ---------------------- | -------------------------------- | ---------------- | ------ | ------------------------------------------------ |
+| **API availability**   | non-5xx / total requests         | **≥ 99.9%**      | 30d    | `EpayApiHigh5xxRate` (> 2% for 5m)               |
+| **API latency (read)** | server-side p95                  | **< 300 ms**     | 30d    | —                                                |
+| **API latency (read)** | server-side p99                  | **< 1 s**        | 30d    | `EpayApiP99LatencyHigh` (> 2s for 10m)           |
+| **Payment write**      | server-side p95                  | **< 500 ms**     | 30d    | —                                                |
+| **DB pool wait**       | p99 wait to acquire a connection | **< 500 ms**     | 30d    | `EpayDbPoolWaitHigh` (> 500ms for 10m)           |
+| **Query latency**      | p99 per query                    | **< 1 s**        | 30d    | `EpaySlowQueryP99High` (> 1s for 10m)            |
+| **Indexer lag**        | ledger head − checkpoint         | **< 30 ledgers** | 7d     | `EpayQueueLagHigh` (waiting jobs > 1000 for 10m) |
+| **Webhook delivery**   | delivered within the schedule    | **≥ 99%**        | 7d     | — (dead letters surfaced in the DB)              |
+| **Readiness**          | replicas passing `/health/ready` | **100%**         | 1h     | `EpayReadinessProbeFailing`                      |
 
 Targets are deliberately stated as **server-side** latency. Client-side numbers
 include the customer's network and wallet, which EPay does not control; alerting
@@ -33,11 +33,11 @@ on them produces noise, not signal.
 With a 99.9% availability target over 30 days there are **~43 minutes** of allowed
 downtime (0.1% of 43,200 minutes) and a matching 0.1% error budget.
 
-| Budget consumed | Policy |
-| --- | --- |
-| < 50% | Ship normally. |
-| 50–100% | No risky changes without an explicit maintainer sign-off; prioritise reliability work. |
-| 100% | **Feature freeze.** The next deploy is a reliability fix. |
+| Budget consumed | Policy                                                                                 |
+| --------------- | -------------------------------------------------------------------------------------- |
+| < 50%           | Ship normally.                                                                         |
+| 50–100%         | No risky changes without an explicit maintainer sign-off; prioritise reliability work. |
+| 100%            | **Feature freeze.** The next deploy is a reliability fix.                              |
 
 The budget is not a target to spend — it is a tripwire. If a month passes with 0%
 consumed, the SLO is probably looser than the product needs, and we tighten it.
@@ -49,13 +49,13 @@ runbook. The default profile ramps virtual users, holds a steady state, then ram
 down, and asserts the thresholds below — the run fails if an SLO is breached, so
 it can gate a release rather than just produce a graph.
 
-| Metric | Threshold (k6) |
-| --- | --- |
-| `http_req_failed` | < 5% |
-| `http_req_duration` p90 | < 300 ms |
-| `http_req_duration` p95 | < 500 ms |
-| `http_req_duration` p99 | < 1000 ms |
-| payment success rate | > 95% |
+| Metric                  | Threshold (k6) |
+| ----------------------- | -------------- |
+| `http_req_failed`       | < 5%           |
+| `http_req_duration` p90 | < 300 ms       |
+| `http_req_duration` p95 | < 500 ms       |
+| `http_req_duration` p99 | < 1000 ms      |
+| payment success rate    | > 95%          |
 
 ### Running a load test
 
@@ -77,23 +77,23 @@ graph. Use staging, or a local stack seeded with realistic data.
 ### What to watch during a run
 
 Open the Grafana **EPay — Platform Health** dashboard alongside k6. The k6
-summary tells you *that* a threshold failed; the dashboard tells you *why*:
+summary tells you _that_ a threshold failed; the dashboard tells you _why_:
 
-| Symptom in k6 | Likely cause | Look at |
-| --- | --- | --- |
-| p99 up, throughput flat | a slow query or missing index | `EpaySlowQueryP99High`, query breakdown |
-| p99 up with rising pool wait | connection pool too small, or a query holding a connection | `EpayDbPoolWaitHigh` |
-| errors up, latency flat | 429s from throttling, or a downstream failure | status-code breakdown |
-| latency flat, errors at the tail | one bad replica | readiness / replica count |
+| Symptom in k6                    | Likely cause                                               | Look at                                 |
+| -------------------------------- | ---------------------------------------------------------- | --------------------------------------- |
+| p99 up, throughput flat          | a slow query or missing index                              | `EpaySlowQueryP99High`, query breakdown |
+| p99 up with rising pool wait     | connection pool too small, or a query holding a connection | `EpayDbPoolWaitHigh`                    |
+| errors up, latency flat          | 429s from throttling, or a downstream failure              | status-code breakdown                   |
+| latency flat, errors at the tail | one bad replica                                            | readiness / replica count               |
 
 ## Capacity
 
-| Resource | Current | Scaling signal |
-| --- | --- | --- |
-| API replicas | 2–10 (HPA, 70% CPU) | CPU; 10 is a deliberate ceiling because the connection pool is per-replica |
-| Indexer replicas | 1 (singleton) | must stay 1 — only one process may hold the checkpoint lease |
-| DB connections | `replicas × pool size` | watch `EpayDbPoolWaitHigh` before raising either |
-| BullMQ workers | 5 concurrent per indexer | queue depth, not CPU |
+| Resource         | Current                  | Scaling signal                                                             |
+| ---------------- | ------------------------ | -------------------------------------------------------------------------- |
+| API replicas     | 2–10 (HPA, 70% CPU)      | CPU; 10 is a deliberate ceiling because the connection pool is per-replica |
+| Indexer replicas | 1 (singleton)            | must stay 1 — only one process may hold the checkpoint lease               |
+| DB connections   | `replicas × pool size`   | watch `EpayDbPoolWaitHigh` before raising either                           |
+| BullMQ workers   | 5 concurrent per indexer | queue depth, not CPU                                                       |
 
 Raising `maxReplicas` without raising the database's `max_connections` converts a
 throughput problem into a pool-exhaustion outage. The two must move together.

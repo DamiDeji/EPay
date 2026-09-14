@@ -15,13 +15,13 @@ or settlement. **Treat the body as untrusted until the signature verifies**, and
 
 ## Headers
 
-| Header | Example | Meaning |
-| --- | --- | --- |
-| `X-EPay-Signature` | `t=1700000000,v1=5257a869…` | Unix timestamp and HMAC signature |
-| `X-EPay-Event-Id` | `evt_01HA…` | Stable id for this event; your dedupe key |
-| `X-EPay-Event-Type` | `payment.completed` | The event name |
-| `X-Request-Id` | `6f1c…` | EPay's request id, for support |
-| `User-Agent` | `EPay-Webhooks/1.0` | Constant |
+| Header              | Example                     | Meaning                                   |
+| ------------------- | --------------------------- | ----------------------------------------- |
+| `X-EPay-Signature`  | `t=1700000000,v1=5257a869…` | Unix timestamp and HMAC signature         |
+| `X-EPay-Event-Id`   | `evt_01HA…`                 | Stable id for this event; your dedupe key |
+| `X-EPay-Event-Type` | `payment.completed`         | The event name                            |
+| `X-Request-Id`      | `6f1c…`                     | EPay's request id, for support            |
+| `User-Agent`        | `EPay-Webhooks/1.0`         | Constant                                  |
 
 ## Signing scheme
 
@@ -147,12 +147,12 @@ func verify(rawBody, header, secret string) bool {
 
 ## Responding
 
-| Response | EPay's behaviour |
-| --- | --- |
-| Any `2xx` | Delivered. The delivery is marked succeeded and never retried. |
+| Response               | EPay's behaviour                                                                         |
+| ---------------------- | ---------------------------------------------------------------------------------------- |
+| Any `2xx`              | Delivered. The delivery is marked succeeded and never retried.                           |
 | `4xx` (other than 429) | Treated as a failure and retried — a bug on your side should not silently drop an event. |
-| `429`, or any `5xx` | Retried on the backoff schedule. |
-| Timeout (> 10s) | Treated as a failure and retried. |
+| `429`, or any `5xx`    | Retried on the backoff schedule.                                                         |
+| Timeout (> 10s)        | Treated as a failure and retried.                                                        |
 
 **Respond fast.** Do the minimum in the request: verify, persist to a queue or
 table, return `200`. Process asynchronously. A slow handler burns your retry
@@ -165,15 +165,15 @@ retry will not come.
 
 Failures are retried with exponential backoff:
 
-| Attempt | Delay before this attempt |
-| --- | --- |
-| 1 (initial) | immediate |
-| 2 | 30 s |
-| 3 | 2 min |
-| 4 | 10 min |
-| 5 | 30 min |
-| 6 | 2 h |
-| 7 | 6 h |
+| Attempt     | Delay before this attempt |
+| ----------- | ------------------------- |
+| 1 (initial) | immediate                 |
+| 2           | 30 s                      |
+| 3           | 2 min                     |
+| 4           | 10 min                    |
+| 5           | 30 min                    |
+| 6           | 2 h                       |
+| 7           | 6 h                       |
 
 After the 7th attempt fails, the delivery is **dead-lettered**: it stays in EPay's
 `webhook_deliveries` table with `deadLetteredAt` set and is available from
@@ -216,22 +216,22 @@ still only knows the old secret will see failures — accept both before switchi
 
 ## Event types
 
-| Event | Fired when |
-| --- | --- |
-| `payment.created` | A payment request is recorded |
-| `payment.completed` | Funds have settled to the merchant |
-| `payment.failed` | The payment failed or expired |
-| `payment.refunded` | A payment was refunded |
-| `invoice.issued` | An invoice was sent |
-| `invoice.paid` | An invoice was paid |
-| `invoice.overdue` | An invoice passed its due date |
-| `escrow.created` | An escrow was opened |
-| `escrow.funded` | The customer funded the escrow |
-| `escrow.completed` | Funds were released to the merchant |
-| `escrow.disputed` | A dispute was raised |
-| `refund.completed` | A refund reached the payer |
-| `subscription.renewed` | A subscription period was billed |
-| `settlement.completed` | A settlement batch was paid out |
+| Event                  | Fired when                          |
+| ---------------------- | ----------------------------------- |
+| `payment.created`      | A payment request is recorded       |
+| `payment.completed`    | Funds have settled to the merchant  |
+| `payment.failed`       | The payment failed or expired       |
+| `payment.refunded`     | A payment was refunded              |
+| `invoice.issued`       | An invoice was sent                 |
+| `invoice.paid`         | An invoice was paid                 |
+| `invoice.overdue`      | An invoice passed its due date      |
+| `escrow.created`       | An escrow was opened                |
+| `escrow.funded`        | The customer funded the escrow      |
+| `escrow.completed`     | Funds were released to the merchant |
+| `escrow.disputed`      | A dispute was raised                |
+| `refund.completed`     | A refund reached the payer          |
+| `subscription.renewed` | A subscription period was billed    |
+| `settlement.completed` | A settlement batch was paid out     |
 
 The complete on-chain event catalogue that drives these (with exact payloads) is
 in [`packages/contracts/EVENTS.md`](../packages/contracts/EVENTS.md).

@@ -11,7 +11,10 @@ const log = createChildLogger('checkpoint');
 export class CheckpointManager {
   private currentBlock: number;
   private lastFinalizedBlock: number;
-  private db: { getLastIndexedBlock: () => Promise<number>; setLastIndexedBlock: (block: number) => Promise<void> };
+  private db: {
+    getLastIndexedBlock: () => Promise<number>;
+    setLastIndexedBlock: (block: number) => Promise<void>;
+  };
 
   constructor(
     db: {

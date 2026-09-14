@@ -12,13 +12,7 @@ import {
   HttpStatus,
   NotFoundException,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -29,7 +23,6 @@ import { CreateMerchantDto } from './dto/create-merchant.dto';
 import { UpdateMerchantDto } from './dto/update-merchant.dto';
 import { VerifyMerchantDto } from './dto/verify-merchant.dto';
 import { MerchantService } from './merchant.service';
-
 
 @ApiTags('Merchants')
 @Controller('merchants')
@@ -42,10 +35,7 @@ export class MerchantController {
   @ApiOperation({ summary: 'Register a new merchant' })
   @ApiResponse({ status: 201, description: 'Merchant registered' })
   @ApiResponse({ status: 409, description: 'User already has a merchant account' })
-  async register(
-    @CurrentUser('sub') userId: string,
-    @Body() dto: CreateMerchantDto,
-  ) {
+  async register(@CurrentUser('sub') userId: string, @Body() dto: CreateMerchantDto) {
     return this.merchantService.register(userId, dto);
   }
 
@@ -56,13 +46,17 @@ export class MerchantController {
   @ApiOperation({ summary: 'List all merchants (admin)' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'pageSize', required: false, type: Number })
-  @ApiQuery({ name: 'status', required: false, enum: ['PENDING', 'ACTIVE', 'SUSPENDED', 'REJECTED', 'INACTIVE'] })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: ['PENDING', 'ACTIVE', 'SUSPENDED', 'REJECTED', 'INACTIVE'],
+  })
   async list(
     @Query('page') page?: number,
     @Query('pageSize') pageSize?: number,
     @Query('status') status?: string,
   ) {
-    return this.merchantService.list({ page, pageSize, status } as any);
+    return this.merchantService.list({ page, pageSize, status });
   }
 
   @Get('me')
@@ -99,10 +93,7 @@ export class MerchantController {
   @Roles('ADMIN', 'VERIFIER')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Verify a merchant (admin/verifier)' })
-  async verify(
-    @Param('id') id: string,
-    @Body() dto: VerifyMerchantDto,
-  ) {
+  async verify(@Param('id') id: string, @Body() dto: VerifyMerchantDto) {
     return this.merchantService.verify(id, dto);
   }
 

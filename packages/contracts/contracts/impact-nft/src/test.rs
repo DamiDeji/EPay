@@ -3,7 +3,12 @@
 //! Tests cover: badge definitions, badge issuance, badge queries,
 //! soulbound enforcement, revocation, and tier management.
 
-use soroban_sdk::{testutils::Address as _, Env, Address, String};
+// `Ledger` supplies `env.ledger().with_mut(...)`; without it the suite does not
+// compile (E0599).
+use soroban_sdk::{
+    testutils::{Address as _, Ledger},
+    Address, Env, String,
+};
 
 use super::*;
 
@@ -37,12 +42,18 @@ fn test_initialize() {
 
     // Check default badge definitions were created
     let verified = client.get_badge_definition(&1).unwrap();
-    assert_eq!(verified.badge_type, String::from_str(&env, BADGE_VERIFIED_MERCHANT));
+    assert_eq!(
+        verified.badge_type,
+        String::from_str(&env, BADGE_VERIFIED_MERCHANT)
+    );
     assert_eq!(verified.name, String::from_str(&env, "Verified Merchant"));
     assert_eq!(verified.tier, BadgeTier::Silver);
 
     let top_rated = client.get_badge_definition(&2).unwrap();
-    assert_eq!(top_rated.badge_type, String::from_str(&env, BADGE_TOP_RATED));
+    assert_eq!(
+        top_rated.badge_type,
+        String::from_str(&env, BADGE_TOP_RATED)
+    );
     assert_eq!(top_rated.tier, BadgeTier::Gold);
 }
 
@@ -69,19 +80,24 @@ fn test_register_badge_definition() {
 
     client.register_badge_definition(
         &owner,
-        &3u64,
-        &String::from_str(&env, BADGE_100_PAYMENTS),
-        &String::from_str(&env, "100 Payments Processed"),
-        &String::from_str(&env, "Merchant has processed 100+ payments"),
-        &BadgeTier::Bronze,
-        &None,
-        &String::from_str(&env, "Process 100 payments on the platform"),
-        &10000u64,
-        &true,
+        &BadgeDefinitionInput {
+            badge_id: 3u64,
+            badge_type: String::from_str(&env, BADGE_100_PAYMENTS),
+            name: String::from_str(&env, "100 Payments Processed"),
+            description: String::from_str(&env, "Merchant has processed 100+ payments"),
+            tier: BadgeTier::Bronze,
+            icon_url: None,
+            criteria: String::from_str(&env, "Process 100 payments on the platform"),
+            max_supply: 10000u64,
+            is_active: true,
+        },
     );
 
     let definition = client.get_badge_definition(&3).unwrap();
-    assert_eq!(definition.badge_type, String::from_str(&env, BADGE_100_PAYMENTS));
+    assert_eq!(
+        definition.badge_type,
+        String::from_str(&env, BADGE_100_PAYMENTS)
+    );
     assert_eq!(definition.tier, BadgeTier::Bronze);
     assert_eq!(definition.max_supply, 10000);
 }
@@ -100,12 +116,15 @@ fn test_update_badge_definition() {
     );
 
     let definition = client.get_badge_definition(&1).unwrap();
-    assert_eq!(definition.name, String::from_str(&env, "Verified Merchant Plus"));
+    assert_eq!(
+        definition.name,
+        String::from_str(&env, "Verified Merchant Plus")
+    );
 }
 
 #[test]
 fn test_get_nonexistent_badge_definition() {
-    let (env, client, _owner) = setup_test();
+    let (_env, client, _owner) = setup_test();
     assert_eq!(client.get_badge_definition(&9999), None);
 }
 
@@ -119,11 +138,8 @@ fn test_issue_badge() {
 
     let recipient = Address::generate(&env);
     let badge_id = client.issue_badge(
-        &owner,
-        &recipient,
-        &1u64, // VERIFIED_MERCHANT
-        &None,
-        &None,
+        &owner, &recipient, &1u64, // VERIFIED_MERCHANT
+        &None, &None,
     );
 
     assert_eq!(badge_id, 3); // First issued badge gets ID 3 (after 2 definitions)
@@ -155,17 +171,19 @@ fn test_issue_badge_with_expiry() {
 }
 
 #[test]
+#[should_panic(expected = "Badge definition is inactive")]
 fn test_cannot_issue_inactive_badge() {
     let (env, client, owner) = setup_test();
 
     // Deactivate badge 1
-    client.update_badge_definition(&owner, 1, &None, &None, &None, &Some(false));
+    client.update_badge_definition(&owner, &1u64, &None, &None, &None, &Some(false));
 
     let recipient = Address::generate(&env);
     client.issue_badge(&owner, &recipient, &1u64, &None, &None);
 }
 
 #[test]
+#[should_panic(expected = "Owner already has this badge")]
 fn test_cannot_issue_to_self_twice() {
     let (env, client, owner) = setup_test();
 
@@ -177,6 +195,7 @@ fn test_cannot_issue_to_self_twice() {
 }
 
 #[test]
+#[should_panic(expected = "Only owner can perform this action")]
 fn test_cannot_issue_without_permission() {
     let (env, client, _owner) = setup_test();
 
@@ -206,10 +225,10 @@ fn test_get_badge_balance() {
     let (env, client, owner) = setup_test();
 
     let recipient = Address::generate(&env);
-    assert_eq!(client.get_badge_balance(&recipient, 1), 0);
+    assert_eq!(client.get_badge_balance(&recipient, &1), 0);
 
     client.issue_badge(&owner, &recipient, &1u64, &None, &None);
-    assert_eq!(client.get_badge_balance(&recipient, 1), 1);
+    assert_eq!(client.get_badge_balance(&recipient, &1), 1);
 }
 
 #[test]
@@ -217,11 +236,11 @@ fn test_has_badge() {
     let (env, client, owner) = setup_test();
 
     let recipient = Address::generate(&env);
-    assert!(!client.has_badge(&recipient, String::from_str(&env, BADGE_VERIFIED_MERCHANT)));
+    assert!(!client.has_badge(&recipient, &String::from_str(&env, BADGE_VERIFIED_MERCHANT)));
 
     client.issue_badge(&owner, &recipient, &1u64, &None, &None);
-    assert!(client.has_badge(&recipient, String::from_str(&env, BADGE_VERIFIED_MERCHANT)));
-    assert!(!client.has_badge(&recipient, String::from_str(&env, BADGE_TOP_RATED)));
+    assert!(client.has_badge(&recipient, &String::from_str(&env, BADGE_VERIFIED_MERCHANT)));
+    assert!(!client.has_badge(&recipient, &String::from_str(&env, BADGE_TOP_RATED)));
 }
 
 #[test]
@@ -234,13 +253,13 @@ fn test_get_held_badge_types() {
 
     let types = client.get_held_badge_types(&recipient);
     assert_eq!(types.len(), 2);
-    assert!(types.contains(&String::from_str(&env, BADGE_VERIFIED_MERCHANT)));
-    assert!(types.contains(&String::from_str(&env, BADGE_TOP_RATED)));
+    assert!(types.contains(String::from_str(&env, BADGE_VERIFIED_MERCHANT)));
+    assert!(types.contains(String::from_str(&env, BADGE_TOP_RATED)));
 }
 
 #[test]
 fn test_get_nonexistent_badge() {
-    let (env, client, _owner) = setup_test();
+    let (_env, client, _owner) = setup_test();
     assert_eq!(client.get_issued_badge(&9999), None);
 }
 
@@ -255,15 +274,16 @@ fn test_revoke_badge() {
     let recipient = Address::generate(&env);
     let badge_id = client.issue_badge(&owner, &recipient, &1u64, &None, &None);
 
-    assert!(client.has_badge(&recipient, String::from_str(&env, BADGE_VERIFIED_MERCHANT)));
+    assert!(client.has_badge(&recipient, &String::from_str(&env, BADGE_VERIFIED_MERCHANT)));
 
     client.revoke_badge(&owner, &badge_id);
 
-    assert!(!client.has_badge(&recipient, String::from_str(&env, BADGE_VERIFIED_MERCHANT)));
-    assert_eq!(client.get_badge_balance(&recipient, 1), 0);
+    assert!(!client.has_badge(&recipient, &String::from_str(&env, BADGE_VERIFIED_MERCHANT)));
+    assert_eq!(client.get_badge_balance(&recipient, &1), 0);
 }
 
 #[test]
+#[should_panic(expected = "Only owner can perform this action")]
 fn test_cannot_revoke_without_permission() {
     let (env, client, _owner) = setup_test();
 
@@ -282,19 +302,19 @@ fn test_cannot_revoke_without_permission() {
 fn test_issue_to_multiple_recipients() {
     let (env, client, owner) = setup_test();
 
-    for i in 0..10 {
+    for _i in 0..10 {
         let recipient = Address::generate(&env);
         client.issue_badge(&owner, &recipient, &1u64, &None, &None);
     }
 
     // Each recipient should have exactly 1 badge
-    for i in 0..10 {
-        let recipient = Address::generate(&env);
+    for _i in 0..10 {
+        let _recipient = Address::generate(&env);
         // Regenerate to get the ones we issued
     }
 
     // Just verify we can issue to many
-    assert!(client.get_badges(Address::generate(&env)).len() >= 0);
+    assert_eq!(client.get_badges(&Address::generate(&env)).len(), 0);
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -312,5 +332,5 @@ fn test_badge_supply_limit() {
 
     // Issue one - should work
     client.issue_badge(&owner, &recipient, &1u64, &None, &None);
-    assert_eq!(client.get_badge_balance(&recipient, 1), 1);
+    assert_eq!(client.get_badge_balance(&recipient, &1), 1);
 }

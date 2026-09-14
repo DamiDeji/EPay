@@ -29,17 +29,38 @@ export const CONTRACTS: Record<string, ContractInfo> = {
   PaymentRouter: {
     name: 'PaymentRouter',
     contractId: process.env.PAYMENT_ROUTER_CONTRACT_ID ?? '',
-    events: ['payment_created', 'payment_confirmed', 'payment_completed', 'payment_failed', 'payment_refunded'],
+    events: [
+      'payment_created',
+      'payment_confirmed',
+      'payment_completed',
+      'payment_failed',
+      'payment_refunded',
+    ],
   },
   InvoiceManager: {
     name: 'InvoiceManager',
     contractId: process.env.INVOICE_MANAGER_CONTRACT_ID ?? '',
-    events: ['invoice_created', 'invoice_issued', 'invoice_paid', 'invoice_cancelled', 'invoice_refunded'],
+    events: [
+      'invoice_created',
+      'invoice_issued',
+      'invoice_paid',
+      'invoice_cancelled',
+      'invoice_refunded',
+    ],
   },
   EscrowManager: {
     name: 'EscrowManager',
     contractId: process.env.ESCROW_MANAGER_CONTRACT_ID ?? '',
-    events: ['escrow_created', 'escrow_funded', 'milestone_done', 'milestone_rel', 'escrow_completed', 'escrow_disputed', 'escrow_resolved', 'escrow_cancelled'],
+    events: [
+      'escrow_created',
+      'escrow_funded',
+      'milestone_done',
+      'milestone_rel',
+      'escrow_completed',
+      'escrow_disputed',
+      'escrow_resolved',
+      'escrow_cancelled',
+    ],
   },
   RefundManager: {
     name: 'RefundManager',

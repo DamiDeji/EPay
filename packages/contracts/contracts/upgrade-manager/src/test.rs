@@ -3,7 +3,12 @@
 //! Tests cover: two-step admin transfer, timelocked upgrades,
 //! upgrade cancellation, access control, and edge cases.
 
-use soroban_sdk::{testutils::Address as _, Env, Address, String};
+// `Ledger` supplies `env.ledger().with_mut(...)`; without it the suite does not
+// compile (E0599).
+use soroban_sdk::{
+    testutils::{Address as _, Ledger},
+    Address, Bytes, Env, String,
+};
 
 use super::*;
 
@@ -31,7 +36,7 @@ fn setup_test() -> (Env, UpgradeManagerClient<'static>, Address) {
 
 #[test]
 fn test_initialize() {
-    let (env, client, owner) = setup_test();
+    let (_env, client, owner) = setup_test();
 
     assert_eq!(client.get_admin(), owner);
     assert!(!client.has_pending_admin_transfer());
@@ -98,7 +103,7 @@ fn test_non_proposed_admin_cannot_accept() {
 #[test]
 #[should_panic(expected = "No admin transfer pending")]
 fn test_accept_without_transfer() {
-    let (env, client, owner) = setup_test();
+    let (env, client, _owner) = setup_test();
     let random = Address::generate(&env);
     client.accept_admin(&random);
 }
@@ -126,11 +131,13 @@ fn test_non_admin_cannot_transfer() {
 }
 
 #[test]
-#[should_panic(expected = "Cannot transfer to zero address")]
-fn test_cannot_transfer_to_zero() {
-    let (env, client, owner) = setup_test();
+#[should_panic(expected = "Cannot transfer admin to the current admin")]
+fn test_cannot_transfer_to_current_admin() {
+    let (_env, client, owner) = setup_test();
 
-    client.transfer_admin(&owner, &Address::zero());
+    // Handing the admin role to the current admin would make the two-step
+    // handover a no-op and silently clear any genuine pending transfer.
+    client.transfer_admin(&owner, &owner);
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -141,7 +148,7 @@ fn test_cannot_transfer_to_zero() {
 fn test_propose_upgrade() {
     let (env, client, owner) = setup_test();
 
-    let wasm_hash = vec![1u8; 32]; // 32-byte SHA-256 hash
+    let wasm_hash = Bytes::from_slice(&env, &[1u8; 32]); // 32-byte SHA-256 hash
     let description = String::from_str(&env, "Security patch");
 
     let proposal_id = client.propose_upgrade(&owner, &wasm_hash, &description);
@@ -154,10 +161,11 @@ fn test_propose_upgrade() {
 }
 
 #[test]
+#[should_panic(expected = "WASM hash must be 32 bytes (SHA-256)")]
 fn test_propose_upgrade_invalid_hash() {
     let (env, client, owner) = setup_test();
 
-    let short_hash = vec![1u8; 16]; // Too short
+    let short_hash = Bytes::from_slice(&env, &[1u8; 16]); // Too short
     client.propose_upgrade(&owner, &short_hash, &String::from_str(&env, "Bad hash"));
 }
 
@@ -165,8 +173,9 @@ fn test_propose_upgrade_invalid_hash() {
 fn test_execute_upgrade_after_timelock() {
     let (env, client, owner) = setup_test();
 
-    let wasm_hash = vec![1u8; 32];
-    let proposal_id = client.propose_upgrade(&owner, &wasm_hash, &String::from_str(&env, "Upgrade"));
+    let wasm_hash = Bytes::from_slice(&env, &[1u8; 32]);
+    let proposal_id =
+        client.propose_upgrade(&owner, &wasm_hash, &String::from_str(&env, "Upgrade"));
 
     let proposal = client.get_upgrade_proposal(&proposal_id).unwrap();
     let executable_at = proposal.executable_at;
@@ -188,8 +197,9 @@ fn test_execute_upgrade_after_timelock() {
 fn test_execute_upgrade_before_timelock() {
     let (env, client, owner) = setup_test();
 
-    let wasm_hash = vec![1u8; 32];
-    let proposal_id = client.propose_upgrade(&owner, &wasm_hash, &String::from_str(&env, "Upgrade"));
+    let wasm_hash = Bytes::from_slice(&env, &[1u8; 32]);
+    let proposal_id =
+        client.propose_upgrade(&owner, &wasm_hash, &String::from_str(&env, "Upgrade"));
 
     // Try to execute immediately (before timelock)
     client.execute_upgrade(&owner, &proposal_id);
@@ -208,8 +218,9 @@ fn test_execute_nonexistent_upgrade() {
 fn test_cancel_upgrade() {
     let (env, client, owner) = setup_test();
 
-    let wasm_hash = vec![1u8; 32];
-    let proposal_id = client.propose_upgrade(&owner, &wasm_hash, &String::from_str(&env, "Will cancel"));
+    let wasm_hash = Bytes::from_slice(&env, &[1u8; 32]);
+    let proposal_id =
+        client.propose_upgrade(&owner, &wasm_hash, &String::from_str(&env, "Will cancel"));
 
     assert!(client.get_upgrade_proposal(&proposal_id).is_some());
 
@@ -228,7 +239,11 @@ fn test_non_admin_cannot_propose_upgrade() {
     let (env, client, _owner) = setup_test();
 
     let unauthorized = Address::generate(&env);
-    client.propose_upgrade(&unauthorized, &vec![1u8; 32], &String::from_str(&env, "Hack"));
+    client.propose_upgrade(
+        &unauthorized,
+        &Bytes::from_slice(&env, &[1u8; 32]),
+        &String::from_str(&env, "Hack"),
+    );
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -262,8 +277,12 @@ fn test_full_admin_transfer_workflow() {
     assert_eq!(client.get_admin(), new_admin);
 
     // New admin can now propose upgrades
-    let wasm_hash = vec![2u8; 32];
-    let proposal_id = client.propose_upgrade(&new_admin, &wasm_hash, &String::from_str(&env, "New feature"));
+    let wasm_hash = Bytes::from_slice(&env, &[2u8; 32]);
+    let proposal_id = client.propose_upgrade(
+        &new_admin,
+        &wasm_hash,
+        &String::from_str(&env, "New feature"),
+    );
 
     assert_eq!(proposal_id, 1);
 }
@@ -273,8 +292,8 @@ fn test_upgrade_proposal_chain() {
     let (env, client, owner) = setup_test();
 
     for i in 0..5 {
-        let wasm_hash = vec![i as u8; 32];
-        let desc = String::from_str(&env, &format!("Upgrade {}", i));
+        let wasm_hash = Bytes::from_slice(&env, &[i as u8; 32]);
+        let desc = String::from_str(&env, "Upgrade");
         let id = client.propose_upgrade(&owner, &wasm_hash, &desc);
         assert_eq!(id, (i + 1) as u64);
     }

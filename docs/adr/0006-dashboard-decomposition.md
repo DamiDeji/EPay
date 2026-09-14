@@ -9,11 +9,11 @@
 
 EPay serves three audiences with different goals:
 
-| Audience | Wants | Almost never touches |
-| --- | --- | --- |
-| **Customers** | Pay, view payment history, manage a wallet, track escrow | Merchant analytics, platform config |
-| **Merchants** | Invoices, analytics, settlements, refunds, payment links | Merchant onboarding queues, platform config |
-| **Admins** | Approve merchants, audit log, emergency pause, platform health | Customer checkout flows |
+| Audience      | Wants                                                          | Almost never touches                        |
+| ------------- | -------------------------------------------------------------- | ------------------------------------------- |
+| **Customers** | Pay, view payment history, manage a wallet, track escrow       | Merchant analytics, platform config         |
+| **Merchants** | Invoices, analytics, settlements, refunds, payment links       | Merchant onboarding queues, platform config |
+| **Admins**    | Approve merchants, audit log, emergency pause, platform health | Customer checkout flows                     |
 
 One codebase could serve all three behind a role check:
 
@@ -50,7 +50,7 @@ EPay ships **three separate Next.js applications** — `apps/web`,
   surface. Blast radius of a frontend bug stays within one audience.
 - **Clear ownership.** Each app maps to one audience's mental model and one set of
   owners; there is no shared route table where roles must be reasoned about.
-- **Shared components, not shared *pages*.** The duplication that matters
+- **Shared components, not shared _pages_.** The duplication that matters
   (buttons, tables, hooks, types) lives in `@epay/*` packages, so three apps do not
   mean three implementations — only three entry points.
 
@@ -66,7 +66,7 @@ audiences with very different risk tolerance.
 that is invisible in review and fatal at runtime. Three apps cannot be mis-built
 into the wrong role.
 
-**Separate *services* with a shared shell (micro-frontends).** Rejected as
+**Separate _services_ with a shared shell (micro-frontends).** Rejected as
 over-engineering at this scale: the operational cost (multiple runtimes, shared
 routing, version skew) buys nothing three static-ish Next apps do not already give.
 

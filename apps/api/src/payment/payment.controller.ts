@@ -9,13 +9,7 @@ import {
   UseGuards,
   NotFoundException,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiQuery,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
@@ -64,10 +58,7 @@ export class PaymentController {
 
   @Patch(':id/confirm')
   @ApiOperation({ summary: 'Confirm a payment with transaction hash' })
-  async confirm(
-    @Param('id') id: string,
-    @Body('txHash') txHash: string,
-  ) {
+  async confirm(@Param('id') id: string, @Body('txHash') txHash: string) {
     return this.paymentService.confirm(id, txHash);
   }
 

@@ -15,24 +15,24 @@ the `owner` symbol, set exactly once by `init`. `init` panics with
 `Already initialized` if called again, so ownership cannot be re-seeded by a
 second initialisation.
 
-| Contract | Owner powers | Additional roles |
-| --- | --- | --- |
-| `PaymentRouter` | `refund_payment`; `init` wiring of fee/pause/config addresses | payer & merchant authorise their own transitions |
-| `InvoiceManager` | `mark_overdue` | merchant creates/issues; customer pays |
-| `EscrowManager` | `complete`, `resolve_dispute`, `refund_escrow` | customer funds; merchant/customer dispute |
-| `RefundManager` | approve / complete / reject refunds | payer or merchant requests |
-| `SubscriptionManager` | none beyond `init` | customer creates/cancels; `renew` is permissionless |
-| `SettlementManager` | `create_settlement`, `process_settlement` | — |
-| `MerchantRegistry` | suspend / reactivate | registered verifiers verify |
-| `TreasuryVault` | deposit / withdraw / record — **all writes** | depositor authorises `deposit` |
-| `FeeManager` | set default and per-merchant fees | — |
-| `ConfigurationManager` | `update_config` | — |
-| `EmergencyPause` | pause / unpause | — |
-| `RoleManager` | assign / revoke roles | — |
-| `UpgradeManager` | transfers admin, proposes/executes upgrades | proposed admin must accept |
-| `PriceOracle` | add / remove oracles | authorised oracles write prices |
-| `Governance` | set quorum, cancel | token holders vote |
-| `ImpactNFT` | badging definitions & issuance | issuer revokes |
+| Contract               | Owner powers                                                  | Additional roles                                    |
+| ---------------------- | ------------------------------------------------------------- | --------------------------------------------------- |
+| `PaymentRouter`        | `refund_payment`; `init` wiring of fee/pause/config addresses | payer & merchant authorise their own transitions    |
+| `InvoiceManager`       | `mark_overdue`                                                | merchant creates/issues; customer pays              |
+| `EscrowManager`        | `complete`, `resolve_dispute`, `refund_escrow`                | customer funds; merchant/customer dispute           |
+| `RefundManager`        | approve / complete / reject refunds                           | payer or merchant requests                          |
+| `SubscriptionManager`  | none beyond `init`                                            | customer creates/cancels; `renew` is permissionless |
+| `SettlementManager`    | `create_settlement`, `process_settlement`                     | —                                                   |
+| `MerchantRegistry`     | suspend / reactivate                                          | registered verifiers verify                         |
+| `TreasuryVault`        | deposit / withdraw / record — **all writes**                  | depositor authorises `deposit`                      |
+| `FeeManager`           | set default and per-merchant fees                             | —                                                   |
+| `ConfigurationManager` | `update_config`                                               | —                                                   |
+| `EmergencyPause`       | pause / unpause                                               | —                                                   |
+| `RoleManager`          | assign / revoke roles                                         | —                                                   |
+| `UpgradeManager`       | transfers admin, proposes/executes upgrades                   | proposed admin must accept                          |
+| `PriceOracle`          | add / remove oracles                                          | authorised oracles write prices                     |
+| `Governance`           | set quorum, cancel                                            | token holders vote                                  |
+| `ImpactNFT`            | badging definitions & issuance                                | issuer revokes                                      |
 
 ### Admin transfer is two-step
 
@@ -42,7 +42,7 @@ Admin handover is **propose → accept**, never a single call
 1. The current admin calls `transfer_admin(new_admin)`, which stores a
    `AdminTransferState::Pending { new_admin, proposed_by, proposed_at }` and emits
    `admin_transfer_proposed`. **Nothing about the current admin changes.**
-2. The *proposed* address calls `accept_admin` from its own transaction. Only then
+2. The _proposed_ address calls `accept_admin` from its own transaction. Only then
    is `owner` rewritten and `admin_transfer_completed` emitted.
 3. Either side can walk away: the current admin can call `cancel_admin_transfer`.
 
@@ -55,12 +55,12 @@ handover on its own. Transfers to the zero address are rejected outright.
 Contracts are upgradeable, and the path is **timelocked**
 (`UpgradeManager`, implementing [ADR 0004](../../docs/adr/0004-upgrade-pattern.md)):
 
-| Step | Call | Constraint |
-| --- | --- | --- |
-| 1. Propose | `propose_upgrade(caller, wasm_hash, description)` | admin only; `wasm_hash` must be exactly 32 bytes (SHA-256); returns a proposal id |
-| 2. Wait | — | **72 hours** (`MIN_TIMELOCK_SECONDS = 259 200`) between proposal and the earliest execution |
-| 3. Execute | `execute_upgrade(caller, id)` | admin only; panics with `Upgrade timelock has not expired` before `executable_at` |
-| — or cancel | `cancel_upgrade(caller, id)` | admin only; removes the proposal |
+| Step        | Call                                              | Constraint                                                                                  |
+| ----------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| 1. Propose  | `propose_upgrade(caller, wasm_hash, description)` | admin only; `wasm_hash` must be exactly 32 bytes (SHA-256); returns a proposal id           |
+| 2. Wait     | —                                                 | **72 hours** (`MIN_TIMELOCK_SECONDS = 259 200`) between proposal and the earliest execution |
+| 3. Execute  | `execute_upgrade(caller, id)`                     | admin only; panics with `Upgrade timelock has not expired` before `executable_at`           |
+| — or cancel | `cancel_upgrade(caller, id)`                      | admin only; removes the proposal                                                            |
 
 Why 72 hours: it is long enough for users and integrators to read the proposed
 hash, verify the WASM off-chain, and exit positions they are not comfortable
@@ -74,7 +74,7 @@ schedule; a proposal sits indefinitely until executed or cancelled.
 > **Operational note.** `propose_upgrade` records the hash in the manager. The
 > actual `update_current_contract_wasm` call for a given contract is a separate
 > Stellar operation; the manager's role is to enforce that no upgrade can be
-> *authorised* inside the window. See the deployment runbook for the pairing.
+> _authorised_ inside the window. See the deployment runbook for the pairing.
 
 ## Pause & emergency behaviour
 
@@ -127,7 +127,7 @@ Read-only functions (`get_*`, `*_exists`, `is_*`, `has_*`, `calculate_*`) requir
 no authorisation and never mutate state. Query functions are safe to call from the
 indexer.
 
-## What the contracts do *not* do (non-goals)
+## What the contracts do _not_ do (non-goals)
 
 - **No custody.** The contracts hold tokens only for the duration of an escrow;
   they never hold private keys and cannot move a user's funds outside the
@@ -140,16 +140,16 @@ indexer.
 
 ## Internal review status
 
-| Area | Status |
-| --- | --- |
-| Authorisation on every mutating entry point | ✅ Reviewed |
-| Two-step admin transfer | ✅ Implemented (`UpgradeManager`) |
-| Timelocked upgrades (72h) | ✅ Implemented (`UpgradeManager`) |
-| Emergency pause + `require_not_paused` | ✅ Implemented (`EmergencyPause`) |
-| Overflow-safe arithmetic | ✅ Reviewed (checked `i128`, explicit bounds) |
-| Event on every state change | ✅ Catalogued in [EVENTS.md](./EVENTS.md) |
+| Area                                           | Status                                                                                             |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Authorisation on every mutating entry point    | ✅ Reviewed                                                                                        |
+| Two-step admin transfer                        | ✅ Implemented (`UpgradeManager`)                                                                  |
+| Timelocked upgrades (72h)                      | ✅ Implemented (`UpgradeManager`)                                                                  |
+| Emergency pause + `require_not_paused`         | ✅ Implemented (`EmergencyPause`)                                                                  |
+| Overflow-safe arithmetic                       | ✅ Reviewed (checked `i128`, explicit bounds)                                                      |
+| Event on every state change                    | ✅ Catalogued in [EVENTS.md](./EVENTS.md)                                                          |
 | Property/fuzz tests on funds-at-risk contracts | ✅ `TreasuryVault`, `EscrowManager`, `RefundManager`, `SettlementManager` (10 000 iterations each) |
-| **Third-party audit** | 🔜 **Not yet performed** — blocking for mainnet, funded in the SCF Wave 8 application |
+| **Third-party audit**                          | 🔜 **Not yet performed** — blocking for mainnet, funded in the SCF Wave 8 application              |
 
 The audit will be scoped to the funds-at-risk tier first:
 `EscrowManager`, `RefundManager`, `TreasuryVault`, `PaymentRouter`, `FeeManager`.

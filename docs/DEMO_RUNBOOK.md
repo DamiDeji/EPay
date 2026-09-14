@@ -5,28 +5,28 @@ payment — against Stellar testnet, rather than just read the code.
 
 ## Current state (August 2026)
 
-| Component | Status |
-|-----------|--------|
-| 12 Soroban contracts | ✅ Deployed to Stellar testnet (`DEPLOYMENTS.md`, `.env.example`) |
-| Web app (`apps/web`) | ✅ Live on Vercel (`https://epay-web-teal.vercel.app`) |
-| Merchant dashboard | ✅ Live on Vercel (`https://epay-merchant.vercel.app`) |
-| Admin dashboard | ✅ Live on Vercel (`https://epay-admin-two.vercel.app`) |
-| API (`apps/api`) | ❌ Not publicly hosted — dashboards call `http://localhost:4000` by default |
-| Indexer (`apps/indexer`) | ❌ Not running anywhere |
-| Postgres + Redis | ❌ Local-only (docker-compose) |
+| Component                | Status                                                                      |
+| ------------------------ | --------------------------------------------------------------------------- |
+| 12 Soroban contracts     | ✅ Deployed to Stellar testnet (`DEPLOYMENTS.md`, `.env.example`)           |
+| Web app (`apps/web`)     | ✅ Live on Vercel (`https://epay-web-teal.vercel.app`)                      |
+| Merchant dashboard       | ✅ Live on Vercel (`https://epay-merchant.vercel.app`)                      |
+| Admin dashboard          | ✅ Live on Vercel (`https://epay-admin-two.vercel.app`)                     |
+| API (`apps/api`)         | ❌ Not publicly hosted — dashboards call `http://localhost:4000` by default |
+| Indexer (`apps/indexer`) | ❌ Not running anywhere                                                     |
+| Postgres + Redis         | ❌ Local-only (docker-compose)                                              |
 
 **The one thing blocking an interactive demo is a hosted API** (+ its database and
 Redis), wired to the existing Vercel deployments via `NEXT_PUBLIC_API_URL`.
 
 ## Recommended stack
 
-| Piece | Provider | Why |
-|-------|----------|-----|
-| Postgres | **Neon** (serverless Postgres, free tier) | Free tier, connection string drop-in for Prisma |
-| Redis (BullMQ) | **Upstash** (serverless Redis, free tier) | Free tier; standard Redis protocol works with BullMQ |
-| API process | **Railway / Render / Fly.io** (Docker) | Long-running Fastify/NestJS server — not a Vercel fit |
-| Indexer worker | Same host as API (separate service) | Long-running BullMQ worker + Horizon scanner |
-| Frontends | Vercel (already in place) | Add `NEXT_PUBLIC_API_URL` env var |
+| Piece          | Provider                                  | Why                                                   |
+| -------------- | ----------------------------------------- | ----------------------------------------------------- |
+| Postgres       | **Neon** (serverless Postgres, free tier) | Free tier, connection string drop-in for Prisma       |
+| Redis (BullMQ) | **Upstash** (serverless Redis, free tier) | Free tier; standard Redis protocol works with BullMQ  |
+| API process    | **Railway / Render / Fly.io** (Docker)    | Long-running Fastify/NestJS server — not a Vercel fit |
+| Indexer worker | Same host as API (separate service)       | Long-running BullMQ worker + Horizon scanner          |
+| Frontends      | Vercel (already in place)                 | Add `NEXT_PUBLIC_API_URL` env var                     |
 
 > Fly.io and Render both have generous free/cheap tiers for small containers; check
 > current pricing before committing. The repo ships production Dockerfiles

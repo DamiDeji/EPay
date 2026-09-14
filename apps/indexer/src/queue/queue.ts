@@ -73,9 +73,13 @@ export class IndexerQueue {
   }
 
   async enqueueEvent(event: ParsedEvent): Promise<string> {
-    const job = await this.queue.add('process-event', { event }, {
-      jobId: makeJobId(event),
-    });
+    const job = await this.queue.add(
+      'process-event',
+      { event },
+      {
+        jobId: makeJobId(event),
+      },
+    );
 
     log.debug(
       { jobId: job.id, contractName: event.contractName, eventName: event.eventName },
@@ -110,10 +114,7 @@ export class IndexerQueue {
 
         await dispatchEvent(event, this.prisma);
 
-        log.debug(
-          { jobId: job.id, attempts: job.attemptsMade },
-          'Event processed successfully',
-        );
+        log.debug({ jobId: job.id, attempts: job.attemptsMade }, 'Event processed successfully');
       },
       {
         connection: {

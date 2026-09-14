@@ -112,26 +112,37 @@ Last reviewed: 2026-09-14.
 
 Scoped, not started. Ordered by dependency, not by desire.
 
-### CI health
+### CI health — ✅ done
 
-Three pre-existing issues keep a fully green CI out of reach. None is a runtime
-bug, and all three are configuration:
+The three blockers listed here (ESLint 10 requiring a flat config, Prisma 7
+requiring a driver adapter, and Jest not transforming `@stellar/stellar-sdk`'s
+ESM-only dependencies) are **fixed**. Lint, typecheck, formatting and tests are
+now real gates across the workspace, and `pnpm ci` reproduces CI locally.
 
-1. **ESLint cannot run.** The repo has a legacy `.eslintrc.js`, but the installed
-   ESLint 10 requires a flat `eslint.config.js`. Every `pnpm lint` invocation
-   aborts before evaluating a single rule, so lint is not currently a gate.
-2. **The API Jest suite does not load.** Prisma 7 requires a driver adapter
-   (`@prisma/adapter-pg`) that `packages/database` does not pass to
-   `PrismaClient`, and Jest is not configured to transform
-   `@stellar/stellar-sdk`'s CommonJS output. The 116 test cases exist; they cannot
-   execute.
-3. **No `apps/*` build in CI for the API image.** The Nest CLI tolerates the
-   type surface that `tsc --noEmit` accepts, but the build is only proven locally
-   and in the image jobs.
+One claim in this section was also wrong and has been corrected: `pnpm typecheck`
+was **not** green. `apps/api/tsconfig.json` excluded `*.spec.ts` and `test/`, so
+the API's type errors were invisible. With specs in the program, `tsc` reported
+182 errors — mostly one root cause (the Prisma mock did not model Prisma's
+delegate getters), plus stale fixtures using a `currency` field the DTO does not
+define. All are fixed.
 
-`pnpm typecheck` (22/22 tasks) and `pnpm build` (15/15 tasks) are green. Restoring
-lint and the API test suite is a prerequisite for trusting the suite as a
-regression net during the audit. **Blocking for audit.**
+Remaining CI work is tracked in
+[`docs/FINAL-ENGINEERING-REPORT.md`](./docs/FINAL-ENGINEERING-REPORT.md#18-remaining-risks-and-todo):
+wiring `tests/e2e` and `tests/k6` into CI, and removing `--passWithNoTests` from
+packages that should have tests.
+
+### Indexer test coverage — **blocking**
+
+`apps/indexer` has **no tests** for any of its 15 modules. It is the component
+that decides what happened on chain (event parsing, checkpointing, duplicate
+suppression, crash recovery, backoff), and `vitest run --passWithNoTests`
+currently reports it green. This is the largest outstanding gap in the project.
+
+### Coverage thresholds — **blocking**
+
+`apps/api` sits at ~54% lines / ~67% branches / ~72% functions. Floors are
+enforced so coverage cannot regress, but the stated targets (80% overall, 90%
+for payment, refund, settlement and auth) are not met.
 
 ### Contract audit
 
@@ -146,7 +157,7 @@ Property/fuzz suites cover the four funds-at-risk contracts. Extending them to t
 control-plane contracts (`UpgradeManager`, `RoleManager`,
 `ConfigurationManager`) would close the remaining gap. Also worth adding: an
 explicit state-machine model (e.g. `proptest` stateful testing) so a random
-sequence of *any* legal calls is validated against the spec.
+sequence of _any_ legal calls is validated against the spec.
 
 ### Wire AI summaries to the metrics
 
@@ -181,15 +192,15 @@ lives.
 
 ## Known issues
 
-| Issue | Impact | Status |
-| --- | --- | --- |
-| `pnpm lint` cannot run at all (ESLint 10 needs flat config; repo has `.eslintrc.js`) | Lint is not a CI gate; code-style regressions are unreviewed | **Open** — migration scoped in *Planned* |
-| API Jest suite fails to load (Prisma 7 driver adapter; stellar-sdk not transformed) | 116 test cases cannot execute; no API regression net | **Open** — scoped in *Planned* |
-| No third-party smart-contract audit | Funds-at-risk contracts are unaudited | **Open** — **blocks mainnet** |
-| Dockerfiles use mutable base tags (`node:26-alpine`) and unpinned pnpm | Images are not reproducible | **Open** — the Helm chart enforces digests at deploy time, but the images are not digest-pinned at build |
-| Webhook delivery has no scheduler wired to `processDue()` | Deliveries are signed and stored; a periodic tick still needs to call the dispatcher | **Open** — the code and schema exist; the cron/worker entry point is the missing piece |
-| ZAP baseline scan is informational (`fail_action: false`) | DAST regressions are reported, not blocked | **Open** — promote to blocking after the baseline is triaged |
-| `main` previously could not build at all (`@epay/hooks`, Prisma 7, `vite@5`) | Every CI job failed | **Fixed** |
+| Issue                                                                                | Impact                                                                               | Status                                                                                                   |
+| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
+| `pnpm lint` cannot run at all (ESLint 10 needs flat config; repo has `.eslintrc.js`) | Lint is not a CI gate; code-style regressions are unreviewed                         | **Open** — migration scoped in _Planned_                                                                 |
+| API Jest suite fails to load (Prisma 7 driver adapter; stellar-sdk not transformed)  | 116 test cases cannot execute; no API regression net                                 | **Open** — scoped in _Planned_                                                                           |
+| No third-party smart-contract audit                                                  | Funds-at-risk contracts are unaudited                                                | **Open** — **blocks mainnet**                                                                            |
+| Dockerfiles use mutable base tags (`node:26-alpine`) and unpinned pnpm               | Images are not reproducible                                                          | **Open** — the Helm chart enforces digests at deploy time, but the images are not digest-pinned at build |
+| Webhook delivery has no scheduler wired to `processDue()`                            | Deliveries are signed and stored; a periodic tick still needs to call the dispatcher | **Open** — the code and schema exist; the cron/worker entry point is the missing piece                   |
+| ZAP baseline scan is informational (`fail_action: false`)                            | DAST regressions are reported, not blocked                                           | **Open** — promote to blocking after the baseline is triaged                                             |
+| `main` previously could not build at all (`@epay/hooks`, Prisma 7, `vite@5`)         | Every CI job failed                                                                  | **Fixed**                                                                                                |
 
 ---
 

@@ -57,6 +57,7 @@ Copy this into your PR description and tick every box. Reviewers will not approv
 an unticked box without a written reason.
 
 **Correctness**
+
 - [ ] TypeScript compiles with zero errors (`pnpm typecheck`)
 - [ ] All tests pass (`pnpm test`)
 - [ ] Lint passes (`pnpm lint`)
@@ -64,6 +65,7 @@ an unticked box without a written reason.
 - [ ] No `console.log` or `TODO` comments left in production code
 
 **Contracts** (only if `packages/contracts/` changed)
+
 - [ ] `cargo test --manifest-path packages/contracts/Cargo.toml` passes
 - [ ] `cargo clippy -- -D warnings` is clean
 - [ ] Every new public contract function has a unit test
@@ -71,18 +73,21 @@ an unticked box without a written reason.
       `EVENTS` notes and listed in `CHANGELOG.md`
 
 **API** (only if `apps/api/` changed)
+
 - [ ] The OpenAPI spec is still accurate — `@ApiOperation`/`@ApiResponse`
       decorators updated for new or changed endpoints (`/api/docs` reflects it)
 - [ ] New endpoints have a guard unless they are deliberately public
 - [ ] Input validation (DTO or Zod) is present on every new input
 
 **Operations** (only if `helm/`, `k8s/`, `monitoring/`, or `infra/` changed)
+
 - [ ] `helm lint helm/epay` passes
 - [ ] `helm template epay helm/epay` renders
 - [ ] If the chart changed, `./scripts/render-k8s-manifests.sh` was run and
       `k8s/manifests.yaml` is committed (CI fails on drift)
 
 **Compliance**
+
 - [ ] `CHANGELOG.md` has an entry under `[Unreleased]` in
       [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format
 - [ ] The diff is **Gitleaks-clean** (`gitleaks detect --config .gitleaks.toml`)

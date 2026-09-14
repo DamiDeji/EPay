@@ -1,6 +1,9 @@
 import type {
-  Subscription, CreateSubscriptionRequest, SubscriptionStatus,
-  PaginatedResponse, PaginationQuery,
+  Subscription,
+  CreateSubscriptionRequest,
+  SubscriptionStatus,
+  PaginatedResponse,
+  PaginationQuery,
 } from '@epay/types';
 
 import { BaseResource } from './base';
@@ -39,11 +42,13 @@ export class SubscriptionsResource extends BaseResource {
   /**
    * List subscriptions with optional filters.
    */
-  async list(params?: PaginationQuery & {
-    merchantId?: string;
-    customerId?: string;
-    status?: SubscriptionStatus;
-  }): Promise<PaginatedResponse<Subscription>> {
+  async list(
+    params?: PaginationQuery & {
+      merchantId?: string;
+      customerId?: string;
+      status?: SubscriptionStatus;
+    },
+  ): Promise<PaginatedResponse<Subscription>> {
     return this.client.get<PaginatedResponse<Subscription>>(
       `/subscriptions${this.buildQuery(params as Record<string, unknown>)}`,
     );

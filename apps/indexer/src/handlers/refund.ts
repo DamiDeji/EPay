@@ -14,7 +14,10 @@ export async function handleRefundEvent(
   switch (eventName) {
     case 'RefundRequested': {
       const d = data as {
-        refundId: number; paymentId: number; amount: string; reason: string;
+        refundId: number;
+        paymentId: number;
+        amount: string;
+        reason: string;
       };
       await prisma.refund.upsert({
         where: { refundId: `ref_${d.refundId}` },

@@ -8,44 +8,50 @@
 ## Running Tests
 
 ### Local Development
+
 ```bash
 cd tests/k6
 API_URL=http://localhost:4000 k6 run load-tests.js
 ```
 
 ### With API Key
+
 ```bash
 API_URL=https://api.epay.dev API_KEY=your-api-key k6 run load-tests.js
 ```
 
 ### Stress Test
+
 ```bash
 k6 run --vus 100 --duration 3m load-tests.js
 ```
 
 ### Spike Test
+
 ```bash
 k6 run --vus 50 --duration 10s load-tests.js
 ```
 
 ### Run all scenarios
+
 ```bash
 k6 run load-tests.js
 ```
 
 ## SLOs (Service Level Objectives)
 
-| Metric | Target |
-|--------|--------|
-| Payment success rate | >95% |
-| P95 response time | <500ms |
-| P90 response time | <300ms |
-| P99 response time | <1000ms |
-| Error rate | <5% |
+| Metric               | Target  |
+| -------------------- | ------- |
+| Payment success rate | >95%    |
+| P95 response time    | <500ms  |
+| P90 response time    | <300ms  |
+| P99 response time    | <1000ms |
+| Error rate           | <5%     |
 
 ## Output
 
 k6 generates a summary report at the end of each run. For detailed analysis:
+
 ```bash
 k6 run --out json=results.json load-tests.js
 ```

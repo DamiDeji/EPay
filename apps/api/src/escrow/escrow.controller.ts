@@ -69,7 +69,10 @@ export class EscrowController {
   @ApiOperation({ summary: 'Complete a milestone' })
   async completeMilestone(
     @Param('id') id: string,
-    @Param('milestoneIndex') milestoneIndex: number,
+    // Route params are always strings unless a `ParseIntPipe` is applied, so
+    // declaring this as `number` was a type lie that made the `Number()` call
+    // look redundant. Convert explicitly from the real runtime type.
+    @Param('milestoneIndex') milestoneIndex: string,
     @Body('releaseTxHash') releaseTxHash?: string,
   ) {
     return this.escrowService.completeMilestone(id, Number(milestoneIndex), releaseTxHash);

@@ -1,6 +1,15 @@
 'use client';
 
-import { Button, Input, Card, CardHeader, CardContent, CardTitle, CardDescription, CardFooter } from '@epay/ui';
+import {
+  Button,
+  Input,
+  Card,
+  CardHeader,
+  CardContent,
+  CardTitle,
+  CardDescription,
+  CardFooter,
+} from '@epay/ui';
 import { motion } from 'framer-motion';
 import { Zap, Mail, Lock, ArrowRight, AlertCircle, Wallet } from 'lucide-react';
 import Link from 'next/link';
@@ -14,17 +23,20 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleEmailLogin = async (e: React.FormEvent) => {
+  const handleEmailLogin = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000'}/auth/login`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        },
+      );
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
@@ -89,7 +101,9 @@ export default function LoginPage() {
                     type="email"
                     placeholder="you@example.com"
                     value={email}
-                    onChange={(e) => { setEmail(e.target.value); }}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                    }}
                     className="pl-10"
                     required
                   />
@@ -106,7 +120,9 @@ export default function LoginPage() {
                     type="password"
                     placeholder="••••••••"
                     value={password}
-                    onChange={(e) => { setPassword(e.target.value); }}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                    }}
                     className="pl-10"
                     required
                   />
@@ -132,7 +148,9 @@ export default function LoginPage() {
               variant="outline"
               className="w-full gap-2"
               size="lg"
-              onClick={() => { router.push('/dashboard'); }}
+              onClick={() => {
+                router.push('/dashboard');
+              }}
             >
               <Wallet className="w-4 h-4" />
               Connect Stellar Wallet

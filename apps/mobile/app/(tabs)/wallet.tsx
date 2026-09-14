@@ -41,11 +41,13 @@ export default function WalletScreen(): React.ReactElement {
       try {
         setError(null);
         const result = await client.getBalance(key);
-        setBalances(result.map((b) => ({
-          assetCode: b.assetCode,
-          assetIssuer: b.assetIssuer,
-          balance: b.balance,
-        })));
+        setBalances(
+          result.map((b) => ({
+            assetCode: b.assetCode,
+            assetIssuer: b.assetIssuer,
+            balance: b.balance,
+          })),
+        );
       } catch {
         setError('Could not reach Horizon. Check your connection.');
         setBalances([]);

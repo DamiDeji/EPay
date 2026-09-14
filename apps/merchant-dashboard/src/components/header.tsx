@@ -8,7 +8,9 @@ import { useState, useEffect } from 'react';
 export function DashboardHeader() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-4 lg:px-8 border-b border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg">
@@ -22,7 +24,13 @@ export function DashboardHeader() {
       </div>
       <div className="flex items-center gap-2 ml-auto">
         {mounted && (
-          <Button variant="ghost" size="icon" onClick={() => { setTheme(theme === 'dark' ? 'light' : 'dark'); }}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              setTheme(theme === 'dark' ? 'light' : 'dark');
+            }}
+          >
             {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </Button>
         )}

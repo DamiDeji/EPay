@@ -10,14 +10,14 @@ are kept here as reference.
 
 ## Labels
 
-| Area label | Applies to |
-|-----------|-----------|
-| `good-first-issue` | Small, well-documented, low-risk |
-| `contracts` | Soroban (Rust) smart contracts in `packages/contracts` |
-| `backend` | NestJS API, indexer, database |
-| `frontend` | `apps/web`, `apps/merchant-dashboard`, `apps/admin-dashboard` |
-| `docs` | README, docs/, SDK docs, deployment docs |
-| `tests` | Test coverage anywhere |
+| Area label         | Applies to                                                    |
+| ------------------ | ------------------------------------------------------------- |
+| `good-first-issue` | Small, well-documented, low-risk                              |
+| `contracts`        | Soroban (Rust) smart contracts in `packages/contracts`        |
+| `backend`          | NestJS API, indexer, database                                 |
+| `frontend`         | `apps/web`, `apps/merchant-dashboard`, `apps/admin-dashboard` |
+| `docs`             | README, docs/, SDK docs, deployment docs                      |
+| `tests`            | Test coverage anywhere                                        |
 
 **Complexity:** 🟢 beginner · 🟡 intermediate · 🔴 advanced
 
@@ -61,7 +61,7 @@ are kept here as reference.
 - **Area:** `contracts` · **Complexity:** 🟡 intermediate
 - **Where:** `packages/contracts/contracts/treasury-vault/src/lib.rs`
 - **Problem:** `record_tx` is now owner-only (the unauthenticated bypass was fixed).
-  The contract doc comments describe it as the accounting entry point for *other*
+  The contract doc comments describe it as the accounting entry point for _other_
   EPay contracts (PaymentRouter, EscrowManager) that move tokens themselves — so when
   those contracts start recording on-chain, the owner-only check will block them.
 - **Acceptance criteria:**

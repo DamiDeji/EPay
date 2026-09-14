@@ -29,7 +29,7 @@ function sortedKeys(labels: MetricLabels): string[] {
 /** Stable map key for a label set, independent of property order. */
 function labelKey(labels: MetricLabels): string {
   return sortedKeys(labels)
-    .map((key) => `${key}=${String(labels[key] ?? '')}`)
+    .map((key) => `${key}=${labels[key] ?? ''}`)
     .join('\u0000');
 }
 
@@ -42,7 +42,7 @@ function renderLabels(labels: MetricLabels): string {
   if (keys.length === 0) {
     return '';
   }
-  const pairs = keys.map((key) => `${key}="${escapeLabelValue(String(labels[key] ?? ''))}"`);
+  const pairs = keys.map((key) => `${key}="${escapeLabelValue(labels[key] ?? '')}"`);
   return `{${pairs.join(',')}}`;
 }
 
@@ -213,10 +213,7 @@ export class Histogram {
   }
 
   expose(): string {
-    const lines = [
-      `# HELP ${this.name} ${this.help}`,
-      `# TYPE ${this.name} histogram`,
-    ];
+    const lines = [`# HELP ${this.name} ${this.help}`, `# TYPE ${this.name} histogram`];
     for (const series of this.series.values()) {
       let cumulative = 0;
       for (let i = 0; i < this.buckets.length; i += 1) {

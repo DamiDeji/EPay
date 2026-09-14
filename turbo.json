@@ -32,11 +32,11 @@
       "dependsOn": ["^build"]
     },
     "test": {
-      "dependsOn": ["build"],
+      "dependsOn": ["^build"],
       "inputs": ["src/**", "test/**", "**/*.test.*", "**/*.spec.*"]
     },
     "test:coverage": {
-      "dependsOn": ["build"],
+      "dependsOn": ["^build"],
       "inputs": ["src/**", "test/**", "**/*.test.*", "**/*.spec.*"],
       "outputs": ["coverage/**"]
     },

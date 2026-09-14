@@ -138,7 +138,7 @@ export function parseDsn(dsn: string | undefined): SentryTarget | undefined {
       storeUrl: `${protocol}://${url.host}/api/${projectId}/store/`,
       authHeader: [
         'Sentry sentry_version=7',
-        `sentry_client=${'epay-api/1.0'}`,
+        `sentry_client=epay-api/1.0`,
         `sentry_key=${url.username}`,
       ].join(', '),
     };

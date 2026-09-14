@@ -1,12 +1,4 @@
-import {
-  Controller,
-  Post,
-  Body,
-  HttpCode,
-  HttpStatus,
-  UseGuards,
-  Req,
-} from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, UseGuards, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { Request } from 'express';
 
@@ -68,11 +60,6 @@ export class AuthController {
     @Req() req: Request & { user: { sub: string } },
     @Body() dto: CreateApiKeyDto,
   ) {
-    return this.authService.generateApiKey(
-      req.user.sub,
-      dto.merchantId,
-      dto.name,
-      dto.permissions,
-    );
+    return this.authService.generateApiKey(req.user.sub, dto.merchantId, dto.name, dto.permissions);
   }
 }

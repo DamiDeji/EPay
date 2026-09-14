@@ -1,5 +1,5 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
 import type { PaymentLink, Merchant } from '@epay/types';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -54,9 +54,7 @@ export default function ConfirmPaymentScreen(): React.ReactElement {
     }
 
     if (biometricRequired) {
-      const authorized = await authorizePayment(
-        `Pay ${link.amount} ${link.asset.code}`,
-      );
+      const authorized = await authorizePayment(`Pay ${link.amount} ${link.asset.code}`);
       if (!authorized) {
         setError('Payment cancelled — biometric check failed.');
         return;
@@ -109,7 +107,10 @@ export default function ConfirmPaymentScreen(): React.ReactElement {
       <View style={styles.card}>
         <Row label="Network" value={(merchant?.settlementPublicKey ?? '').slice(0, 8) || '—'} />
         <Row label="Payment link" value={link.code} />
-        <Row label="Destination" value={merchant?.settlementPublicKey ? 'Merchant wallet' : 'Missing'} />
+        <Row
+          label="Destination"
+          value={merchant?.settlementPublicKey ? 'Merchant wallet' : 'Missing'}
+        />
       </View>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -131,7 +132,12 @@ export default function ConfirmPaymentScreen(): React.ReactElement {
 
       <Pressable
         accessibilityRole="button"
-        onPress={() => Alert.alert('Non-custodial', 'Funds move directly from your wallet to the merchant on Stellar.')}
+        onPress={() =>
+          Alert.alert(
+            'Non-custodial',
+            'Funds move directly from your wallet to the merchant on Stellar.',
+          )
+        }
       >
         <Text style={styles.link}>How funds move</Text>
       </Pressable>

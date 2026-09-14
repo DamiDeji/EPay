@@ -1,15 +1,34 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { JwtService } from '@nestjs/jwt';
 import * as crypto from 'crypto';
-import { Keypair } from '@stellar/stellar-sdk';
-import { AuthService } from './auth.service';
-import { PrismaService } from '../database/prisma.service';
+
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
+import { Keypair } from '@stellar/stellar-sdk';
+
 import { createMockPrismaService, mockDate } from '../../test/mocks/prisma.mock';
+import { PrismaService } from '../database/prisma.service';
+
+import { AuthService } from './auth.service';
 
 const TEST_PASSWORD = 'password123';
 const TEST_SALT = crypto.randomBytes(16).toString('hex');
 const TEST_HASH = crypto.scryptSync(TEST_PASSWORD, TEST_SALT, 64).toString('hex');
+
+/**
+ * `Keypair.sign()` returns a `Uint8Array`, and `Uint8Array.prototype.toString()`
+ * ignores its argument — `sig.toString('base64')` silently yields a comma-joined
+ * list of byte values, not base64. Everything that turns a signature into a
+ * transportable string must go through `Buffer.from(sig)` first.
+ */
+function signToBase64(keypair: Keypair, message: string): string {
+  return Buffer.from(keypair.sign(Buffer.from(message, 'utf-8'))).toString('base64');
+}
+
+/** Build the `salt:derivedKeyHex` string `AuthService.verifyApiKey` expects. */
+function apiKeyHash(apiKey: string, salt: string): string {
+  return `${salt}:${crypto.scryptSync(apiKey, salt, 64).toString('hex')}`;
+}
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -122,7 +141,7 @@ describe('AuthService', () => {
       const testKeypair = Keypair.random();
       const testPublicKey = testKeypair.publicKey();
       const testMessage = 'Login to EPay';
-      const testSignature = testKeypair.sign(Buffer.from(testMessage, 'utf-8')).toString('base64');
+      const testSignature = signToBase64(testKeypair, testMessage);
 
       prisma.user.findUnique.mockResolvedValue(null);
       prisma.user.create.mockResolvedValue({
@@ -175,9 +194,7 @@ describe('AuthService', () => {
     it('should throw if refresh token invalid', async () => {
       prisma.user.findFirst.mockResolvedValue(null);
 
-      await expect(service.refreshToken('bad_token')).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(service.refreshToken('bad_token')).rejects.toThrow(UnauthorizedException);
     });
   });
 
@@ -194,22 +211,52 @@ describe('AuthService', () => {
   });
 
   describe('validateApiKey', () => {
-    it('should return user for valid API key', async () => {
-      prisma.apiKey.findFirst.mockResolvedValue({
-        id: 'key_1',
-        user: mockUser,
-        merchant: null,
-      });
+    const VALID_API_KEY = 'epay_valid_key_here';
 
-      const result = await service.validateApiKey('epay_valid_key_here');
-      expect(result).toBeDefined();
+    it('should return the user for a valid API key', async () => {
+      // `validateApiKey` lists every active key sharing the key's 8-char prefix
+      // and then timing-safe compares the scrypt hash, so the fixture has to be
+      // a real hash over the real key — a stub would not exercise the compare.
+      prisma.apiKey.findMany.mockResolvedValue([
+        {
+          id: 'key_1',
+          keyHash: apiKeyHash(VALID_API_KEY, crypto.randomBytes(16).toString('hex')),
+          user: mockUser,
+          merchant: null,
+        },
+      ] as never);
+      prisma.apiKey.update.mockResolvedValue({});
+
+      const result = await service.validateApiKey(VALID_API_KEY);
+
       expect(result?.id).toBe('user_1');
+      expect(prisma.apiKey.update).toHaveBeenCalledWith({
+        where: { id: 'key_1' },
+        data: { lastUsedAt: expect.any(Date) as Date },
+      });
     });
 
-    it('should return null for invalid API key', async () => {
-      prisma.apiKey.findFirst.mockResolvedValue(null);
+    it('should skip a prefix match whose hash does not verify', async () => {
+      prisma.apiKey.findMany.mockResolvedValue([
+        {
+          id: 'key_1',
+          keyHash: apiKeyHash('a_different_key', crypto.randomBytes(16).toString('hex')),
+          user: mockUser,
+          merchant: null,
+        },
+      ] as never);
+
+      const result = await service.validateApiKey(VALID_API_KEY);
+
+      expect(result).toBeNull();
+      expect(prisma.apiKey.update).not.toHaveBeenCalled();
+    });
+
+    it('should return null when no key matches the prefix', async () => {
+      prisma.apiKey.findMany.mockResolvedValue([] as never);
 
       const result = await service.validateApiKey('bad_key');
+
       expect(result).toBeNull();
     });
   });

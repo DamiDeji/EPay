@@ -96,7 +96,11 @@ export class TreasuryService {
     return tx ? this.sanitizeTransaction(tx) : null;
   }
 
-  async recordDeposit(amount: string, fromPublicKey: string, txHash: string): Promise<TreasuryTransaction> {
+  async recordDeposit(
+    amount: string,
+    fromPublicKey: string,
+    txHash: string,
+  ): Promise<TreasuryTransaction> {
     const tx = await this.prisma.treasuryTransaction.create({
       data: {
         txType: 'DEPOSIT',

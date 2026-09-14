@@ -17,6 +17,10 @@ packages/contracts/build/
 packages/contracts/artifacts/
 packages/contracts/target/
 
+# Soroban writes diagnostic JSON snapshots for failing tests; they are
+# regenerated on every run and must not be committed.
+packages/contracts/contracts/*/test_snapshots/
+
 # Environment
 .env
 .env.local

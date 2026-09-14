@@ -18,13 +18,8 @@ export class AnalyticsService {
     });
 
     const totalPayments = payments.length;
-    const totalVolume = payments.reduce(
-      (sum, p) => sum + BigInt(p.amount.toString()),
-      BigInt(0),
-    );
-    const successfulPayments = payments.filter(
-      (p) => p.status === 'COMPLETED',
-    ).length;
+    const totalVolume = payments.reduce((sum, p) => sum + BigInt(p.amount.toString()), BigInt(0));
+    const successfulPayments = payments.filter((p) => p.status === 'COMPLETED').length;
     const refundedPayments = payments.filter(
       (p) => p.status === 'REFUNDED' || p.status === 'PARTIALLY_REFUNDED',
     ).length;
@@ -36,23 +31,20 @@ export class AnalyticsService {
       totalPayments,
       totalVolume: totalVolume.toString(),
       averagePaymentSize:
-        totalPayments > 0
-          ? (totalVolume / BigInt(totalPayments)).toString()
-          : '0',
+        totalPayments > 0 ? (totalVolume / BigInt(totalPayments)).toString() : '0',
       successRate:
-        totalPayments > 0
-          ? Number(((successfulPayments / totalPayments) * 100).toFixed(2))
-          : 0,
+        totalPayments > 0 ? Number(((successfulPayments / totalPayments) * 100).toFixed(2)) : 0,
       refundRate:
-        totalPayments > 0
-          ? Number(((refundedPayments / totalPayments) * 100).toFixed(2))
-          : 0,
+        totalPayments > 0 ? Number(((refundedPayments / totalPayments) * 100).toFixed(2)) : 0,
       assetBreakdown,
       dailyVolume,
     };
   }
 
-  async getMerchantRevenue(merchantId: string, days: number): Promise<{
+  async getMerchantRevenue(
+    merchantId: string,
+    days: number,
+  ): Promise<{
     totalRevenue: string;
     totalFees: string;
     netRevenue: string;
@@ -68,13 +60,9 @@ export class AnalyticsService {
       },
     });
 
-    const totalRevenue = payments.reduce(
-      (sum, p) => sum + BigInt(p.amount.toString()),
-      BigInt(0),
-    );
+    const totalRevenue = payments.reduce((sum, p) => sum + BigInt(p.amount.toString()), BigInt(0));
     const feeBps = BigInt(50);
-    const totalFees =
-      (totalRevenue * feeBps) / BigInt(10000);
+    const totalFees = (totalRevenue * feeBps) / BigInt(10000);
 
     return {
       totalRevenue: totalRevenue.toString(),
@@ -104,10 +92,7 @@ export class AnalyticsService {
       }),
     ]);
 
-    const totalVolume = payments.reduce(
-      (sum, p) => sum + BigInt(p.amount.toString()),
-      BigInt(0),
-    );
+    const totalVolume = payments.reduce((sum, p) => sum + BigInt(p.amount.toString()), BigInt(0));
 
     return {
       totalMerchants,
@@ -144,9 +129,7 @@ export class AnalyticsService {
       }));
   }
 
-  private aggregateCurrencyBreakdown(
-    payments: any[],
-  ): Record<string, number> {
+  private aggregateCurrencyBreakdown(payments: any[]): Record<string, number> {
     const breakdown: Record<string, number> = {};
 
     for (const payment of payments) {

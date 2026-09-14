@@ -11,7 +11,7 @@
 #![no_std]
 
 use soroban_sdk::{
-    contract, contractimpl, contracttype, symbol_short, Address, Env, String, Symbol,
+    contract, contractimpl, contracttype, symbol_short, Address, Env, String, Symbol, Vec,
 };
 
 const OWNER_KEY: Symbol = symbol_short!("owner");
@@ -47,13 +47,13 @@ pub enum BadgeTier {
 #[derive(Clone, Debug, PartialEq)]
 pub struct BadgeDefinition {
     pub badge_id: u64,
-    pub badge_type: String,        // e.g., "VERIFIED_MERCHANT"
-    pub name: String,              // e.g., "Verified Merchant"
-    pub description: String,       // e.g., "Merchant has been verified by EPay admin"
+    pub badge_type: String,  // e.g., "VERIFIED_MERCHANT"
+    pub name: String,        // e.g., "Verified Merchant"
+    pub description: String, // e.g., "Merchant has been verified by EPay admin"
     pub tier: BadgeTier,
-    pub icon_url: Option<String>,  // URL to badge icon
-    pub criteria: String,          // How to earn this badge
-    pub max_supply: u64,           // Max number of this badge that can be issued (0 = unlimited)
+    pub icon_url: Option<String>, // URL to badge icon
+    pub criteria: String,         // How to earn this badge
+    pub max_supply: u64,          // Max number of this badge that can be issued (0 = unlimited)
     pub issued_count: u64,
     pub is_active: bool,
 }
@@ -62,12 +62,31 @@ pub struct BadgeDefinition {
 #[derive(Clone, Debug, PartialEq)]
 pub struct IssuedBadge {
     pub badge_id: u64,
-    pub definition_id: u64,    // Reference to BadgeDefinition
+    pub definition_id: u64, // Reference to BadgeDefinition
     pub owner: Address,
     pub issued_at: u64,
-    pub expires_at: Option<u64>, // Some badges may expire
+    pub expires_at: Option<u64>,  // Some badges may expire
     pub metadata: Option<String>, // JSON metadata
-    pub is_sbt: bool,            // Soulbound (non-transferable)
+    pub is_sbt: bool,             // Soulbound (non-transferable)
+}
+
+/// Input for `register_badge_definition`.
+///
+/// A `#[contractimpl]` method is limited to a small number of arguments, so the
+/// definition is passed as a single contract type rather than ten separate
+/// parameters (which the SDK macro rejects outright).
+#[contracttype]
+#[derive(Clone, Debug, PartialEq)]
+pub struct BadgeDefinitionInput {
+    pub badge_id: u64,
+    pub badge_type: String,
+    pub name: String,
+    pub description: String,
+    pub tier: BadgeTier,
+    pub icon_url: Option<String>,
+    pub criteria: String,
+    pub max_supply: u64,
+    pub is_active: bool,
 }
 
 #[contracttype]
@@ -94,33 +113,38 @@ impl ImpactNFT {
 
         // Register default badge definitions
         Self::register_badge_definition(
-            &owner,
-            &1u64,
-            &String::from_str(&env, BADGE_VERIFIED_MERCHANT),
-            &String::from_str(&env, "Verified Merchant"),
-            &String::from_str(&env, "Merchant has been verified by EPay admin"),
-            &BadgeTier::Silver,
-            &None,
-            &String::from_str(&env, "Merchant must be verified by admin"),
-            &1000u64,
-            &true,
+            env.clone(),
+            owner.clone(),
+            BadgeDefinitionInput {
+                badge_id: 1u64,
+                badge_type: String::from_str(&env, BADGE_VERIFIED_MERCHANT),
+                name: String::from_str(&env, "Verified Merchant"),
+                description: String::from_str(&env, "Merchant has been verified by EPay admin"),
+                tier: BadgeTier::Silver,
+                icon_url: None,
+                criteria: String::from_str(&env, "Merchant must be verified by admin"),
+                max_supply: 1000u64,
+                is_active: true,
+            },
         );
-        env.storage()
-            .instance()
-            .set(&NEXT_ID_KEY, &2u64);
 
         Self::register_badge_definition(
-            &owner,
-            &2u64,
-            &String::from_str(&env, BADGE_TOP_RATED),
-            &String::from_str(&env, "Top Rated Merchant"),
-            &String::from_str(&env, "Merchant has consistently high ratings"),
-            &BadgeTier::Gold,
-            &None,
-            &String::from_str(&env, "Must maintain 4.5+ star rating"),
-            &500u64,
-            &true,
+            env.clone(),
+            owner.clone(),
+            BadgeDefinitionInput {
+                badge_id: 2u64,
+                badge_type: String::from_str(&env, BADGE_TOP_RATED),
+                name: String::from_str(&env, "Top Rated Merchant"),
+                description: String::from_str(&env, "Merchant has consistently high ratings"),
+                tier: BadgeTier::Gold,
+                icon_url: None,
+                criteria: String::from_str(&env, "Must maintain 4.5+ star rating"),
+                max_supply: 500u64,
+                is_active: true,
+            },
         );
+
+        env.storage().instance().set(&NEXT_ID_KEY, &3u64);
     }
 
     /// Get the contract owner.
@@ -133,41 +157,33 @@ impl ImpactNFT {
     // ════════════════════════════════════════════════════════════════════
 
     /// Register a new badge definition.
-    pub fn register_badge_definition(
-        env: Env,
-        caller: Address,
-        badge_id: &u64,
-        badge_type: &String,
-        name: &String,
-        description: &String,
-        tier: &BadgeTier,
-        icon_url: &Option<String>,
-        criteria: &String,
-        max_supply: &u64,
-        is_active: &bool,
-    ) {
+    pub fn register_badge_definition(env: Env, caller: Address, input: BadgeDefinitionInput) {
         Self::require_owner(&env, &caller);
 
+        let key = (symbol_short!("badgedef"), input.badge_id);
+        if env.storage().persistent().has(&key) {
+            panic!("Badge definition already registered");
+        }
+
         let definition = BadgeDefinition {
-            badge_id: *badge_id,
-            badge_type: badge_type.clone(),
-            name: name.clone(),
-            description: description.clone(),
-            tier: tier.clone(),
-            icon_url: icon_url.clone(),
-            criteria: criteria.clone(),
-            max_supply: *max_supply,
+            badge_id: input.badge_id,
+            badge_type: input.badge_type,
+            name: input.name,
+            description: input.description,
+            tier: input.tier,
+            icon_url: input.icon_url,
+            criteria: input.criteria,
+            max_supply: input.max_supply,
             issued_count: 0,
-            is_active: *is_active,
+            is_active: input.is_active,
         };
 
-        let key = (symbol_short!("definition"), *badge_id);
         env.storage().persistent().set(&key, &definition);
     }
 
     /// Get a badge definition.
     pub fn get_badge_definition(env: Env, badge_id: u64) -> Option<BadgeDefinition> {
-        let key = (symbol_short!("definition"), badge_id);
+        let key = (symbol_short!("badgedef"), badge_id);
         env.storage().persistent().get(&key)
     }
 
@@ -183,7 +199,7 @@ impl ImpactNFT {
     ) {
         Self::require_owner(&env, &caller);
 
-        let key = (symbol_short!("definition"), badge_id);
+        let key = (symbol_short!("badgedef"), badge_id);
         let mut definition: BadgeDefinition = env
             .storage()
             .persistent()
@@ -223,7 +239,7 @@ impl ImpactNFT {
     ) -> u64 {
         Self::require_owner(&env, &caller);
 
-        let definition_key = (symbol_short!("definition"), badge_id);
+        let definition_key = (symbol_short!("badgedef"), badge_id);
         let definition: BadgeDefinition = env
             .storage()
             .persistent()
@@ -245,11 +261,7 @@ impl ImpactNFT {
             panic!("Owner already has this badge");
         }
 
-        let badge_id_final = env
-            .storage()
-            .instance()
-            .get(&NEXT_ID_KEY)
-            .unwrap();
+        let badge_id_final = env.storage().instance().get(&NEXT_ID_KEY).unwrap();
 
         let issued_badge = IssuedBadge {
             badge_id: badge_id_final,
@@ -277,9 +289,7 @@ impl ImpactNFT {
         if definition.max_supply > 0 {
             let mut def = definition;
             def.issued_count += 1;
-            env.storage()
-                .persistent()
-                .set(&definition_key, &def);
+            env.storage().persistent().set(&definition_key, &def);
         }
 
         // Increment next_id
@@ -301,18 +311,15 @@ impl ImpactNFT {
 
     /// Get badges held by an address.
     pub fn get_badges(env: Env, owner: Address) -> Vec<u64> {
-        let mut badges = Vec::new();
-        let next_id: u64 = env
-            .storage()
-            .instance()
-            .get(&NEXT_ID_KEY)
-            .unwrap();
+        let mut badges = Vec::new(&env);
+        let next_id: u64 = env.storage().instance().get(&NEXT_ID_KEY).unwrap();
 
         for id in 1..next_id {
             let badge_key = (symbol_short!("badge"), id);
-            if let Some(badge) = env.storage().persistent().get(&badge_key) {
+            let stored: Option<IssuedBadge> = env.storage().persistent().get(&badge_key);
+            if let Some(badge) = stored {
                 if badge.owner == owner && badge.is_sbt {
-                    badges.push(id);
+                    badges.push_back(id);
                 }
             }
         }
@@ -323,11 +330,8 @@ impl ImpactNFT {
     /// Get badge balance for a specific badge type.
     pub fn get_badge_balance(env: Env, owner: Address, badge_id: u64) -> u64 {
         let key = (symbol_short!("balance"), owner, badge_id);
-        env.storage()
-            .persistent()
-            .get(&key)
-            .map(|b| b.amount)
-            .unwrap_or(0)
+        let stored: Option<BadgeBalance> = env.storage().persistent().get(&key);
+        stored.map(|b| b.amount).unwrap_or(0)
     }
 
     /// Get an issued badge by ID.
@@ -342,15 +346,12 @@ impl ImpactNFT {
         let mut badge_id = 0u64;
         let mut found = false;
 
-        let next_id: u64 = env
-            .storage()
-            .instance()
-            .get(&NEXT_ID_KEY)
-            .unwrap();
+        let next_id: u64 = env.storage().instance().get(&NEXT_ID_KEY).unwrap();
 
         for id in 1..next_id {
-            let def_key = (symbol_short!("definition"), id);
-            if let Some(def) = env.storage().persistent().get(&def_key) {
+            let def_key = (symbol_short!("badgedef"), id);
+            let stored: Option<BadgeDefinition> = env.storage().persistent().get(&def_key);
+            if let Some(def) = stored {
                 if def.badge_type == badge_type {
                     badge_id = id;
                     found = true;
@@ -363,19 +364,19 @@ impl ImpactNFT {
             return false;
         }
 
-        let balance = Self::get_badge_balance(&env, owner, badge_id);
+        let balance = Self::get_badge_balance(env.clone(), owner, badge_id);
         balance > 0
     }
 
     /// Get all badge types held by an address.
     pub fn get_held_badge_types(env: Env, owner: Address) -> Vec<String> {
-        let badges = Self::get_badges(&env, owner);
-        let mut types = Vec::new();
+        let badges = Self::get_badges(env.clone(), owner);
+        let mut types = Vec::new(&env);
 
-        for badge_id in badges {
-            let badge = Self::get_issued_badge(&env, badge_id).unwrap();
-            let def = Self::get_badge_definition(&env, badge.definition_id).unwrap();
-            types.push(def.badge_type);
+        for badge_id in badges.iter() {
+            let badge = Self::get_issued_badge(env.clone(), badge_id).unwrap();
+            let def = Self::get_badge_definition(env.clone(), badge.definition_id).unwrap();
+            types.push_back(def.badge_type);
         }
 
         types
@@ -402,7 +403,8 @@ impl ImpactNFT {
 
         // Update balance
         let balance_key = (symbol_short!("balance"), badge.owner, badge.definition_id);
-        if let Some(mut balance) = env.storage().persistent().get(&balance_key) {
+        let stored_balance: Option<BadgeBalance> = env.storage().persistent().get(&balance_key);
+        if let Some(mut balance) = stored_balance {
             balance.amount -= 1;
             if balance.amount == 0 {
                 env.storage().persistent().remove(&balance_key);

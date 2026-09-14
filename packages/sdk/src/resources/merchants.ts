@@ -1,5 +1,9 @@
 import type {
-  Merchant, MerchantOnboardingRequest, MerchantStatus, PaginatedResponse, PaginationQuery,
+  Merchant,
+  MerchantOnboardingRequest,
+  MerchantStatus,
+  PaginatedResponse,
+  PaginationQuery,
 } from '@epay/types';
 
 import { BaseResource } from './base';
@@ -32,10 +36,14 @@ export class MerchantsResource extends BaseResource {
   /**
    * List merchants (admin only).
    */
-  async list(params?: PaginationQuery & {
-    status?: MerchantStatus;
-  }): Promise<PaginatedResponse<Merchant>> {
-    return this.client.get<PaginatedResponse<Merchant>>(`/merchants${this.buildQuery(params as Record<string, unknown>)}`);
+  async list(
+    params?: PaginationQuery & {
+      status?: MerchantStatus;
+    },
+  ): Promise<PaginatedResponse<Merchant>> {
+    return this.client.get<PaginatedResponse<Merchant>>(
+      `/merchants${this.buildQuery(params as Record<string, unknown>)}`,
+    );
   }
 
   /**

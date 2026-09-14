@@ -1,6 +1,15 @@
 'use client';
 
-import { Button, Input, Card, CardHeader, CardContent, CardTitle, CardDescription, CardFooter } from '@epay/ui';
+import {
+  Button,
+  Input,
+  Card,
+  CardHeader,
+  CardContent,
+  CardTitle,
+  CardDescription,
+  CardFooter,
+} from '@epay/ui';
 import { motion } from 'framer-motion';
 import { Zap, Mail, Lock, User, ArrowRight, AlertCircle, Wallet } from 'lucide-react';
 import Link from 'next/link';
@@ -15,7 +24,7 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleRegister = async (e: React.FormEvent) => {
+  const handleRegister = async (e: React.SyntheticEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
@@ -93,7 +102,9 @@ export default function RegisterPage() {
                     type="text"
                     placeholder="John Doe"
                     value={displayName}
-                    onChange={(e) => { setDisplayName(e.target.value); }}
+                    onChange={(e) => {
+                      setDisplayName(e.target.value);
+                    }}
                     className="pl-10"
                     required
                   />
@@ -110,7 +121,9 @@ export default function RegisterPage() {
                     type="email"
                     placeholder="you@example.com"
                     value={email}
-                    onChange={(e) => { setEmail(e.target.value); }}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                    }}
                     className="pl-10"
                     required
                   />
@@ -127,7 +140,9 @@ export default function RegisterPage() {
                     type="password"
                     placeholder="Min. 8 characters"
                     value={password}
-                    onChange={(e) => { setPassword(e.target.value); }}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                    }}
                     className="pl-10"
                     minLength={8}
                     required
@@ -154,7 +169,9 @@ export default function RegisterPage() {
               variant="outline"
               className="w-full gap-2"
               size="lg"
-              onClick={() => { router.push('/dashboard'); }}
+              onClick={() => {
+                router.push('/dashboard');
+              }}
             >
               <Zap className="w-4 h-4" />
               Connect Stellar Wallet

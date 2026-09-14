@@ -1,0 +1,15 @@
+{
+  // `tsconfig.json` only includes `src/**/*`, so the four runnable `examples/`
+  // scripts were never type-checked. The README points developers at them, so a
+  // broken example should fail CI. `pnpm typecheck` and ESLint both use this
+  // project; it emits nothing.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": ".",
+    // The examples are Node scripts that read `process.env`.
+    "types": ["node"]
+  },
+  "include": ["src/**/*", "examples/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

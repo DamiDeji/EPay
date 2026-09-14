@@ -59,7 +59,9 @@ describe('xlmToStroops', () => {
 
 describe('isValidStellarPublicKey', () => {
   it('should accept valid G... address', () => {
-    expect(isValidStellarPublicKey('GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA')).toBe(true);
+    expect(
+      isValidStellarPublicKey('GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'),
+    ).toBe(true);
   });
 
   it('should reject short addresses', () => {
@@ -100,7 +102,11 @@ describe('getExplorerUrl', () => {
   });
 
   it('should return public account URL', () => {
-    const url = getExplorerUrl('account', 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', StellarNetwork.PUBLIC);
+    const url = getExplorerUrl(
+      'account',
+      'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+      StellarNetwork.PUBLIC,
+    );
     expect(url).toContain('stellar.expert');
     expect(url).toContain('public');
     expect(url).toContain('GAAAAAA');
@@ -134,7 +140,10 @@ describe('calculateNetAmount', () => {
 
 describe('EPayError', () => {
   it('should create from response', () => {
-    const err = EPayError.fromResponse(400, { message: 'Bad request', errors: [{ code: 'E1', message: 'details' }] });
+    const err = EPayError.fromResponse(400, {
+      message: 'Bad request',
+      errors: [{ code: 'E1', message: 'details' }],
+    });
     expect(err.message).toBe('Bad request');
     expect(err.statusCode).toBe(400);
     expect(err.errors).toHaveLength(1);

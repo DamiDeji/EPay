@@ -56,11 +56,41 @@ const STATS = [
 ];
 
 const RECENT_PAYMENTS = [
-  { id: 'pay_001', amount: '12.5 XLM', customer: '0x1234...abcd', status: 'COMPLETED', date: '2 min ago' },
-  { id: 'pay_002', amount: '45.0 XLM', customer: '0x5678...efgh', status: 'COMPLETED', date: '15 min ago' },
-  { id: 'pay_003', amount: '8.2 XLM', customer: '0x9012...ijkl', status: 'PENDING', date: '1 hour ago' },
-  { id: 'pay_004', amount: '100.0 XLM', customer: '0x3456...mnop', status: 'FAILED', date: '2 hours ago' },
-  { id: 'pay_005', amount: '3.7 XLM', customer: '0x7890...qrst', status: 'COMPLETED', date: '3 hours ago' },
+  {
+    id: 'pay_001',
+    amount: '12.5 XLM',
+    customer: '0x1234...abcd',
+    status: 'COMPLETED',
+    date: '2 min ago',
+  },
+  {
+    id: 'pay_002',
+    amount: '45.0 XLM',
+    customer: '0x5678...efgh',
+    status: 'COMPLETED',
+    date: '15 min ago',
+  },
+  {
+    id: 'pay_003',
+    amount: '8.2 XLM',
+    customer: '0x9012...ijkl',
+    status: 'PENDING',
+    date: '1 hour ago',
+  },
+  {
+    id: 'pay_004',
+    amount: '100.0 XLM',
+    customer: '0x3456...mnop',
+    status: 'FAILED',
+    date: '2 hours ago',
+  },
+  {
+    id: 'pay_005',
+    amount: '3.7 XLM',
+    customer: '0x7890...qrst',
+    status: 'COMPLETED',
+    date: '3 hours ago',
+  },
 ];
 
 const statusColors: Record<string, 'success' | 'warning' | 'destructive' | 'slate'> = {
@@ -76,7 +106,9 @@ export default function DashboardPage() {
       {/* Page Header */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">Dashboard</h1>
-        <p className="text-slate-500 dark:text-slate-400 mt-1">Welcome back! Here&apos;s your payment overview.</p>
+        <p className="text-slate-500 dark:text-slate-400 mt-1">
+          Welcome back! Here&apos;s your payment overview.
+        </p>
       </div>
 
       {/* Stats Grid */}
@@ -107,7 +139,9 @@ export default function DashboardPage() {
                     {stat.change}
                   </div>
                 </div>
-                <div className="text-2xl font-bold text-slate-900 dark:text-white mb-1">{stat.value}</div>
+                <div className="text-2xl font-bold text-slate-900 dark:text-white mb-1">
+                  {stat.value}
+                </div>
                 <div className="text-sm text-slate-500 dark:text-slate-400">{stat.label}</div>
               </CardContent>
             </Card>
@@ -134,7 +168,20 @@ export default function DashboardPage() {
               ))}
             </div>
             <div className="flex justify-between mt-2 px-4 text-xs text-slate-400">
-              {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((m) => (
+              {[
+                'Jan',
+                'Feb',
+                'Mar',
+                'Apr',
+                'May',
+                'Jun',
+                'Jul',
+                'Aug',
+                'Sep',
+                'Oct',
+                'Nov',
+                'Dec',
+              ].map((m) => (
                 <span key={m}>{m}</span>
               ))}
             </div>
@@ -173,7 +220,10 @@ export default function DashboardPage() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Recent Payments</CardTitle>
-          <Badge variant="slate" className="cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-600">
+          <Badge
+            variant="slate"
+            className="cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-600"
+          >
             View All
           </Badge>
         </CardHeader>
@@ -182,11 +232,21 @@ export default function DashboardPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-200 dark:border-slate-700">
-                  <th className="text-left py-3 px-2 font-medium text-slate-500 dark:text-slate-400">Payment ID</th>
-                  <th className="text-left py-3 px-2 font-medium text-slate-500 dark:text-slate-400">Amount</th>
-                  <th className="text-left py-3 px-2 font-medium text-slate-500 dark:text-slate-400">Customer</th>
-                  <th className="text-left py-3 px-2 font-medium text-slate-500 dark:text-slate-400">Status</th>
-                  <th className="text-right py-3 px-2 font-medium text-slate-500 dark:text-slate-400">Date</th>
+                  <th className="text-left py-3 px-2 font-medium text-slate-500 dark:text-slate-400">
+                    Payment ID
+                  </th>
+                  <th className="text-left py-3 px-2 font-medium text-slate-500 dark:text-slate-400">
+                    Amount
+                  </th>
+                  <th className="text-left py-3 px-2 font-medium text-slate-500 dark:text-slate-400">
+                    Customer
+                  </th>
+                  <th className="text-left py-3 px-2 font-medium text-slate-500 dark:text-slate-400">
+                    Status
+                  </th>
+                  <th className="text-right py-3 px-2 font-medium text-slate-500 dark:text-slate-400">
+                    Date
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -198,8 +258,12 @@ export default function DashboardPage() {
                     <td className="py-3 px-2">
                       <span className="font-mono text-xs text-[#0098EA]">{payment.id}</span>
                     </td>
-                    <td className="py-3 px-2 font-medium text-slate-900 dark:text-white">{payment.amount}</td>
-                    <td className="py-3 px-2 font-mono text-xs text-slate-500">{payment.customer}</td>
+                    <td className="py-3 px-2 font-medium text-slate-900 dark:text-white">
+                      {payment.amount}
+                    </td>
+                    <td className="py-3 px-2 font-mono text-xs text-slate-500">
+                      {payment.customer}
+                    </td>
                     <td className="py-3 px-2">
                       <Badge variant={statusColors[payment.status]}>{payment.status}</Badge>
                     </td>

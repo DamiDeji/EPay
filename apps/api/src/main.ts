@@ -12,19 +12,15 @@ async function bootstrap(): Promise<void> {
 
   // Cast FastifyAdapter to any to avoid type incompatibility
   // between NestJS v10 core types and @nestjs/platform-fastify v11 types
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-  const app = await NestFactory.create(
-    AppModule,
-    new FastifyAdapter({ logger: true }) as any,
-    {
-      logger: ['log', 'error', 'warn', 'debug', 'verbose'],
-    },
-  );
+
+  const app = await NestFactory.create(AppModule, new FastifyAdapter({ logger: true }) as any, {
+    logger: ['log', 'error', 'warn', 'debug', 'verbose'],
+  });
 
   // Request-id correlation. Registered on the Fastify instance directly (before
   // routing) so every request — including 404s — is correlatable in logs and
   // error reports, and the id is echoed back in the `x-request-id` header.
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
   const fastify = app.getHttpAdapter().getInstance();
   attachRequestContext(fastify);
 
@@ -37,7 +33,11 @@ async function bootstrap(): Promise<void> {
           styleSrc: ["'self'", "'unsafe-inline'"],
           scriptSrc: ["'self'"],
           imgSrc: ["'self'", 'data:', 'https://*.stellar.org', 'https://stellar.expert'],
-          connectSrc: ["'self'", 'https://*.stellar.org', process.env.CORS_ORIGINS?.split(',')[0] ?? 'http://localhost:3000'],
+          connectSrc: [
+            "'self'",
+            'https://*.stellar.org',
+            process.env.CORS_ORIGINS?.split(',')[0] ?? 'http://localhost:3000',
+          ],
           fontSrc: ["'self'"],
           frameSrc: ["'none'"],
           objectSrc: ["'none'"],
@@ -49,7 +49,9 @@ async function bootstrap(): Promise<void> {
   );
 
   // CORS with strict origin validation
-  const allowedOrigins = process.env.CORS_ORIGINS?.split(',').map((o) => o.trim()) ?? ['http://localhost:3000'];
+  const allowedOrigins = process.env.CORS_ORIGINS?.split(',').map((o) => o.trim()) ?? [
+    'http://localhost:3000',
+  ];
   app.enableCors({
     origin: (origin: string | undefined, callback: (err: Error | null, allow: boolean) => void) => {
       // Allow requests with no origin (mobile apps, curl, etc.)
@@ -62,7 +64,13 @@ async function bootstrap(): Promise<void> {
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'x-stellar-signature', 'x-request-id'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'x-api-key',
+      'x-stellar-signature',
+      'x-request-id',
+    ],
     exposedHeaders: ['X-Request-Id', 'X-RateLimit-Limit', 'X-RateLimit-Remaining'],
   });
 
@@ -101,14 +109,13 @@ async function bootstrap(): Promise<void> {
     .addTag('Analytics', 'Analytics and reporting')
     .build();
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   const document = SwaggerModule.createDocument(app as any, config);
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+
   SwaggerModule.setup('api/docs', app as any, document);
 
   // Start server
   const port = process.env.PORT ?? 4000;
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+
   await (app as any).listen(port, '0.0.0.0');
   logger.log(`🚀 EPay API running on http://localhost:${String(port)}`);
   logger.log(`📚 API Docs available at http://localhost:${String(port)}/api/docs`);

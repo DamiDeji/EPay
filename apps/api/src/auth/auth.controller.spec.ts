@@ -1,12 +1,23 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
+
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { createMockPrismaService } from '../../test/mocks/prisma.mock';
 
 describe('AuthController', () => {
   let controller: AuthController;
-  let authService: jest.Mocked<Partial<AuthService>>;
+  // Explicit mock shape rather than `jest.Mocked<Partial<AuthService>>`: the
+  // `Partial` made every method `| undefined`, so each `mockResolvedValue` call
+  // was both an "object is possibly undefined" and a "property does not exist"
+  // error once the specs entered a compiler program.
+  let authService: {
+    register: jest.Mock;
+    login: jest.Mock;
+    refreshToken: jest.Mock;
+    logout: jest.Mock;
+    generateApiKey: jest.Mock;
+  };
 
   beforeEach(async () => {
     authService = {
@@ -79,10 +90,10 @@ describe('AuthController', () => {
   it('should create API key', async () => {
     authService.generateApiKey.mockResolvedValue({ rawKey: 'epay_abc' });
 
-    const result = await controller.createApiKey(
-      { user: { sub: 'user_1' } } as any,
-      { name: 'Test Key', permissions: ['read:payments'] },
-    );
+    const result = await controller.createApiKey({ user: { sub: 'user_1' } } as any, {
+      name: 'Test Key',
+      permissions: ['read:payments'],
+    });
 
     expect(result.rawKey).toBe('epay_abc');
   });

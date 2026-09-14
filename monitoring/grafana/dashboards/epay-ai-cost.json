@@ -34,7 +34,18 @@
           "refId": "A"
         }
       ],
-      "fieldConfig": { "defaults": { "unit": "percentunit", "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 0.8 }] } } }
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 0.8 }
+            ]
+          }
+        }
+      }
     },
     {
       "id": 3,
@@ -43,7 +54,11 @@
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
       "datasource": { "type": "prometheus", "uid": "epay-prometheus" },
       "targets": [
-        { "expr": "sum by (direction) (increase(epay_ai_tokens_total[1h]))", "legendFormat": "{{direction}}", "refId": "A" }
+        {
+          "expr": "sum by (direction) (increase(epay_ai_tokens_total[1h]))",
+          "legendFormat": "{{direction}}",
+          "refId": "A"
+        }
       ]
     },
     {
@@ -53,7 +68,11 @@
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
       "datasource": { "type": "prometheus", "uid": "epay-prometheus" },
       "targets": [
-        { "expr": "histogram_quantile(0.95, sum(rate(epay_ai_summary_duration_seconds_bucket[5m])) by (le, resource))", "legendFormat": "{{resource}}", "refId": "A" }
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(epay_ai_summary_duration_seconds_bucket[5m])) by (le, resource))",
+          "legendFormat": "{{resource}}",
+          "refId": "A"
+        }
       ],
       "fieldConfig": { "defaults": { "unit": "s" } }
     },
@@ -64,7 +83,11 @@
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
       "datasource": { "type": "prometheus", "uid": "epay-prometheus" },
       "targets": [
-        { "expr": "sum by (status) (rate(epay_ai_summary_errors_total[5m]))", "legendFormat": "{{status}}", "refId": "A" }
+        {
+          "expr": "sum by (status) (rate(epay_ai_summary_errors_total[5m]))",
+          "legendFormat": "{{status}}",
+          "refId": "A"
+        }
       ]
     }
   ]

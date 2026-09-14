@@ -6,7 +6,11 @@ import type { StellarNetwork } from '@epay/types';
 
 // ── Wallet Address Validation (Phase 7h) ──────────────────────────────────────
 // Additional wallet utilities beyond the existing validators
-export { isValidStellarAddress, looksLikeStellarAddress, generateTestAddress } from './wallet-validator';
+export {
+  isValidStellarAddress,
+  looksLikeStellarAddress,
+  generateTestAddress,
+} from './wallet-validator';
 
 // ── API Response Helpers ────────────────────────────────────────────────────
 
@@ -19,7 +23,10 @@ export function successResponse<T>(data: T, message?: string) {
   };
 }
 
-export function errorResponse(message: string, errors?: { code: string; message: string; field?: string }[]) {
+export function errorResponse(
+  message: string,
+  errors?: { code: string; message: string; field?: string }[],
+) {
   return {
     success: false,
     data: null,
@@ -124,16 +131,22 @@ export function getExplorerUrl(
   value: string,
   network: StellarNetwork = 'testnet' as StellarNetwork,
 ): string {
-  const base = network === ('public' as StellarNetwork)
-    ? 'https://stellar.expert/explorer/public'
-    : 'https://stellar.expert/explorer/testnet';
+  const base =
+    network === ('public' as StellarNetwork)
+      ? 'https://stellar.expert/explorer/public'
+      : 'https://stellar.expert/explorer/testnet';
 
   switch (type) {
-    case 'tx': return `${base}/tx/${value}`;
-    case 'account': return `${base}/account/${value}`;
-    case 'ledger': return `${base}/ledger/${value}`;
-    case 'contract': return `${base}/contract/${value}`;
-    default: return base;
+    case 'tx':
+      return `${base}/tx/${value}`;
+    case 'account':
+      return `${base}/account/${value}`;
+    case 'ledger':
+      return `${base}/ledger/${value}`;
+    case 'contract':
+      return `${base}/contract/${value}`;
+    default:
+      return base;
   }
 }
 
@@ -159,11 +172,7 @@ export function calculateNetAmount(amountStroops: string, feeBps = 50): string {
 /**
  * Calculate the minimum Stellar account balance including reserves.
  */
-export function calculateMinBalance(
-  numTrustlines = 0,
-  numOffers = 0,
-  numSigners = 0,
-): string {
+export function calculateMinBalance(numTrustlines = 0, numOffers = 0, numSigners = 0): string {
   const baseReserve = BigInt('10000000'); // 1 XLM
   const trustlineReserve = BigInt('5000000'); // 0.5 XLM per trustline
   const offerReserve = BigInt('5000000'); // 0.5 XLM per offer
@@ -201,7 +210,15 @@ export function paginate<T>(
   items: T[],
   page: number,
   pageSize: number,
-): { data: T[]; total: number; page: number; pageSize: number; totalPages: number; hasNext: boolean; hasPrevious: boolean } {
+): {
+  data: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
+} {
   const total = items.length;
   const totalPages = Math.ceil(total / pageSize);
   const start = (page - 1) * pageSize;

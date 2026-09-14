@@ -1,5 +1,9 @@
 import type {
-  Refund, CreateRefundRequest, RefundStatus, PaginatedResponse, PaginationQuery,
+  Refund,
+  CreateRefundRequest,
+  RefundStatus,
+  PaginatedResponse,
+  PaginationQuery,
 } from '@epay/types';
 
 import { BaseResource } from './base';
@@ -34,12 +38,16 @@ export class RefundsResource extends BaseResource {
   /**
    * List refunds with optional filters.
    */
-  async list(params?: PaginationQuery & {
-    merchantId?: string;
-    paymentId?: string;
-    status?: RefundStatus;
-  }): Promise<PaginatedResponse<Refund>> {
-    return this.client.get<PaginatedResponse<Refund>>(`/refunds${this.buildQuery(params as Record<string, unknown>)}`);
+  async list(
+    params?: PaginationQuery & {
+      merchantId?: string;
+      paymentId?: string;
+      status?: RefundStatus;
+    },
+  ): Promise<PaginatedResponse<Refund>> {
+    return this.client.get<PaginatedResponse<Refund>>(
+      `/refunds${this.buildQuery(params as Record<string, unknown>)}`,
+    );
   }
 
   /**

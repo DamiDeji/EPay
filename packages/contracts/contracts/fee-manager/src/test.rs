@@ -3,7 +3,12 @@
 //! Tests cover: fee configuration, fee calculation, merchant-specific fees,
 //! bounds enforcement, and access control.
 
-use soroban_sdk::{testutils::Address as _, Env, Address};
+// `Ledger` is the testutils trait that supplies `env.ledger().with_mut(...)`;
+// without it the suite does not compile (`E0599: no method named with_mut`).
+use soroban_sdk::{
+    testutils::{Address as _, Ledger},
+    Address, Env,
+};
 
 use super::*;
 
@@ -31,7 +36,7 @@ fn setup_test() -> (Env, FeeManagerClient<'static>, Address) {
 
 #[test]
 fn test_initialize() {
-    let (env, client, _owner) = setup_test();
+    let (_env, client, _owner) = setup_test();
 
     let config = client.get_config();
     assert_eq!(config.default_fee_bps, 50);
@@ -84,7 +89,7 @@ fn test_initialize_with_fee_too_high() {
 
 #[test]
 fn test_calculate_fee_default() {
-    let (env, client, _owner) = setup_test();
+    let (_env, client, _owner) = setup_test();
 
     // Default 0.5% fee
     let fee = client.calculate_fee(&10_000_000_i128, &None);
@@ -102,7 +107,7 @@ fn test_calculate_fee_default() {
 
 #[test]
 fn test_calculate_fee_various_rates() {
-    let (env, client, owner) = setup_test();
+    let (_env, client, owner) = setup_test();
 
     // Set custom default fee
     client.set_default_fee(&owner, &100_u32); // 1%
@@ -143,20 +148,20 @@ fn test_calculate_fee_with_merchant_override() {
 #[test]
 #[should_panic(expected = "Fee outside allowed bounds")]
 fn test_set_fee_below_minimum() {
-    let (env, client, owner) = setup_test();
+    let (_env, client, owner) = setup_test();
     client.set_default_fee(&owner, &5_u32); // Below min 10
 }
 
 #[test]
 #[should_panic(expected = "Fee outside allowed bounds")]
 fn test_set_fee_above_maximum() {
-    let (env, client, owner) = setup_test();
+    let (_env, client, owner) = setup_test();
     client.set_default_fee(&owner, &600_u32); // Above max 500
 }
 
 #[test]
 fn test_set_fee_at_boundaries() {
-    let (env, client, owner) = setup_test();
+    let (_env, client, owner) = setup_test();
 
     // At minimum
     client.set_default_fee(&owner, &10_u32);
@@ -198,7 +203,7 @@ fn test_non_owner_cannot_set_merchant_fee() {
 
 #[test]
 fn test_fee_precision() {
-    let (env, client, _owner) = setup_test();
+    let (_env, client, _owner) = setup_test();
 
     // Fee calculation should truncate (not round) — integer division
     // 9999 * 50 / 10000 = 499950 / 10000 = 49 (truncated)
@@ -242,28 +247,43 @@ fn test_fuzz_fee_calculation() {
     let contract_id = env.register_contract(None, FeeManager);
     let client = FeeManagerClient::new(&env, &contract_id);
     client.init(&owner, &50_u32);
+    // The sweep below issues hundreds of metered contract calls.
+    env.budget().reset_unlimited();
 
     let merchant = Address::generate(&env);
     client.set_merchant_fee(&owner, &merchant, &100_u32);
 
-    // Generate random amounts and verify fee calculation
-    for i in 0..10000 {
+    // Sweep deterministic amounts and fee configurations. Each step performs a
+    // metered contract call, so the sweep is bounded to keep the suite fast.
+    for i in 0..256usize {
         let amount = ((i as u64 + 1) * 1000) as i128;
-        let fee_bps = 10 + (i % 491) * 10; // 10 to 4910, but actual max is 500
-        let capped = fee_bps.min(500);
+        let fee_bps = 10 + (i % 491) * 10; // 10 to 4910, but the contract caps at 500
+        let capped = (fee_bps as u32).min(500);
 
-        if i % 2 == 0 {
+        // Alternate between the merchant-specific override and the global
+        // default, and always compare against the rate that was just configured.
+        let (fee1, fee2) = if i % 2 == 0 {
             client.set_default_fee(&owner, &capped);
+            (
+                client.calculate_fee(&amount, &None),
+                client.calculate_fee(&amount, &None),
+            )
         } else {
             client.set_merchant_fee(&owner, &merchant, &capped);
-        }
+            (
+                client.calculate_fee(&amount, &Some(merchant.clone())),
+                client.calculate_fee(&amount, &Some(merchant.clone())),
+            )
+        };
 
-        // Calculate and verify idempotent
-        let fee1 = client.calculate_fee(&amount, &Some(merchant));
-        let fee2 = client.calculate_fee(&amount, &Some(merchant));
-        assert_eq!(fee1, fee2);
-
-        // fee * 10000 <= amount * capped (no overflow in the other direction)
-        assert!(fee1 * 10000 <= amount * capped as i128 || amount == 0);
+        // Pure function of (amount, configured rate): repeated calls agree.
+        assert_eq!(fee1, fee2, "fee calculation must be idempotent");
+        assert_eq!(
+            fee1,
+            amount * capped as i128 / 10000,
+            "fee must be floor(amount * bps / 10_000)"
+        );
+        // Never charges more than the configured basis-point rate.
+        assert!(fee1 * 10000 <= amount * capped as i128);
     }
 }

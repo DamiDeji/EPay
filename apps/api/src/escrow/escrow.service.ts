@@ -1,10 +1,6 @@
 import { generateId } from '@epay/shared';
 import type { Escrow, PaginatedResponse } from '@epay/types';
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 
 import { PrismaService } from '../database/prisma.service';
 
@@ -17,10 +13,7 @@ export class EscrowService {
   async create(dto: CreateEscrowDto): Promise<Escrow> {
     const escrowId = generateId('esc');
 
-    const totalAmount = dto.milestones.reduce(
-      (sum, m) => sum + BigInt(m.amount),
-      BigInt(0),
-    );
+    const totalAmount = dto.milestones.reduce((sum, m) => sum + BigInt(m.amount), BigInt(0));
 
     const escrow = await this.prisma.escrow.create({
       data: {

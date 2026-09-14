@@ -1,16 +1,25 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { AuditService } from './audit.service';
-import { PrismaService } from '../database/prisma.service';
+import type { TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
+
 import { createMockPrismaService, mockDate } from '../../test/mocks/prisma.mock';
+import { PrismaService } from '../database/prisma.service';
+
+import { AuditService } from './audit.service';
 
 describe('AuditService', () => {
   let service: AuditService;
   let prisma: ReturnType<typeof createMockPrismaService>;
 
   const mockLog = {
-    id: 'log_1', userId: 'user_1', action: 'CREATE', resource: 'PAYMENT',
-    resourceId: 'pay_1', changes: { amount: '1000' },
-    ipAddress: '127.0.0.1', userAgent: 'TestAgent', createdAt: mockDate(),
+    id: 'log_1',
+    userId: 'user_1',
+    action: 'CREATE',
+    resource: 'PAYMENT',
+    resourceId: 'pay_1',
+    changes: { amount: '1000' },
+    ipAddress: '127.0.0.1',
+    userAgent: 'TestAgent',
+    createdAt: mockDate(),
   };
 
   beforeEach(async () => {
@@ -25,8 +34,11 @@ describe('AuditService', () => {
     it('should create an audit log entry', async () => {
       prisma.auditLog.create.mockResolvedValue(mockLog);
       const result = await service.log({
-        userId: 'user_1', action: 'CREATE', resource: 'PAYMENT',
-        resourceId: 'pay_1', changes: { amount: '1000' },
+        userId: 'user_1',
+        action: 'CREATE',
+        resource: 'PAYMENT',
+        resourceId: 'pay_1',
+        changes: { amount: '1000' },
       });
       expect(result.id).toBe('log_1');
       expect(result.action).toBe('CREATE');
@@ -35,7 +47,8 @@ describe('AuditService', () => {
     it('should handle anonymous user', async () => {
       prisma.auditLog.create.mockResolvedValue({ ...mockLog, userId: null });
       const result = await service.log({
-        action: 'READ', resource: 'INVOICE',
+        action: 'READ',
+        resource: 'INVOICE',
       });
       expect(result.userId).toBeNull();
     });

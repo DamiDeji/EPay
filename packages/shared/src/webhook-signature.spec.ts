@@ -91,9 +91,9 @@ describe('verifyWebhookSignature', () => {
   it('rejects a replay outside the tolerance window', () => {
     const header = buildWebhookSignatureHeader(SECRET, BODY, NOW);
     const tooLate = NOW + WEBHOOK_TIMESTAMP_TOLERANCE_SECONDS + 1;
-    expect(verifyWebhookSignature({ secret: SECRET, header, body: BODY, nowSeconds: tooLate })).toBe(
-      false,
-    );
+    expect(
+      verifyWebhookSignature({ secret: SECRET, header, body: BODY, nowSeconds: tooLate }),
+    ).toBe(false);
   });
 
   it('rejects a far-future timestamp', () => {

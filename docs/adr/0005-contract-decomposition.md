@@ -59,13 +59,13 @@ switch a blunt global instrument, and makes storage-layout migration on upgrade
 all-or-nothing. For a system that must survive an audit and be upgraded under a
 timelock, those are disqualifying.
 
-**One contract per *operation*** (e.g. `CreatePayment`, `ConfirmPayment`).
+**One contract per _operation_** (e.g. `CreatePayment`, `ConfirmPayment`).
 Rejected. It fragments state ownership: `ConfirmPayment` would have to write
 storage it does not own, and the payment lifecycle would be spread across
 contracts with no single invariant owner.
 
 **Shared library crate, single deployed contract.** Rejected for the same reason as
-the monolith — the library helps the *developer*, not the *blast radius*; all code
+the monolith — the library helps the _developer_, not the _blast radius_; all code
 still ships as one deployable unit.
 
 ## Consequences

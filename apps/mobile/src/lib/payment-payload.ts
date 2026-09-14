@@ -49,20 +49,19 @@ export function parsePaymentPayload(raw: string): ParsedPayment {
   if (input.startsWith('{')) {
     try {
       const parsed = JSON.parse(input) as Record<string, unknown>;
-      const publicKey = typeof parsed['to'] === 'string' ? parsed['to'] : parsed['publicKey'];
+      const publicKey = typeof parsed.to === 'string' ? parsed.to : parsed.publicKey;
       if (typeof publicKey === 'string' && isValidStellarPublicKey(publicKey)) {
         return {
           kind: 'address',
           publicKey,
-          amount: typeof parsed['amount'] === 'string' ? parsed['amount'] : undefined,
-          assetCode: typeof parsed['asset'] === 'string' ? parsed['asset'] : undefined,
-          memo: typeof parsed['memo'] === 'string' ? parsed['memo'] : undefined,
-          description:
-            typeof parsed['description'] === 'string' ? parsed['description'] : undefined,
+          amount: typeof parsed.amount === 'string' ? parsed.amount : undefined,
+          assetCode: typeof parsed.asset === 'string' ? parsed.asset : undefined,
+          memo: typeof parsed.memo === 'string' ? parsed.memo : undefined,
+          description: typeof parsed.description === 'string' ? parsed.description : undefined,
         };
       }
-      if (typeof parsed['code'] === 'string') {
-        return { kind: 'payment-link', code: parsed['code'] };
+      if (typeof parsed.code === 'string') {
+        return { kind: 'payment-link', code: parsed.code };
       }
     } catch {
       return { kind: 'invalid', reason: 'Malformed JSON in QR code' };
@@ -80,11 +79,11 @@ export function parsePaymentPayload(raw: string): ParsedPayment {
     return {
       kind: 'address',
       publicKey: account,
-      amount: params['amount'],
-      assetCode: params['asset_code'] ?? params['assetCode'],
-      assetIssuer: params['asset_issuer'] ?? params['assetIssuer'],
-      memo: params['memo'],
-      description: params['msg'] ?? params['description'],
+      amount: params.amount,
+      assetCode: params.asset_code ?? params.assetCode,
+      assetIssuer: params.asset_issuer ?? params.assetIssuer,
+      memo: params.memo,
+      description: params.msg ?? params.description,
     };
   }
 
@@ -94,19 +93,19 @@ export function parsePaymentPayload(raw: string): ParsedPayment {
     const queryIndex = rest.indexOf('?');
     const query = queryIndex === -1 ? '' : rest.slice(queryIndex + 1);
     const params = parseQuery(query);
-    const to = params['to'] ?? params['publicKey'];
+    const to = params.to ?? params.publicKey;
     if (to && isValidStellarPublicKey(to)) {
       return {
         kind: 'address',
         publicKey: to,
-        amount: params['amount'],
-        assetCode: params['asset'] ?? params['assetCode'],
-        assetIssuer: params['assetIssuer'],
-        memo: params['memo'],
-        description: params['description'],
+        amount: params.amount,
+        assetCode: params.asset ?? params.assetCode,
+        assetIssuer: params.assetIssuer,
+        memo: params.memo,
+        description: params.description,
       };
     }
-    const code = params['code'];
+    const code = params.code;
     if (code && isPaymentLinkCode(code)) return { kind: 'payment-link', code };
     return { kind: 'invalid', reason: 'EPay URI is missing a destination account' };
   }

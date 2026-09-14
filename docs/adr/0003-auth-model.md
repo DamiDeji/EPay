@@ -14,19 +14,19 @@ EPay serves two very different clients:
   verifying our calls.
 
 Because EPay is non-custodial ([ADR 0002](./0002-custody-model.md)), there is no
-"move money" endpoint to protect: the API authorizes *record-keeping and
-configuration*, not transfers. That reframes what authentication has to achieve.
+"move money" endpoint to protect: the API authorizes _record-keeping and
+configuration_, not transfers. That reframes what authentication has to achieve.
 It is a **data-access and command** boundary, not a funds boundary.
 
 ## Decision
 
 Three credential types, each scoped to its client:
 
-| Client | Credential | Lifetime | Notes |
-| --- | --- | --- | --- |
-| Dashboard / mobile | **JWT access + refresh** | 15m access, 7d refresh | Role claims (`ADMIN`, `MERCHANT`, `CUSTOMER`, `DEVELOPER`) |
-| Dashboard / mobile (alt) | **Stellar wallet signature** | Per-session challenge | Nonce-based; proves key ownership |
-| Merchant backend | **API key** (`x-api-key`) | Long-lived, revocable, scoped | `ApiPermission` per key |
+| Client                   | Credential                   | Lifetime                      | Notes                                                      |
+| ------------------------ | ---------------------------- | ----------------------------- | ---------------------------------------------------------- |
+| Dashboard / mobile       | **JWT access + refresh**     | 15m access, 7d refresh        | Role claims (`ADMIN`, `MERCHANT`, `CUSTOMER`, `DEVELOPER`) |
+| Dashboard / mobile (alt) | **Stellar wallet signature** | Per-session challenge         | Nonce-based; proves key ownership                          |
+| Merchant backend         | **API key** (`x-api-key`)    | Long-lived, revocable, scoped | `ApiPermission` per key                                    |
 
 Supporting controls:
 

@@ -133,7 +133,7 @@ describe('EPayClient', () => {
       const headers = call[1].headers as Record<string, string>;
       // eslint-disable-next-line @typescript-eslint/dot-notation
       expect(headers['Authorization']).toBeUndefined();
-      // eslint-disable-next-line @typescript-eslint/dot-notation
+
       expect(headers['x-api-key']).toBeUndefined();
     });
   });
