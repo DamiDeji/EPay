@@ -23,10 +23,10 @@
   "devDependencies": {
     "@epay/config": "workspace:*",
     "@epay/types": "workspace:*",
-    "@types/node": "^26.2.0",
+    "@types/node": "^26.5.1",
     "dotenv": "^17.4.2",
-    "prisma": "^7.9.1",
-    "tsx": "^4.23.12",
+    "prisma": "^7.10.0",
+    "tsx": "^4.23.13",
     "typescript": "^7.0.2"
   }
 }
