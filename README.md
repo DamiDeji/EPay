@@ -7,6 +7,10 @@
 [![CI](https://github.com/DamiDeji/EPay/actions/workflows/ci.yml/badge.svg)](https://github.com/DamiDeji/EPay/actions/workflows/ci.yml)
 [![Contracts](https://github.com/DamiDeji/EPay/actions/workflows/contracts.yml/badge.svg)](https://github.com/DamiDeji/EPay/actions/workflows/contracts.yml)
 [![Code Quality](https://github.com/DamiDeji/EPay/actions/workflows/codeql.yml/badge.svg)](https://github.com/DamiDeji/EPay/actions/workflows/codeql.yml)
+[![Supply Chain](https://github.com/DamiDeji/EPay/actions/workflows/supply-chain.yml/badge.svg)](https://github.com/DamiDeji/EPay/actions/workflows/supply-chain.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](./CODE_OF_CONDUCT.md)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](./CONTRIBUTING.md)
 
   <h3>Enterprise-Grade Decentralized Payment Gateway on Stellar</h3>
   <p>Seamless payments, invoices, escrow, subscriptions, and settlement — powered by Soroban smart contracts on the Stellar network.</p>
@@ -56,7 +60,7 @@ epay/
 │   ├── admin-dashboard/      # Platform administration panel
 │   └── indexer/              # Stellar Horizon + Soroban event indexer
 ├── packages/
-│   ├── contracts/            # 12 Soroban (Rust) smart contracts
+│   ├── contracts/            # 16 Soroban (Rust) smart contracts
 │   ├── sdk/                  # TypeScript SDK (Stellar SDK + Soroban SDK)
 │   ├── database/             # Prisma ORM (21 models)
 │   ├── types/                # Shared TypeScript type definitions
@@ -71,7 +75,12 @@ epay/
 
 ## ✨ Features
 
-### Smart Contracts (12 Soroban contracts)
+### Smart Contracts (16 Soroban contracts)
+
+The 12 core primitives below, plus `UpgradeManager` (two-step admin transfer +
+72h-timelocked upgrades), `PriceOracle`, `Governance`, and `ImpactNFT`. Full entry
+points, access control, and invariants: [`packages/contracts/README.md`](./packages/contracts/README.md).
+
 | Contract | Purpose |
 |----------|---------|
 | `PaymentRouter` | Route and process payments |
@@ -215,7 +224,7 @@ pnpm build
 
 | Package | Description | Type |
 |---------|-------------|------|
-| `@epay/contracts` | Soroban smart contracts (12 contracts, Rust) | Library |
+| `@epay/contracts` | Soroban smart contracts (16 contracts, Rust) | Library |
 | `@epay/api` | NestJS REST API server | App |
 | `@epay/web` | Customer landing page + dashboard | App |
 | `@epay/merchant-dashboard` | Merchant analytics & management | App |
@@ -248,11 +257,24 @@ pnpm build
 
 ## 🧪 Testing
 
-| Package | Framework | Tests | Coverage |
-|---------|-----------|-------|----------|
-| `@epay/contracts` | Cargo test | 4 contract suites (PaymentRouter, EscrowManager, TreasuryVault, RefundManager) | Run `cargo test` — 8 contracts still have empty test stubs |
-| `@epay/api` | Jest | 16 suites, 105 tests | 50% lines (services: ~76%, controllers: 0%) |
-| `@epay/sdk` | Vitest | 4 suites, 91 tests | 87% statements, 87% lines |
+**267 Rust tests, 116 API test cases, 91 SDK tests, 17 shared tests, 23 app tests, 7 Playwright e2e tests.** Concrete counts, because a number you can verify is worth more than an adjective.
+
+| Package | Framework | Count | Status |
+|---------|-----------|-------|--------|
+| `@epay/contracts` | Cargo test | 267 `#[test]` functions across 16 suites — includes 10,000-iteration property/fuzz suites for TreasuryVault, EscrowManager, RefundManager, SettlementManager | ✅ Runs under `cargo test` in CI |
+| `@epay/api` | Jest | 17 suites, 116 test cases | ⚠️ **Blocked** — 16 suites fail to load (see below) |
+| `@epay/sdk` | Vitest | 4 suites, 91 tests | ✅ Passing (87% statements/lines) |
+| `@epay/shared` | Vitest | 1 suite, 17 tests | ✅ Passing — webhook HMAC signing, verification, retry policy |
+| `@epay/extension` | Vitest | 12 tests | ✅ Passing |
+| `@epay/mobile` | Jest | 11 tests | ✅ Passing |
+| `tests/e2e` | Playwright | 7 tests × 4 browser projects | Requires running apps + API |
+| `tests/k6` | k6 | Load profile | SLOs in [`docs/performance.md`](./docs/performance.md) |
+
+**Current API test status.** The API suite is written but does not load, for two
+configuration reasons unrelated to the tests themselves: Prisma 7 requires a driver
+adapter that `packages/database` does not yet pass to `PrismaClient`, and Jest is
+not configured to transform `@stellar/stellar-sdk`'s CommonJS output. Both are
+tracked in the [ROADMAP known issues](./ROADMAP.md#known-issues).
 
 ```bash
 # Run all tests
@@ -261,7 +283,7 @@ pnpm test
 # Run with coverage
 pnpm test:coverage
 
-# Run contracts tests only
+# Run contracts tests only (includes the fuzz suites)
 cargo test --manifest-path packages/contracts/Cargo.toml
 ```
 
@@ -269,11 +291,21 @@ cargo test --manifest-path packages/contracts/Cargo.toml
 
 ## 📄 Documentation & Links
 
-- **[Architecture](./docs/ARCHITECTURE.md)** — System architecture and data flow
+- **[Documentation index](./docs/README.md)** — Everything in `docs/`, organised
+- **[Getting Started](./docs/getting-started.md)** — Running EPay in five minutes
+- **[Architecture](./docs/architecture.md)** — System design, rationale, and data flow
+- **[Integration Guide](./docs/contract-integration.md)** — Build on the API and SDK
+- **[Webhook Receivers](./docs/webhook-receiver.md)** — Verify signatures, handle retries
+- **[Contract Reference](./packages/contracts/README.md)** — Entry points, access control, invariants per contract
+- **[Contract Events](./packages/contracts/EVENTS.md)** — Every emitted event, with payloads
+- **[Performance & SLOs](./docs/performance.md)** — Latency targets and error budget
+- **[Disaster Recovery](./docs/disaster-recovery.md)** · **[Restore Runbook](./docs/restore-runbook.md)** — RTO/RPO and manual recovery
+- **[External Secrets](./docs/external-secrets.md)** — Credentials from a secret manager
+- **[ADRs](./docs/adr/)** — Why Stellar, why 16 contracts, why three dashboards
+- **[Roadmap](./ROADMAP.md)** — Shipped, in progress, and planned
+- **[Security](./SECURITY.md)** — Vulnerability reporting and response SLA
+- **[Contributing](./CONTRIBUTING.md)** · **[Code of Conduct](./CODE_OF_CONDUCT.md)** · **[Contributors](./CONTRIBUTORS.md)**
 - **[Team](./TEAM.md)** — Who's building EPay
-- **[Roadmap](./ROADMAP.md)** — Development milestones and grant funding plans
-- **[Security](./SECURITY.md)** — Vulnerability reporting and audit status
-- **[Contributing](./CONTRIBUTING.md)** — How to contribute
 - **[Contributor Backlog](./docs/CONTRIBUTOR_ISSUES.md)** — Scoped issues for external contributors
 - **[Demo Runbook](./docs/DEMO_RUNBOOK.md)** — Deploy the live testnet demo
 - **[Deployments](./DEPLOYMENTS.md)** — Live testnet contract addresses

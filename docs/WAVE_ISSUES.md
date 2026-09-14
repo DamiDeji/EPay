@@ -120,10 +120,10 @@ opening issues, but the relative sizing below is a useful guide.
 ### 12. Add architecture doc and point contributors to it — 25 pts
 
 - **Type:** docs · **Difficulty:** beginner · **Label:** `documentation`, `good-first-issue`
-- **Where:** `README.md`, `docs/ARCHITECTURE.md`, `docs/WAVE_ISSUES.md`
-- **Problem:** `docs/ARCHITECTURE.md` exists but needs review and cross-linking from the
+- **Where:** `README.md`, `docs/architecture.md`, `docs/WAVE_ISSUES.md`
+- **Problem:** `docs/architecture.md` exists but needs review and cross-linking from the
   README.
-- **Acceptance criteria:** `docs/ARCHITECTURE.md` is linked from the README documentation
+- **Acceptance criteria:** `docs/architecture.md` is linked from the README documentation
   section and reflects the current component list.
 
 ## How to open an issue

@@ -50,6 +50,30 @@ We choose Stellar/Soroban over TON because:
 - **Anchors and SEP standards.** SEP-24 on/off-ramps give a credible path to fiat, which TON
   does not offer as cleanly.
 
+## Why Stellar/Soroban and not an EVM chain
+
+The obvious alternative to Stellar is an EVM L2 (Base, Arbitrum, Optimism) or
+Ethereum itself. It has more developers, more tooling, and more wallet
+integrations. We still chose Stellar, for reasons specific to payments:
+
+| Dimension | Stellar/Soroban | EVM L2 | Why it decided the choice |
+| --- | --- | --- | --- |
+| **Settlement cost** | sub-cent, deterministic | cents to dollars on L1, variable on L2 | High-volume billing and micropayments are only viable with sub-cent fees |
+| **Settlement time** | 3–5s to finality | seconds on L2, but with L1 reorg risk in the window | Merchant point-of-sale needs near-instant, low-variance confirmation |
+| **Asset conversion** | protocol-level DEX/orderbook | requires integrating a third-party AMM or oracle | Merchants can accept one asset and settle in another without EPay operating liquidity |
+| **Fee predictability** | resource-metered, capped | gas auctions, priority fees, spikes | A payment gateway must bound worst-case transaction cost |
+| **Anchor/SEP standards** | SEP-24/31 give a real fiat path | ramps are third-party and fragmented | Regulatory and fiat off-ramps map to the target merchants |
+| **Wallet ecosystem** | Freighter, xBull, Albedo, Rabet, Lobstr | far larger (MetaMask, WalletConnect, …) | **The one dimension the EVM wins**, and the main cost of this decision |
+
+None of these are absolute, and a payments product could be built on an L2. But
+EPay's differentiators — merchant-grade settlement cost, speed, and built-in
+conversion — are exactly the dimensions where Stellar is structurally better. The
+EVM's advantage (developer and wallet breadth) is real and is paid for in higher
+fees and harder fee prediction, which hits the product's core loop.
+
+Because the choice is expensive to reverse, the trade-off is recorded here rather
+than rediscovered later.
+
 ## Consequences
 
 - All contracts, tests, indexing, SDK, and wallet integration remain Stellar/Soroban; no TON

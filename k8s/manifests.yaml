@@ -397,7 +397,7 @@ data:
   RATE_LIMIT_MAX: "100"
   RATE_LIMIT_TTL: "60"
   REDIS_URL: "redis://redis:6379"
-  WEBHOOK_MAX_RETRIES: "5"
+  WEBHOOK_MAX_RETRIES: "7"
   LOG_LEVEL: "info"
   NODE_ENV: "production"
   PORT: "4000"
@@ -583,7 +583,7 @@ spec:
         app.kubernetes.io/instance: epay
         app.kubernetes.io/component: api
       annotations:
-        checksum/config: a9081c70eae58b071b0d4d9d78b05178b0cc6c6d0e8a8e3538b2e1fc33df0eef
+        checksum/config: cb5a7cfe73189d750b65c5d6d08cc39e3e8d4ab0c7b4416e12dbc2eea907b442
     spec:
       securityContext:
         runAsNonRoot: true
@@ -923,7 +923,7 @@ spec:
         app.kubernetes.io/instance: epay
         app.kubernetes.io/component: indexer
       annotations:
-        checksum/config: a9081c70eae58b071b0d4d9d78b05178b0cc6c6d0e8a8e3538b2e1fc33df0eef
+        checksum/config: cb5a7cfe73189d750b65c5d6d08cc39e3e8d4ab0c7b4416e12dbc2eea907b442
     spec:
       securityContext:
         runAsNonRoot: true

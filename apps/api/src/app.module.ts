@@ -14,6 +14,7 @@ import { HealthModule } from './health/health.module';
 import { InvoiceModule } from './invoice/invoice.module';
 import { MerchantModule } from './merchant/merchant.module';
 import { NotificationModule } from './notification/notification.module';
+import { ObservabilityModule } from './observability/observability.module';
 import { PaymentModule } from './payment/payment.module';
 import { RefundModule } from './refund/refund.module';
 import { SettlementModule } from './settlement/settlement.module';
@@ -67,6 +68,7 @@ import { WebhookModule } from './webhook/webhook.module';
     HealthModule,
     AuditModule,
     AiModule,
+    ObservabilityModule,
   ],
   providers: [
     {

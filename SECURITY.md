@@ -66,6 +66,10 @@ EPay is a decentralized payment gateway. The security model addresses:
 | Double spending | Idempotency keys and transaction deduplication |
 | Oracle manipulation | Multi-source price feeds with deviation checks |
 | Flash loan attacks | Time-locked state transitions |
+| Brute force / abuse | Global `ThrottlerGuard` (100 req/min general, 10/min auth, 30/min payments) |
+| Injection / MIME sniffing | Helmet with an explicit Content-Security-Policy, plus a global `ValidationPipe` (`whitelist`, `forbidNonWhitelisted`) |
+| **CSRF** | **Not applicable by design** — the API authenticates with `Authorization: Bearer` / `x-api-key` headers, never ambient cookies, so a cross-site request carries no credentials. If cookie-based sessions are ever introduced, CSRF tokens become mandatory; revisit this row. |
+| Credential leakage | Gitleaks in CI (blocking on push and PR), curated `.gitleaks.toml` |
 
 ## Audit Status
 

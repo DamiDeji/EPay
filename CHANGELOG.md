@@ -9,6 +9,70 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+#### Governance & repo hygiene
+- `CODE_OF_CONDUCT.md` — Contributor Covenant v2.1, with enforcement guidelines
+  and a `conduct@epay.dev` reporting address.
+- `CONTRIBUTORS.md` — maintainers, contributors, and the automation accounts that
+  write to the repository.
+- `semantic-release` (`.releaserc.json` + `.github/workflows/release.yml`) derives
+  versions from Conventional Commits and creates the GitHub Release on every green
+  `main`. `CHANGELOG.md` is deliberately **not** machine-rewritten — it stays
+  hand-edited in Keep a Changelog format so entries carry context.
+- README badges for the supply-chain workflow, licence, Contributor Covenant, and
+  PRs-welcome, each linking to a real target.
+
+#### Contract documentation & test depth
+- `packages/contracts/README.md` — per-contract entry points, access control, and
+  invariants for all 16 contracts, grouped by trust tier.
+- `packages/contracts/SECURITY.md` — ownership model, two-step `transfer_admin` →
+  `accept_admin`, the 72-hour upgrade timelock, pause semantics, and audit status.
+- `packages/contracts/EVENTS.md` — every emitted event with topics and data, plus
+  the reminder that a new event must be catalogued in the same pull request.
+- **Property/fuzz tests (10,000 iterations each)** for the four funds-at-risk
+  contracts — `TreasuryVault`, `EscrowManager`, `RefundManager`,
+  `SettlementManager` — asserting conservation-of-funds, bounded payouts, exact
+  fee arithmetic, and rejection of illegal state transitions. A deterministic
+  xorshift PRNG keeps the suites reproducible and dependency-free.
+- PR template now checks OpenAPI accuracy for API changes, an `EVENTS.md` entry
+  for new contract events, and Helm lint/template + manifest drift for ops changes.
+
+#### Observability (API)
+- `GET /metrics` in Prometheus exposition format, with a hand-rolled registry
+  (`apps/api/src/observability/`) instead of `prom-client` so no new packages enter
+  the SBOM. Emits the metric names the alert rules already reference.
+- Request-ID correlation over `AsyncLocalStorage`, echoed as `x-request-id` and
+  available to logs and error reports.
+- Sentry-compatible error reporting over the store API, enabled by `SENTRY_DSN`;
+  degrades to structured logging when unset, with no SDK dependency.
+
+#### Webhooks
+- HMAC-SHA256 signing with a GitHub-style `X-EPay-Signature: t=…,v1=…` header,
+  including timestamp-in-signature so `t` cannot be tampered with.
+- Retry/backoff schedule (30s, 2m, 10m, 30m, 2h, 6h) and dead-lettering after the
+  final attempt, with `nextAttemptAt`/`deadLetteredAt` persisted for inspection.
+- Idempotency on `(merchantId, eventId)` enforced by a unique index, so a replay
+  cannot fan out into duplicate deliveries.
+- `@epay/shared/webhook-signature` — the sender/receiver reference implementation,
+  with 17 unit tests; `docs/webhook-receiver.md` documents verification in
+  TypeScript, Python, and Go.
+
+#### Infrastructure
+- Helm `ExternalSecret` template plus `externalSecrets` values, so credentials can
+  come from a secret manager instead of a committed Kubernetes Secret, with
+  `docs/external-secrets.md` covering AWS/GCP/Vault stores and rotation.
+- OWASP ZAP baseline DAST workflow (`.github/workflows/dast.yml`), scheduled weekly
+  against the deployed web app and informational until triaged.
+
+#### Documentation
+- `docs/` index (`docs/README.md`), `getting-started.md`,
+  `contract-integration.md`, `performance.md`, `webhook-receiver.md`, and
+  `external-secrets.md`.
+- `docs/architecture.md` (renamed from `ARCHITECTURE.md`) now explains *why*:
+  NestJS over bare Express, 16 contracts over a monolith, Prisma, and how the
+  indexer reconciles with on-chain state.
+- ADRs `0005-contract-decomposition.md` and `0006-dashboard-decomposition.md`, and
+  a Stellar-vs-EVM comparison added to ADR 0001.
+
 #### Client surfaces
 - `apps/mobile` — Expo SDK 57 / React Native 0.86 mobile app using `expo-router`,
   reusing `@epay/sdk` and `@epay/types`. QR payment scanning (`expo-camera`),
@@ -68,6 +132,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
+- `ROADMAP.md` refreshed: contract trust hardening and property/fuzz testing moved
+  to Shipped; CI health (ESLint flat-config migration, API Jest suite blocked on a
+  Prisma 7 driver adapter) and webhook scheduling called out as the real open
+  issues. Verified green: `pnpm typecheck` (22/22) and `pnpm build` (15/15).
+- `README.md` now cites verifiable counts (16 contracts, 267 Rust tests, 116 API
+  test cases, 91 SDK tests, 17 shared tests, 23 app tests, 7 e2e tests), each with
+  its actual pass/blocked status, and links the new docs.
+- `helm/epay/values.yaml`: `WEBHOOK_MAX_RETRIES` raised 5 → 7 to match
+  `WEBHOOK_MAX_ATTEMPTS`; added `externalSecrets` values.
+- `.env.example` documents `METRICS_TOKEN`, `SENTRY_DSN`, and the fixed webhook
+  retry schedule.
 - `ROADMAP.md` rewritten with an honest Shipped / In Progress / Planned split and
   a Known Issues section; nothing is marked Shipped unless it is in `main`.
 - `CONTRIBUTING.md` now has a concrete PR checklist covering tests, lint,
@@ -92,8 +167,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   `pnpm-workspace.yaml`, so `onlyBuiltDependencies` is honoured again.
 - `apps/api` builds with `nest build` again by pinning the package to TypeScript
   6, which still exposes the compiler API the Nest CLI requires (TypeScript 7
-  ships the `tsc` binary only). This revealed 162 pre-existing type errors in the
-  API that are still open.
+  ships the `tsc` binary only). The pre-existing type errors this surfaced have
+  since been resolved: `pnpm typecheck` and `pnpm build` are green across the
+  whole workspace.
+- `@epay/shared/webhook-signature` did not resolve in `apps/api`, whose
+  TypeScript config uses the classic `node` module resolution that predates the
+  package `exports` field. Added a root declaration shim so types resolve while
+  runtime continues to use `exports`. `apps/api` now typechecks with **zero**
+  errors.
 
 ## [0.1.0] — 2026-08-05
 

@@ -5,6 +5,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
 
 import { AppModule } from './app.module';
+import { attachRequestContext } from './observability/request-context.middleware';
 
 async function bootstrap(): Promise<void> {
   const logger = new Logger('Bootstrap');
@@ -19,6 +20,13 @@ async function bootstrap(): Promise<void> {
       logger: ['log', 'error', 'warn', 'debug', 'verbose'],
     },
   );
+
+  // Request-id correlation. Registered on the Fastify instance directly (before
+  // routing) so every request — including 404s — is correlatable in logs and
+  // error reports, and the id is echoed back in the `x-request-id` header.
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const fastify = app.getHttpAdapter().getInstance();
+  attachRequestContext(fastify);
 
   // Security headers with CSP
   app.use(

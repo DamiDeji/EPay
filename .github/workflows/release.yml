@@ -1,0 +1,59 @@
+name: Release
+
+# Versioning is derived from Conventional Commits by semantic-release, so the
+# version number is a function of history rather than a human decision. On every
+# green push to `main` it:
+#   1. works out the next version (feat -> minor, fix -> patch, BREAKING -> major),
+#   2. creates the git tag and a GitHub Release with generated notes,
+#   3. pushing the tag triggers supply-chain.yml, which builds, scans, and
+#      cosign-signs the release images.
+#
+# CHANGELOG.md is deliberately NOT rewritten by this workflow. It is hand-edited
+# in Keep a Changelog format (see CONTRIBUTING.md) so entries can carry context a
+# commit-subject dump cannot. `@semantic-release/changelog` is intentionally
+# omitted from .releaserc.json; the generated notes live on the GitHub Release.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  release:
+    name: Tag and publish release
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    # Never release from a fork's branch.
+    if: github.repository == 'DamiDeji/EPay'
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # semantic-release needs full history and tags
+
+      - name: Enable corepack
+        run: corepack enable
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      # `dlx` avoids adding semantic-release (and its ~300 transitive packages)
+      # to the workspace lockfile, where it would show up in every SBOM.
+      - name: Run semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: pnpm dlx semantic-release@24

@@ -565,25 +565,38 @@ enum NotificationChannel {
 // ── Webhook ─────────────────────────────────────────────────────────────────
 
 model WebhookDelivery {
-  id           String   @id @default(cuid())
-  merchantId   String
-  eventType    String
-  url          String
-  payload      Json
-  statusCode   Int?
-  response     String?
-  attempts     Int      @default(0)
-  maxAttempts  Int      @default(5)
-  lastAttemptAt DateTime?
-  succeededAt  DateTime?
-  failedAt     DateTime?
-  createdAt    DateTime @default(now())
+  id             String    @id @default(cuid())
+  merchantId     String
+  eventType      String
+  url            String
+  payload        Json
+  /// Stable id of the originating event; unique per merchant so a replay or a
+  /// duplicated enqueue cannot create a second delivery.
+  eventId        String?
+  /// Value of the `X-EPay-Signature` header (t=...,v1=...). Stored so a failed
+  /// attempt can be verified or replayed with the original signature.
+  signature      String?
+  statusCode     Int?
+  response       String?
+  attempts       Int       @default(0)
+  maxAttempts    Int       @default(7)
+  lastAttemptAt  DateTime?
+  /// When the next retry becomes due. Null for terminal deliveries.
+  nextAttemptAt  DateTime?
+  succeededAt    DateTime?
+  failedAt       DateTime?
+  /// Set when the retry schedule is exhausted; the row is kept for inspection.
+  deadLetteredAt DateTime?
+  createdAt      DateTime  @default(now())
 
   merchant Merchant @relation(fields: [merchantId], references: [id])
 
+  @@unique([merchantId, eventId])
   @@index([merchantId])
   @@index([eventType])
   @@index([succeededAt])
+  @@index([nextAttemptAt])
+  @@index([deadLetteredAt])
   @@index([createdAt])
   @@map("webhook_deliveries")
 }

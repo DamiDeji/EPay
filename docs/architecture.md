@@ -144,8 +144,106 @@ merchants, settlements, and analytics.
 
 | Package     | Framework  | Coverage                                         |
 | ----------- | ---------- | ------------------------------------------------ |
-| `contracts` | Cargo test | 12 spec files                                    |
+| `contracts` | Cargo test | 16 suites + property/fuzz tests on the 4 funds-at-risk contracts |
 | `api`       | Jest       | 16 suites, 105 tests (~50% lines; services ~76%) |
 | `sdk`       | Vitest     | 4 suites, 91 tests (87% statements/lines)        |
+| `shared`    | Vitest     | webhook signing, verification, and retry policy  |
+| `tests/e2e` | Playwright | customer web + dashboards, with axe-core a11y checks |
+| `tests/k6`  | k6         | load profile; SLOs in [`performance.md`](./performance.md) |
 
 Run `pnpm test` for the full suite, or scope with `pnpm --filter <package> test`.
+
+---
+
+## Rationale — why these choices
+
+The tree above describes *what* exists. This section records *why*, so a future
+maintainer can tell an intentional constraint from an accident. Longer-form
+decisions with alternatives and consequences live in [`docs/adr/`](./adr/).
+
+### Why NestJS over bare Express
+
+A payment gateway's hard parts are cross-cutting: authentication, authorisation,
+validation, rate limiting, audit logging, and observability. In bare Express each
+of those is hand-wired per route, and every new endpoint is a chance to forget
+one. NestJS makes them **structural**: guards, pipes, interceptors, and filters
+are declared once and applied uniformly.
+
+Concretely, in this codebase a route cannot accidentally ship without:
+
+- input validation (`ValidationPipe` with `whitelist` and `forbidNonWhitelisted`),
+- a rate-limit decision (global `ThrottlerGuard`),
+- metrics and error reporting (`APP_INTERCEPTOR` in `ObservabilityModule`),
+- RBAC, because guards compose.
+
+The cost is a framework-shaped dependency graph and a learning curve for
+contributors. We accept it: the alternative is a codebase where security is
+reviewed per-diff rather than by construction, which is exactly how payment APIs
+leak. See [ADR 0003](./adr/0003-auth-model.md) for the auth decision.
+
+> **Also relevant:** the API uses **Fastify** as the HTTP adapter under Nest, not
+> Express. Nest's abstractions are adapter-agnostic, so we get Fastify's lower
+> per-request overhead and its `routerPath` (used to keep metric label cardinality
+> bounded) without giving up the guard/pipe/interceptor model.
+
+### Why twelve discrete contracts instead of one monolith
+
+See [ADR 0005](./adr/0005-contract-decomposition.md) for the full argument. In
+short: a single contract would hold every fund, so a bug in *any* code path
+threatens *all* funds, and an upgrade to fix a fee calculation would require
+re-auditing escrow and treasury. Splitting by responsibility gives each contract
+one storage layout, one owner, and one blast radius — and it lets the audit, the
+pause switch, and the fee cap be scoped to the contracts that actually touch
+value. The contracts already share nothing at the storage level, so the split
+costs one cross-contract call on the paths that need it and nothing elsewhere.
+
+### Why Prisma
+
+- **The schema is the contract.** One declarative file defines 22 models, their
+  relations, enums, and indexes; TypeScript types are generated from it, so a
+  field rename is a compile error rather than a runtime `undefined`.
+- **Migrations are code.** `prisma migrate` produces reviewable SQL that ships
+  with the change and runs in CI, including the monthly restore drill.
+- **The database is a read-model.** Because on-chain state is authoritative,
+  being able to drop and rebuild the database from chain history is a feature;
+  Prisma's migration history is what makes that rebuild reproducible.
+
+The trade-off is a heavier runtime than a thin `pg` client and a code-generation
+step in the build. For a schema this relational, the type safety is worth it.
+
+### How the indexer reconciles with on-chain state
+
+Contract state is the **source of truth**; PostgreSQL is a derived read-model.
+The indexer is the only thing allowed to write chain-derived rows, and it
+reconciles by construction rather than by comparison:
+
+1. **Ordered, checkpointed ingestion.** Ledgers are scanned in order, in batches,
+   and a checkpoint (last processed ledger) is persisted in Prisma after each
+   batch. A crash resumes from the checkpoint, so no ledger is skipped and none is
+   processed twice without being idempotent.
+2. **Events carry ids, handlers are idempotent.** Every handler keys on the
+   contract-assigned id (`payment_id`, `escrow_id`, …) and upserts. Replaying a
+   ledger is safe.
+3. **Lag is observable and alerting.** The gap between the chain head and the
+   checkpoint is exported as a metric, and `EpayQueueLagHigh` fires when the
+   indexer falls behind — so "the database is wrong" surfaces as an alert, not as
+   a support ticket.
+4. **Re-derivation is always possible.** Because the indexer is the only writer of
+   chain-derived data, any suspected corruption can be resolved by replaying from
+   a known ledger rather than by hand-repairing rows.
+
+This is why the API never mutates payment status directly: an endpoint changing a
+row the indexer owns would be silently reverted on the next replay, and the two
+writers would disagree. The API writes *requests*; the chain writes *facts*; the
+indexer translates.
+
+### Why three dashboards instead of one role-gated app
+
+See [ADR 0006](./adr/0006-dashboard-decomposition.md). Short version: customers,
+merchants, and platform admins share almost no screens, and shipping them as one
+app means every bundle includes admin code and every role check is a runtime
+condition rather than a routing boundary. Three apps let the admin attack surface
+be deployed, rate-limited, and (soon) network-isolated independently.
+
+The cost is three deployments and a shared component library to keep them
+consistent — which is why `@epay/ui`, `@epay/hooks`, and `@epay/types` exist.

@@ -126,7 +126,8 @@ config:
   RATE_LIMIT_TTL: '60'
   RATE_LIMIT_MAX: '100'
   INDEXER_BATCH_SIZE: '100'
-  WEBHOOK_MAX_RETRIES: '5'
+  # Matches WEBHOOK_MAX_ATTEMPTS in packages/shared/src/webhook-signature.ts.
+  WEBHOOK_MAX_RETRIES: '7'
 
 secrets:
   # Name of a Secret managed outside the chart (Sealed Secrets / External
@@ -134,6 +135,29 @@ secrets:
   existingSecret: epay-secrets
   # Create a placeholder Secret for local/dev use only. Never enable in prod.
   create: false
+
+# ── External Secrets Operator ────────────────────────────────────────────────
+# When enabled, the chart renders an ExternalSecret that syncs real credentials
+# from a secret manager into `secrets.existingSecret`. Requires the ESO CRDs and
+# a ClusterSecretStore. See docs/external-secrets.md.
+externalSecrets:
+  enabled: false
+  refreshInterval: 1h
+  # Must equal secrets.existingSecret — every Deployment mounts that name.
+  targetSecret: epay-secrets
+  secretStoreRef:
+    name: epay-secrets-store
+    kind: ClusterSecretStore
+  # Path/prefix inside the secret manager.
+  remoteKey: epay/production
+  # Keys synced into the Secret. Override `remoteKey`/`property` per key when the
+  # secret manager does not use the same names as the environment variables.
+  keys:
+    - key: POSTGRES_PASSWORD
+    - key: JWT_SECRET
+    - key: WEBHOOK_SECRET
+    - key: METRICS_TOKEN
+    - key: ANTHROPIC_API_KEY
 
 # ── PostgreSQL ────────────────────────────────────────────────────────────────
 postgres:

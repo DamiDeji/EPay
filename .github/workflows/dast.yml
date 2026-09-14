@@ -1,0 +1,61 @@
+name: DAST (OWASP ZAP)
+
+# Baseline dynamic application security testing against a running EPay web app.
+#
+# Why scheduled and not on every PR: a baseline scan takes minutes and probes the
+# live deployment, so running it per-push would slow every contribution for a
+# signal that changes slowly. Weekly + on demand is the right cadence, and it
+# still catches a regression within a few days.
+#
+# Scope: passive, unauthenticated checks against the public customer web app —
+# security headers, cookie flags, information disclosure, TLS, and obvious
+# misconfiguration. It does NOT authenticate, so authenticated endpoints must be
+# covered separately.
+#
+# `fail_action: false` on purpose: a baseline scan of any real site reports
+# warnings that need triage, and a permanently-red CI teaches people to ignore
+# it. The job uploads the report as an artifact; promote it to blocking once the
+# report has been triaged to a stable, documented baseline.
+
+on:
+  schedule:
+    # Mondays at 05:00 UTC.
+    - cron: '0 5 * * 1'
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'URL to scan'
+        required: false
+        default: 'https://epay-web-teal.vercel.app'
+      fail_action:
+        description: 'Fail the workflow when alerts are found'
+        required: false
+        default: 'false'
+
+concurrency:
+  group: dast
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  zap-baseline:
+    name: ZAP baseline scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Run ZAP baseline
+        uses: zaproxy/action-baseline@v0.14.0
+        with:
+          target: ${{ github.event.inputs.target || 'https://epay-web-teal.vercel.app' }}
+          # Report alerts but do not fail yet — see the header comment.
+          fail_action: ${{ github.event.inputs.fail_action || 'false' }}
+          allow_issue_writing: false
+          artifact_name: zap-baseline-report
+          # Conservative scan: no attack-strength payloads against a live site.
+          cmd_options: '-a -j'

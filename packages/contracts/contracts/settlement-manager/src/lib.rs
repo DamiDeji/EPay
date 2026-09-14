@@ -99,3 +99,6 @@ impl SettlementManager {
 
 #[cfg(test)]
 mod test;
+
+#[cfg(test)]
+mod fuzz;

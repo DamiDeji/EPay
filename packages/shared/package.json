@@ -5,6 +5,16 @@
   "description": "Shared utilities and helpers for EPay",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./webhook-signature": {
+      "types": "./dist/webhook-signature.d.ts",
+      "default": "./dist/webhook-signature.js"
+    }
+  },
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",
