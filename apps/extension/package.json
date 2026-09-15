@@ -18,14 +18,14 @@
     "@epay/hooks": "workspace:*",
     "@epay/sdk": "workspace:*",
     "@epay/types": "workspace:*",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
   },
   "devDependencies": {
     "@epay/config": "workspace:*",
     "@types/chrome": "^0.1.0",
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "@vitest/coverage-v8": "^4.1.11",
     "esbuild": "^0.25.0",
     "typescript": "^7.0.2",
