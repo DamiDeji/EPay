@@ -1,6 +1,10 @@
 packages:
   - 'apps/*'
   - 'packages/*'
+  # The Playwright suite lives outside apps/ and packages/ because it drives
+  # every app. It is still a workspace package so that `pnpm install` resolves
+  # it from the committed lockfile instead of an unpinned `npm install`.
+  - 'tests'
 
 # pnpm 10 reads settings from this file rather than the root package.json
 # "pnpm" field, which is now ignored.

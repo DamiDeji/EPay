@@ -9,6 +9,10 @@
  *
  * Names and labels intentionally match the alerting rules in
  * `monitoring/prometheus/rules/epay.yml`.
+ *
+ * It lives in `@epay/shared` because both the API and the indexer expose a
+ * Prometheus endpoint; there is one implementation so the exposition format and
+ * the escaping rules cannot drift between the two services.
  */
 
 export type MetricLabels = Readonly<Record<string, string>>;

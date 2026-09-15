@@ -88,12 +88,12 @@ summary tells you _that_ a threshold failed; the dashboard tells you _why_:
 
 ## Capacity
 
-| Resource         | Current                  | Scaling signal                                                             |
-| ---------------- | ------------------------ | -------------------------------------------------------------------------- |
-| API replicas     | 2–10 (HPA, 70% CPU)      | CPU; 10 is a deliberate ceiling because the connection pool is per-replica |
-| Indexer replicas | 1 (singleton)            | must stay 1 — only one process may hold the checkpoint lease               |
-| DB connections   | `replicas × pool size`   | watch `EpayDbPoolWaitHigh` before raising either                           |
-| BullMQ workers   | 5 concurrent per indexer | queue depth, not CPU                                                       |
+| Resource         | Current                      | Scaling signal                                                             |
+| ---------------- | ---------------------------- | -------------------------------------------------------------------------- |
+| API replicas     | 2–10 (HPA, 70% CPU)          | CPU; 10 is a deliberate ceiling because the connection pool is per-replica |
+| Indexer replicas | 1 (singleton)                | must stay 1 — only one process may hold the checkpoint lease               |
+| DB connections   | `replicas × pool size`       | watch `EpayDbPoolWaitHigh` before raising either                           |
+| Indexer          | 1 process, 1 batch at a time | `epay_indexer_ledger_lag` and batch duration                               |
 
 Raising `maxReplicas` without raising the database's `max_connections` converts a
 throughput problem into a pool-exhaustion outage. The two must move together.

@@ -155,6 +155,43 @@ jobs:
           name: coverage-report
           path: packages/*/coverage/
 
+  e2e:
+    name: E2E (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v7
+      - name: Enable corepack
+        run: corepack enable
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      # The web app imports `@epay/ui` and `@epay/shared` from their built
+      # `dist/`, so the workspace has to be built before the dev server can
+      # start.
+      - name: Build workspace
+        run: pnpm build
+        env:
+          TURBO_CONCURRENCY: 4
+      - name: Install Playwright browsers
+        run: pnpm --filter @epay/tests exec playwright install --with-deps
+      # Playwright starts and stops `@epay/web` itself (see the `webServer`
+      # block); CI sets `reuseExistingServer: false` so a stale server can never
+      # be mistaken for a passing run. A failure here fails the workflow.
+      - name: Run E2E suite
+        run: pnpm --filter @epay/tests e2e
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: playwright-report
+          path: |
+            tests/playwright-report/
+            tests/test-results/
+          retention-days: 7
+
   security:
     name: Security Scan
     runs-on: ubuntu-latest

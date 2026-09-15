@@ -5,11 +5,12 @@ import { STELLAR_DECIMALS } from '@epay/config';
 import type { StellarNetwork } from '@epay/types';
 
 // ── Wallet Address Validation (Phase 7h) ──────────────────────────────────────
-// Additional wallet utilities beyond the existing validators
+// Address-shape helpers beyond the validators declared below: these accept
+// muxed (M...) accounts and offer the loose "still typing" check used by the UI.
 export {
   isValidStellarAddress,
   looksLikeStellarAddress,
-  generateTestAddress,
+  STELLAR_PUBLIC_KEY_LENGTH,
 } from './wallet-validator';
 
 // ── API Response Helpers ────────────────────────────────────────────────────
@@ -265,3 +266,37 @@ export function isExpired(date: Date | string | number): boolean {
   const expiry = typeof date === 'string' || typeof date === 'number' ? new Date(date) : date;
   return expiry.getTime() < Date.now();
 }
+
+// ── Metrics ─────────────────────────────────────────────────────────────────
+// One dependency-free Prometheus registry, shared by the API and the indexer so
+// the exposition format cannot drift between the two services.
+
+export {
+  Counter,
+  Gauge,
+  Histogram,
+  MetricsRegistry,
+  DEFAULT_LATENCY_BUCKETS,
+  type MetricLabels,
+} from './metrics-registry';
+
+// ── Session ─────────────────────────────────────────────────────────────────
+// One implementation of "is this visitor signed in, and where do they go if
+// not", shared by the customer, merchant and admin front-ends.
+
+export {
+  ADMIN_SESSION,
+  CLOCK_SKEW_MS,
+  CUSTOMER_SESSION,
+  MERCHANT_SESSION,
+  clearSession,
+  decodeJwtPayload,
+  hasValidSession,
+  isTokenExpired,
+  readAccessToken,
+  resolveAuthRedirect,
+  storeSession,
+  type SessionConfig,
+  type SessionStorage,
+  type SessionTokens,
+} from './session';

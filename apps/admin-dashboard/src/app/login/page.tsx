@@ -1,10 +1,13 @@
 'use client';
 
+import { ADMIN_SESSION, storeSession } from '@epay/shared';
 import { motion } from 'framer-motion';
 import { AlertCircle, Eye, EyeOff, LogIn, Shield } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 export default function LoginPage() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -18,11 +21,57 @@ export default function LoginPage() {
       setError('Please enter both email and password.');
       return;
     }
+
     setLoading(true);
-    // In production: POST to /auth/login with admin credentials
-    await new Promise((r) => setTimeout(r, 800));
-    setLoading(false);
-    // Redirect handled by Next.js middleware or router.push('/')
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+      const response = await fetch(`${apiUrl}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        const body: unknown = await response.json().catch(() => ({}));
+        const message =
+          typeof body === 'object' && body !== null && 'message' in body
+            ? String((body as { message: unknown }).message)
+            : 'Invalid credentials';
+        throw new Error(message);
+      }
+
+      const data = (await response.json()) as {
+        tokens?: { accessToken?: string; refreshToken?: string };
+        user?: { role?: string };
+      };
+
+      const accessToken = data.tokens?.accessToken;
+      if (!accessToken) {
+        throw new Error('The API did not return an access token');
+      }
+
+      // The admin console and the merchant dashboard share a backend but not a
+      // session: they use different storage keys so signing out of one does not
+      // sign the other out, and an admin token is never presented as a merchant
+      // session. The real authorization boundary is the API, which checks the
+      // role on every request.
+      if (data.user?.role && data.user.role !== 'ADMIN' && data.user.role !== 'SUPER_ADMIN') {
+        throw new Error('This account is not an administrator.');
+      }
+
+      storeSession(
+        localStorage,
+        ADMIN_SESSION,
+        data.tokens?.refreshToken
+          ? { accessToken, refreshToken: data.tokens.refreshToken }
+          : { accessToken },
+      );
+      router.push(ADMIN_SESSION.homePath);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Login failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

@@ -7,7 +7,7 @@ payment — against Stellar testnet, rather than just read the code.
 
 | Component                | Status                                                                      |
 | ------------------------ | --------------------------------------------------------------------------- |
-| 12 Soroban contracts     | ✅ Deployed to Stellar testnet (`DEPLOYMENTS.md`, `.env.example`)           |
+| 16 Soroban contracts     | ✅ Deployed to Stellar testnet (`DEPLOYMENTS.md`, `.env.example`)           |
 | Web app (`apps/web`)     | ✅ Live on Vercel (`https://epay-web-teal.vercel.app`)                      |
 | Merchant dashboard       | ✅ Live on Vercel (`https://epay-merchant.vercel.app`)                      |
 | Admin dashboard          | ✅ Live on Vercel (`https://epay-admin-two.vercel.app`)                     |
@@ -20,13 +20,13 @@ Redis), wired to the existing Vercel deployments via `NEXT_PUBLIC_API_URL`.
 
 ## Recommended stack
 
-| Piece          | Provider                                  | Why                                                   |
-| -------------- | ----------------------------------------- | ----------------------------------------------------- |
-| Postgres       | **Neon** (serverless Postgres, free tier) | Free tier, connection string drop-in for Prisma       |
-| Redis (BullMQ) | **Upstash** (serverless Redis, free tier) | Free tier; standard Redis protocol works with BullMQ  |
-| API process    | **Railway / Render / Fly.io** (Docker)    | Long-running Fastify/NestJS server — not a Vercel fit |
-| Indexer worker | Same host as API (separate service)       | Long-running BullMQ worker + Horizon scanner          |
-| Frontends      | Vercel (already in place)                 | Add `NEXT_PUBLIC_API_URL` env var                     |
+| Piece          | Provider                                  | Why                                                    |
+| -------------- | ----------------------------------------- | ------------------------------------------------------ |
+| Postgres       | **Neon** (serverless Postgres, free tier) | Free tier, connection string drop-in for Prisma        |
+| Redis (BullMQ) | **Upstash** (serverless Redis, free tier) | Free tier; standard Redis protocol works with BullMQ   |
+| API process    | **Railway / Render / Fly.io** (Docker)    | Long-running Fastify/NestJS server — not a Vercel fit  |
+| Indexer        | Same host as API (separate service)       | Long-running Soroban RPC scanner (Postgres + RPC only) |
+| Frontends      | Vercel (already in place)                 | Add `NEXT_PUBLIC_API_URL` env var                      |
 
 > Fly.io and Render both have generous free/cheap tiers for small containers; check
 > current pricing before committing. The repo ships production Dockerfiles
@@ -73,7 +73,8 @@ Redis), wired to the existing Vercel deployments via `NEXT_PUBLIC_API_URL`.
 ## Step 4 — Deploy the indexer
 
 1. Add a second service on the same host using `infra/docker/Dockerfile.indexer`.
-2. Same env vars as the API (it needs the DB, Redis, and Stellar endpoints) plus:
+2. Same env vars as the API (it needs the database and the Soroban RPC endpoint;
+   unlike the API it uses no Redis) plus:
 
    ```env
    INDEXER_POLL_INTERVAL_MS=10000
@@ -129,7 +130,8 @@ curl -s -X POST https://<api>/payments \
   -H 'Content-Type: application/json' \
   -d '{"amount":"10000000","asset":"native","recipient":"<testnet G...>"}'
 
-# 5. Open the dashboard and confirm the payment appears (indexer + API + UI path)
+# 5. Open the dashboard and confirm the payment appears (API + UI path; the
+#    indexer records chain events but does not project them into the read model)
 ```
 
 ## Reviewer experience checklist

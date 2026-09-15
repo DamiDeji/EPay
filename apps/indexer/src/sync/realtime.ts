@@ -1,8 +1,18 @@
+import type { PrismaClient } from '@epay/database';
+
 import type { BlockScanner } from '../blockchain/scanner';
 import type { CheckpointManager } from '../checkpoint';
 import type { IndexerConfig } from '../config';
 import { dispatchEvent } from '../handlers/dispatcher';
 import { createChildLogger } from '../logger';
+import {
+  batchDuration,
+  chainTipLedger,
+  decodeFailures,
+  lastProcessedLedger,
+  ledgerLag,
+  scanDuration,
+} from '../metrics';
 
 const log = createChildLogger('sync:realtime');
 
@@ -10,28 +20,41 @@ export interface RealtimeSyncOptions {
   config: IndexerConfig;
   scanner: BlockScanner;
   checkpoint: CheckpointManager;
-  prisma: any;
+  prisma: PrismaClient;
   onBlockProcessed?: (block: number, eventCount: number) => void;
   onError?: (error: Error, block: number) => void;
 }
 
+export interface RealtimeStatus {
+  running: boolean;
+  currentBlock: number;
+  chainTip: number;
+  lag: number;
+  consecutiveErrors: number;
+}
+
 /**
- * Real-time sync engine that continuously polls the Stellar blockchain
- * for new blocks and processes relevant events.
+ * Continuously polls the chain tip and processes newly confirmed ledgers.
+ *
+ * A poll failure never advances the checkpoint, so a transient RPC outage
+ * delays progress instead of losing a ledger. Consecutive failures widen the
+ * poll interval (bounded exponential backoff) so a prolonged outage does not
+ * hammer the RPC endpoint from every replica at once.
  */
 export class RealtimeSync {
   private readonly config: IndexerConfig;
   private readonly scanner: BlockScanner;
   private readonly checkpoint: CheckpointManager;
-  private readonly prisma: any;
+  private readonly prisma: PrismaClient;
   private readonly onBlockProcessed?: (block: number, eventCount: number) => void;
   private readonly onError?: (error: Error, block: number) => void;
   private isRunning = false;
   private stopRequested = false;
   private pollTimer: ReturnType<typeof setTimeout> | null = null;
-  private currentPoll: Promise<void> | null = null;
+  private inFlight: Promise<void> | null = null;
   private consecutiveErrors = 0;
-  private readonly maxConsecutiveErrors = 10;
+  private chainTip = 0;
+  private readonly maxBackoffMs = 120_000;
 
   constructor(options: RealtimeSyncOptions) {
     this.config = options.config;
@@ -42,6 +65,7 @@ export class RealtimeSync {
     this.onError = options.onError;
   }
 
+  /** Start the poll loop. Resolves after the first poll, not the whole loop. */
   async start(): Promise<void> {
     if (!this.config.realtimeEnabled) {
       log.info('Real-time sync disabled, skipping');
@@ -50,10 +74,24 @@ export class RealtimeSync {
 
     this.isRunning = true;
     this.stopRequested = false;
+    await this.checkpoint.ensureLoaded();
     log.info({ pollIntervalMs: this.config.pollIntervalMs }, 'Starting real-time sync');
 
     await this.poll();
     this.scheduleNextPoll();
+  }
+
+  /**
+   * Delay before the next poll.
+   *
+   * Healthy runs poll on the configured interval; failures back off
+   * exponentially, capped so a long outage still recovers promptly.
+   */
+  nextDelayMs(): number {
+    if (this.consecutiveErrors === 0) return this.config.pollIntervalMs;
+    // Double per consecutive failure, then clamp. The exponent is not bounded
+    // separately: `2 ** n` saturates at Infinity and the clamp handles it.
+    return Math.min(this.maxBackoffMs, this.config.pollIntervalMs * 2 ** this.consecutiveErrors);
   }
 
   private scheduleNextPoll(): void {
@@ -66,71 +104,77 @@ export class RealtimeSync {
         } catch (error) {
           log.error({ error }, 'Unhandled error in poll cycle');
         }
-
-        if (!this.stopRequested) {
-          this.scheduleNextPoll();
-        }
+        this.scheduleNextPoll();
       })();
-    }, this.config.pollIntervalMs);
+    }, this.nextDelayMs());
   }
 
-  private async poll(): Promise<void> {
-    this.currentPoll = this._poll();
-    return this.currentPoll;
+  async poll(): Promise<void> {
+    this.inFlight = this.processOnce();
+    return this.inFlight;
   }
 
-  private async _poll(): Promise<void> {
+  private async processOnce(): Promise<void> {
+    const startedAt = Date.now();
+
     try {
-      const currentBlock = this.checkpoint.getCurrentBlock();
-      const chainTip = await this.scanner.getChainTip();
-      const confirmationBuffer = this.config.confirmationLedgers;
-      const targetBlock = Math.max(currentBlock, chainTip - confirmationBuffer);
+      await this.checkpoint.ensureLoaded();
+      const fromBlock = this.checkpoint.getCurrentBlock() + 1;
+      const tip = await this.scanner.getChainTip();
+      this.chainTip = tip;
+      chainTipLedger.set({}, tip);
 
-      if (targetBlock <= currentBlock) {
-        log.debug(
-          { currentBlock, chainTip, lag: chainTip - currentBlock },
-          'No new blocks to process',
-        );
+      const targetBlock = Math.max(
+        this.checkpoint.getCurrentBlock(),
+        tip - this.config.confirmationLedgers,
+      );
+
+      if (targetBlock < fromBlock) {
+        ledgerLag.set({}, Math.max(0, tip - this.checkpoint.getCurrentBlock()));
         return;
       }
 
-      log.debug({ fromBlock: currentBlock + 1, toBlock: targetBlock }, 'Polling new blocks');
+      const scan = await this.scanner.scanRange(fromBlock, targetBlock);
+      scanDuration.observe({}, (Date.now() - startedAt) / 1000);
 
-      const { events } = await this.scanner.scanRange(currentBlock + 1, targetBlock);
-
-      for (const event of events) {
+      for (const event of scan.events) {
         await dispatchEvent(event, this.prisma);
       }
 
-      await this.checkpoint.finalize(targetBlock);
-      this.consecutiveErrors = 0;
+      if (scan.decodeFailures.length > 0) {
+        decodeFailures.inc({}, scan.decodeFailures.length);
+      }
 
-      const lag = this.checkpoint.getLag(chainTip);
-      if (events.length > 0 || lag > 20) {
+      // Commit only after every event in the range is durable.
+      await this.checkpoint.finalize(targetBlock);
+
+      this.consecutiveErrors = 0;
+      const lag = Math.max(0, tip - targetBlock);
+      ledgerLag.set({}, lag);
+      lastProcessedLedger.set({}, targetBlock);
+      batchDuration.observe({}, (Date.now() - startedAt) / 1000);
+
+      if (scan.events.length > 0 || lag > 20) {
         log.info(
-          { block: targetBlock, events: events.length, chainTip, lag },
+          { block: targetBlock, events: scan.events.length, chainTip: tip, lag },
           'Real-time blocks processed',
         );
       }
 
-      this.onBlockProcessed?.(targetBlock, events.length);
+      this.onBlockProcessed?.(targetBlock, scan.events.length);
     } catch (error) {
       this.consecutiveErrors++;
       const err = error instanceof Error ? error : new Error(String(error));
       this.onError?.(err, this.checkpoint.getCurrentBlock());
 
       log.error(
-        { error: err.message, consecutiveErrors: this.consecutiveErrors },
-        'Real-time poll error',
+        {
+          error: err.message,
+          consecutiveErrors: this.consecutiveErrors,
+          nextDelayMs: this.nextDelayMs(),
+        },
+        'Real-time poll error; checkpoint not advanced',
       );
-
-      if (this.consecutiveErrors >= this.maxConsecutiveErrors) {
-        log.error(
-          { consecutiveErrors: this.consecutiveErrors },
-          'Too many consecutive errors, pausing',
-        );
-        await this.sleep(Math.min(this.config.pollIntervalMs * 4, 120_000));
-      }
     }
   }
 
@@ -143,44 +187,33 @@ export class RealtimeSync {
       this.pollTimer = null;
     }
 
-    // Await the current in-flight poll if one is running
-    if (this.currentPoll) {
+    if (this.inFlight) {
       try {
-        await this.currentPoll;
+        await this.inFlight;
       } catch {
-        // Poll errors are already logged; ignore during shutdown
+        // Poll errors are already logged; ignore during shutdown.
       }
-      this.currentPoll = null;
+      this.inFlight = null;
     }
 
     log.info('Real-time sync stopped');
   }
 
-  async getStatus(): Promise<{
-    running: boolean;
-    currentBlock: number;
-    chainTip: number;
-    lag: number;
-    consecutiveErrors: number;
-  }> {
-    let chainTip = 0;
-    try {
-      chainTip = await this.scanner.getChainTip();
-    } catch {
-      // Ignore
-    }
-
+  /**
+   * Current state for the health endpoint.
+   *
+   * Uses the last observed chain tip rather than issuing an RPC call, so a
+   * liveness probe on a slow network cannot itself time out and cause a restart.
+   */
+  getStatus(): RealtimeStatus {
+    const currentBlock = this.checkpoint.getCurrentBlock();
     return {
       running: this.isRunning,
-      currentBlock: this.checkpoint.getCurrentBlock(),
-      chainTip,
-      lag: this.checkpoint.getLag(chainTip),
+      currentBlock,
+      chainTip: this.chainTip,
+      lag: this.chainTip > 0 ? Math.max(0, this.chainTip - currentBlock) : 0,
       consecutiveErrors: this.consecutiveErrors,
     };
-  }
-
-  private sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   get running(): boolean {

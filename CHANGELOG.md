@@ -9,6 +9,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+#### Indexer correctness and test depth
+
+- **`apps/indexer` rebuilt around Soroban RPC `getEvents`.** Contract events are
+  not available from Horizon, so the scanner no longer uses it. XDR decoding is
+  driven by one catalogue (`blockchain/contracts.ts`) mirroring
+  `packages/contracts/EVENTS.md`; an event the catalogue does not know is still
+  recorded, with `known: false`, and a malformed one is counted rather than
+  dropped.
+- **The five per-event handler modules and the BullMQ queue were deleted.**
+  Processing is direct and synchronous, because a queue let the checkpoint
+  advance ahead of the work — the mechanism that can skip ledgers. Events land in
+  `indexer_events`, unique on the on-chain event id, so a retry or a re-scanned
+  range is a no-op; a failed batch is retried in place and the run aborts rather
+  than stepping over it; `finalize` refuses to move the checkpoint backwards; a
+  corrupted checkpoint value is reported and treated as "no checkpoint".
+- **`/metrics`, `/health` and `/ready` on `METRICS_PORT` (4100)**, matching the
+  Prometheus scrape config, the existing alert rules and the Grafana panels.
+  `getChainTip()` propagates an RPC outage instead of inventing a height.
+- **`reconciliation.ts`** — the operator check that every ledger below the
+  checkpoint had all of its events recorded and that every recorded event is
+  applied.
+- **114 indexer tests across 10 files**, fixtures encoded with the Stellar SDK
+  rather than hand-written base64, with enforced coverage floors (lines ≥ 90,
+  branches ≥ 80) and 96% line coverage. Documented in
+  [`docs/INDEXER.md`](./docs/INDEXER.md).
+
+#### Shared helpers and front-end tests
+
+- **`@epay/shared/metrics-registry`** — one dependency-free Prometheus registry
+  (Counter, Gauge, Histogram) now used by both the API and the indexer, replacing
+  the API-local copy so the exposition format cannot drift between services.
+- **`@epay/shared/session`** — one session and route-guard implementation for the
+  customer, merchant and admin front-ends, with a separate session key per app.
+  The three dashboards have specs covering that wiring, and `@epay/shared` now
+  enforces coverage floors.
+- SDK tests grew to 111 and `packages/shared` to 78.
+
+#### CI: end-to-end tests are now a gate
+
+- **`e2e` job in `.github/workflows/ci.yml`** — the Playwright suite runs on every
+  push and pull request, with browsers installed in the job and
+  `reuseExistingServer: false` so a stale server can never be mistaken for a
+  passing run; the report is uploaded as an artifact. 9 tests × 4 browser
+  projects, all 36 passing.
+- `--passWithNoTests` was removed from every package, so a test script that
+  passes with no tests is no longer possible anywhere in the workspace.
+
 #### Governance & repo hygiene
 
 - `CODE_OF_CONDUCT.md` — Contributor Covenant v2.1, with enforcement guidelines
@@ -148,9 +195,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   to Shipped; CI health (ESLint flat-config migration, API Jest suite blocked on a
   Prisma 7 driver adapter) and webhook scheduling called out as the real open
   issues. Verified green: `pnpm typecheck` (22/22) and `pnpm build` (15/15).
-- `README.md` now cites verifiable counts (16 contracts, 267 Rust tests, 116 API
-  test cases, 91 SDK tests, 17 shared tests, 23 app tests, 7 e2e tests), each with
-  its actual pass/blocked status, and links the new docs.
+- `README.md` now cites verifiable counts (16 contracts, 272 Rust tests, 126 API
+  tests, 114 indexer tests, 111 SDK tests, 78 shared tests, 40 app tests, 36 e2e
+  runs), each with its actual pass/blocked status, and links the new docs.
+- Status documents reconciled against the tree on 2026-09-15: test counts and
+  coverage floors in `README.md` and `docs/TESTING.md`, the `e2e` job's real
+  status (wired into CI, 36/36 passing), and the `ROADMAP.md` known-issues table
+  split into what is still open and what is fixed. `docs/IMPLEMENTATION-AUDIT.md`
+  and `docs/FINAL-ENGINEERING-REPORT.md` keep their 2026-09-14 findings as the
+  historical record and carry the later status alongside them.
 - `helm/epay/values.yaml`: `WEBHOOK_MAX_RETRIES` raised 5 → 7 to match
   `WEBHOOK_MAX_ATTEMPTS`; added `externalSecrets` values.
 - `.env.example` documents `METRICS_TOKEN`, `SENTRY_DSN`, and the fixed webhook
@@ -172,7 +225,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   therefore every dependent build. Added `packages/database/prisma.config.ts`.
 - `pnpm-lock.yaml` had resolved `vite@5.4.21`, which fails against `vitest@4`
   with `ERR_PACKAGE_PATH_NOT_EXPORTED` and broke **every** test suite in the
-  monorepo. `vite` is now pinned to `^7.0.0`, restoring the SDK's 91 tests.
+  monorepo. `vite` is now pinned to `^7.0.0`, restoring the SDK's test suite
+  (111 tests today).
 - Stale `*.tsbuildinfo` files could make `tsc --noEmit` report resolved errors;
   they are no longer committed.
 - pnpm settings moved from the ignored root `package.json` `pnpm` field to

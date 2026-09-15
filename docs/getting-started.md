@@ -150,10 +150,15 @@ cargo test --manifest-path packages/contracts/Cargo.toml
 
 On first boot the indexer backfills from the configured start ledger and then
 switches to real-time. Give it a minute and watch the log line reporting the
-checkpoint advance; the merchant dashboard's payment list is populated by it, not
-by the API.
+checkpoint advance.
 
-If the indexer appears stuck, it is almost always Redis or Horizon connectivity:
+It is observable, not decorative: `curl localhost:4100/metrics` reports the
+ledger lag, and `/health` and `/ready` answer liveness and readiness. Its records
+are **not** projected into the API's read model, so the dashboards are not
+populated by it — [`INDEXER.md`](./INDEXER.md) explains that gap and why it
+exists.
+
+If the indexer appears stuck, it is almost always Soroban RPC connectivity:
 `docker compose logs -f indexer`.
 
 ---
@@ -166,16 +171,14 @@ If the indexer appears stuck, it is almost always Redis or Horizon connectivity:
 | `prisma migrate` can't connect          | Postgres not up, or wrong `DATABASE_URL` | `docker compose up -d postgres`, check `.env`  |
 | API 502s / health check red             | migrations not applied                   | `docker compose --profile setup up db-migrate` |
 | API starts, every request hangs         | Redis missing — BullMQ blocks on connect | `docker compose up -d redis`                   |
-| Dashboards show empty data              | indexer not running or still backfilling | `docker compose logs -f indexer`               |
+| Indexer logs RPC errors                 | Soroban RPC unreachable                  | check `STELLAR_SOROBAN_RPC_URL`                |
 | `@epay/hooks` fails to build            | stale `tsbuildinfo`                      | `pnpm clean && pnpm build`                     |
 
 ### Known issues
 
-`apps/api` currently reports type errors and the Next.js dashboards do not all
-build cleanly in CI; both predate the current work and are tracked in the
-[ROADMAP](../ROADMAP.md#known-issues). Runtime behaviour is unaffected — the
-Docker images build with the Nest CLI, which tolerates the type errors the
-`tsc --noEmit` job does not.
+Open items are tracked in one place — the
+[ROADMAP](../ROADMAP.md#known-issues) — so this document cannot drift out of
+date. Nothing listed there blocks a local run.
 
 ---
 

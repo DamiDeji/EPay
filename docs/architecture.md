@@ -29,16 +29,16 @@ flowchart LR
 
 ```text
 apps/
-  api/                  NestJS REST API (15 modules)
+  api/                  NestJS REST API, one module per domain
   web/                  Customer landing page + dashboard (Next.js)
   merchant-dashboard/   Merchant analytics & management (Next.js)
   admin-dashboard/      Platform administration (Next.js)
-  indexer/              Stellar Horizon + Soroban event indexer (BullMQ)
+  indexer/              Soroban RPC event indexer (checkpoints, metrics, probes)
 
 packages/
-  contracts/            12 Soroban (Rust) smart contracts
+  contracts/            16 Soroban (Rust) smart contracts
   sdk/                  TypeScript SDK (Stellar SDK + Soroban SDK)
-  database/             Prisma ORM schema (21 models)
+  database/             Prisma ORM schema (23 models)
   types/                Shared TypeScript types
   ui/                   Shared React UI components
   hooks/                React hooks (useApi, useAuth, useWallet, ...)
@@ -78,14 +78,22 @@ for the Soroban runtime.
 
 ### Indexer (`apps/indexer`)
 
-The indexer keeps the PostgreSQL database in sync with on-chain state.
+The indexer is the only component that reads the chain. It records every contract
+event exactly once; it does **not** project those events onto the API's read
+model — see [`INDEXER.md`](./INDEXER.md) for that gap and its exact cause.
 
-- Scans Stellar Horizon ledger-by-ledger with configurable batch sizes.
-- Decodes Soroban events for five contract families (Payment, Escrow, Refund,
-  Subscription, Treasury).
-- Two sync modes: historical backfill and real-time (with exponential backoff).
-- Work is distributed through a BullMQ queue with 5x concurrency and rate limiting.
-- Checkpoint-based crash recovery persists progress in Prisma.
+- Reads contract events from **Soroban RPC `getEvents`**, ledger-by-ledger, in
+  configurable batches. Horizon does not expose contract events at all.
+- Decodes XDR for every event of all 16 contracts, driven by one catalogue that
+  mirrors `packages/contracts/EVENTS.md`; an unrecognised event is still recorded,
+  and a malformed one is counted rather than dropped.
+- Two sync modes: historical backfill and real-time, with bounded exponential
+  backoff. Both process events directly — there is deliberately no queue between
+  decoding and checkpointing, because a queue lets the checkpoint advance ahead of
+  the work.
+- Checkpoint-based crash recovery persists progress in Prisma, and a failed batch
+  is retried in place so a ledger can never be skipped.
+- Serves `/metrics`, `/health` and `/ready` on `METRICS_PORT` (4100).
 
 ### API (`apps/api`)
 
@@ -123,10 +131,13 @@ merchants, settlements, and analytics.
 2. The payer signs a Stellar transaction that invokes the relevant Soroban contract.
 3. The transaction settles on the Stellar network; funds move directly to the merchant's
    address (EPay never takes custody).
-4. The indexer observes the ledger/Soroban events and writes a `Payment` record to
-   PostgreSQL.
-5. The API reads the record, updates the merchant dashboard, and fires webhooks and
-   notifications.
+4. The indexer observes the Soroban events and records them in `indexer_events`,
+   one row per on-chain event id, before its checkpoint advances.
+5. The API serves the merchant dashboard from its own records and fires webhooks.
+   It does **not** yet read indexed events: projecting them onto `Payment`,
+   `Escrow`, `Refund` and `Subscription` needs a correlation column that does not
+   exist, because nothing in the API submits a transaction today. See
+   [`INDEXER.md`](./INDEXER.md).
 
 ## Key Design Decisions
 
@@ -142,14 +153,15 @@ merchants, settlements, and analytics.
 
 ## Testing
 
-| Package     | Framework  | Coverage                                                         |
-| ----------- | ---------- | ---------------------------------------------------------------- |
-| `contracts` | Cargo test | 16 suites + property/fuzz tests on the 4 funds-at-risk contracts |
-| `api`       | Jest       | 16 suites, 105 tests (~50% lines; services ~76%)                 |
-| `sdk`       | Vitest     | 4 suites, 91 tests (87% statements/lines)                        |
-| `shared`    | Vitest     | webhook signing, verification, and retry policy                  |
-| `tests/e2e` | Playwright | customer web + dashboards, with axe-core a11y checks             |
-| `tests/k6`  | k6         | load profile; SLOs in [`performance.md`](./performance.md)       |
+| Package     | Framework  | Coverage                                                                              |
+| ----------- | ---------- | ------------------------------------------------------------------------------------- |
+| `contracts` | Cargo test | 272 tests across 16 crates, plus property/fuzz tests on the 4 funds-at-risk contracts |
+| `api`       | Jest       | 18 suites, 126 tests; coverage floor enforced (lines ≥ 50)                            |
+| `indexer`   | Vitest     | 114 tests; coverage floor enforced (lines ≥ 90)                                       |
+| `sdk`       | Vitest     | 4 suites, 111 tests; coverage floor enforced (lines ≥ 85)                             |
+| `shared`    | Vitest     | 78 tests: webhook signing, sessions, wallet validation, metrics registry              |
+| `tests/e2e` | Playwright | 9 tests × 4 browsers, run in CI as the `e2e` job; axe-core a11y checks                |
+| `tests/k6`  | k6         | load profile; SLOs in [`performance.md`](./performance.md), not wired into CI         |
 
 Run `pnpm test` for the full suite, or scope with `pnpm --filter <package> test`.
 
@@ -199,7 +211,7 @@ costs one cross-contract call on the paths that need it and nothing elsewhere.
 
 ### Why Prisma
 
-- **The schema is the contract.** One declarative file defines 22 models, their
+- **The schema is the contract.** One declarative file defines 23 models, their
   relations, enums, and indexes; TypeScript types are generated from it, so a
   field rename is a compile error rather than a runtime `undefined`.
 - **Migrations are code.** `prisma migrate` produces reviewable SQL that ships
@@ -218,16 +230,17 @@ The indexer is the only thing allowed to write chain-derived rows, and it
 reconciles by construction rather than by comparison:
 
 1. **Ordered, checkpointed ingestion.** Ledgers are scanned in order, in batches,
-   and a checkpoint (last processed ledger) is persisted in Prisma after each
-   batch. A crash resumes from the checkpoint, so no ledger is skipped and none is
-   processed twice without being idempotent.
-2. **Events carry ids, handlers are idempotent.** Every handler keys on the
-   contract-assigned id (`payment_id`, `escrow_id`, …) and upserts. Replaying a
-   ledger is safe.
-3. **Lag is observable and alerting.** The gap between the chain head and the
-   checkpoint is exported as a metric, and `EpayQueueLagHigh` fires when the
-   indexer falls behind — so "the database is wrong" surfaces as an alert, not as
-   a support ticket.
+   and a checkpoint (last processed ledger) is persisted in Prisma only after
+   every event in the batch is durable. A crash resumes from the checkpoint, and a
+   batch that keeps failing aborts the run instead of being stepped over, so a
+   ledger cannot be skipped.
+2. **Events carry ids, so replay is a no-op.** Each event is written to
+   `indexer_events`, unique on the on-chain event id. Replaying a ledger, or
+   re-scanning a range, changes nothing.
+3. **Lag is observable.** The gap between the chain head and the checkpoint is
+   exported as `epay_indexer_ledger_lag` and plotted on the queue-lag dashboard.
+   In steady state it settles at `INDEXER_CONFIRMATION_LEDGERS`, because the
+   indexer deliberately stops short of the tip.
 4. **Re-derivation is always possible.** Because the indexer is the only writer of
    chain-derived data, any suspected corruption can be resolved by replaying from
    a known ledger rather than by hand-repairing rows.

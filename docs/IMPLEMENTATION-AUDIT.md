@@ -10,6 +10,14 @@ finding below is reproducible with the command listed next to it.
 toolchain run per package, Rust toolchain 1.98.1 installed, all 16 Soroban
 contracts built, and every test suite executed.
 
+**Reading this document later.** Sections 1–18 are the audit **as it was on
+2026-09-14** and are deliberately left in the past tense of that day; they are
+the evidence for the fixes in
+[`FINAL-ENGINEERING-REPORT.md`](./FINAL-ENGINEERING-REPORT.md). Two tables below
+are annotated with what happened afterwards, because they are the ones a reader
+would otherwise act on: §5 (_Empty tests_) and §19 (_Recommended next fixes_),
+both updated 2026-09-15.
+
 Priority legend: **P0** critical (blocks a release, or a security/financial
 correctness defect) · **P1** high · **P2** medium · **P3** low.
 
@@ -123,6 +131,13 @@ epay/                              pnpm workspace + Turborepo
 
 `--passWithNoTests` means CI reports these as green. That flag is doing real
 harm: it converts "never written" into "passing".
+
+**Since addressed (2026-09-15).** `apps/indexer` has 114 tests across 10 files
+with enforced coverage floors (lines ≥ 90, branches ≥ 80) and 96% line coverage;
+the three dashboards share session/route-guard specs (17 tests) against the
+helpers that moved into `@epay/shared`; every test script now runs a real suite
+and no package uses `--passWithNoTests`. The exact counts are in
+[`docs/TESTING.md`](./TESTING.md).
 
 ## 6. Weak tests
 
@@ -320,21 +335,22 @@ Verified: 272 tests pass; `cargo clippy --all-targets -- -D warnings` clean;
 
 ---
 
-## 19. Recommended next fixes (not completed in this pass)
+## 19. Recommended next fixes (not completed in that pass)
 
-Priority-ordered, with the gap stated precisely.
+Priority-ordered, with the gap stated precisely. The status column records what
+had happened by 2026-09-15.
 
-| Priority | Item                                                                                                                         |
-| -------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| P1       | Write indexer tests: checkpoint recovery, duplicate-event suppression, malformed events, exponential backoff, crash/restart. |
-| P1       | Add coverage thresholds (API 80% lines, 90% for payment/refund/settlement/auth) and enable `--coverage` in CI.               |
-| P1       | Remove `--passWithNoTests` from the packages that have no tests, or write the tests; the flag currently hides the gap.       |
-| P1       | Wire `tests/e2e` into CI against a containerised stack.                                                                      |
-| P2       | Add API-level idempotency tests proving retries cannot duplicate payments/refunds/settlements.                               |
-| P2       | Indexer should expose `/metrics` so the existing alert rules have data.                                                      |
-| P2       | Container scanning (Trivy) and SBOM publication per image in CI.                                                             |
-| P2       | Add tests for the three dashboards (auth guard, role-based routes).                                                          |
-| P2       | Make `pnpm audit` blocking once the current advisory set is triaged.                                                         |
-| P3       | Remove or adopt the unused `packages/ui` and `packages/hooks` code.                                                          |
-| P3       | Add image signing / provenance attestation to the release workflow.                                                          |
-| P3       | Document every environment variable in one place and validate with `packages/config`.                                        |
+| Priority | Item                                                                                                                         | Status (2026-09-15)                                                                  |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| P1       | Write indexer tests: checkpoint recovery, duplicate-event suppression, malformed events, exponential backoff, crash/restart. | **Done** — 114 tests, floors enforced, 96% lines                                     |
+| P1       | Add coverage thresholds (API 80% lines, 90% for payment/refund/settlement/auth) and enable `--coverage` in CI.               | **Partial** — floors in 4 packages; the 80%/90% targets are not met (API ~52% lines) |
+| P1       | Remove `--passWithNoTests` from the packages that have no tests, or write the tests; the flag currently hides the gap.       | **Done** — no test script uses it                                                    |
+| P1       | Wire `tests/e2e` into CI against a containerised stack.                                                                      | **Done** — `e2e` job; 36/36 pass, no containerised stack needed                      |
+| P2       | Add API-level idempotency tests proving retries cannot duplicate payments/refunds/settlements.                               | Open                                                                                 |
+| P2       | Indexer should expose `/metrics` so the existing alert rules have data.                                                      | **Done** — `/metrics`, `/health`, `/ready` on 4100                                   |
+| P2       | Container scanning (Trivy) and SBOM publication per image in CI.                                                             | **Already present** — `supply-chain.yml`                                             |
+| P2       | Add tests for the three dashboards (auth guard, role-based routes).                                                          | **Done** — session/route-guard specs in all three                                    |
+| P2       | Make `pnpm audit` blocking once the current advisory set is triaged.                                                         | Open — still `continue-on-error` in `ci.yml`                                         |
+| P3       | Remove or adopt the unused `packages/ui` and `packages/hooks` code.                                                          | Open                                                                                 |
+| P3       | Add image signing / provenance attestation to the release workflow.                                                          | **Already present** — cosign keyless on tags in `supply-chain.yml`                   |
+| P3       | Document every environment variable in one place and validate with `packages/config`.                                        | Open                                                                                 |

@@ -1,10 +1,13 @@
 import { prisma } from '@epay/database';
 
+import { HttpSorobanRpcClient } from './blockchain/rpc-client';
 import { BlockScanner } from './blockchain/scanner';
+import type { CheckpointManager } from './checkpoint';
 import { createCheckpointManager } from './checkpoint';
 import { loadConfig } from './config';
+import type { HealthSnapshot } from './http-server';
+import { IndexerHttpServer } from './http-server';
 import { logger, createChildLogger } from './logger';
-import { IndexerQueue } from './queue/queue';
 import { HistoricalSync } from './sync/historical';
 import { RealtimeSync } from './sync/realtime';
 
@@ -19,20 +22,27 @@ async function main(): Promise<void> {
   log.info(
     {
       network: config.stellarNetwork,
-      horizon: config.horizonUrl,
       sorobanRpc: config.sorobanRpcUrl,
       pollIntervalMs: config.pollIntervalMs,
       batchSize: config.batchSize,
       confirmationLedgers: config.confirmationLedgers,
+      metricsPort: config.metricsPort,
       contractIds: config.contractIds,
     },
     'Configuration loaded',
   );
 
+  if (config.contractIds.length === 0) {
+    log.warn(
+      'No contract ids are configured, so the indexer will subscribe to nothing. ' +
+        'Set PAYMENT_ROUTER_CONTRACT_ID and the other *_CONTRACT_ID variables.',
+    );
+  }
+
   const shutdownHandlers: (() => Promise<void>)[] = [];
 
   let shutDown = false;
-  const onShutdown = async (signal: string) => {
+  const onShutdown = async (signal: string): Promise<void> => {
     if (shutDown) return;
     shutDown = true;
     log.info({ signal }, 'Received shutdown signal');
@@ -59,94 +69,103 @@ async function main(): Promise<void> {
     await prisma.$connect();
     log.info('Database connected');
 
-    const checkpoint = await createCheckpointManager(prisma, config.historicalStartLedger);
+    const checkpoint: CheckpointManager = createCheckpointManager(
+      prisma,
+      config.historicalStartLedger,
+    );
     const lastLedger = await checkpoint.load();
     log.info({ lastLedger }, 'Checkpoint loaded');
 
-    const scanner = new BlockScanner(config, checkpoint);
+    const rpc = new HttpSorobanRpcClient({ url: config.sorobanRpcUrl });
+    const scanner = new BlockScanner(config, rpc);
     shutdownHandlers.push(async () => {
       scanner.stop();
     });
 
-    const queue = new IndexerQueue(config, prisma);
-    queue.startWorker();
-    shutdownHandlers.push(async () => {
-      await queue.shutdown();
-    });
+    let historicalComplete = !config.historicalEnabled;
+    let realtime: RealtimeSync | null = null;
 
-    // Phase 1: Historical sync
-    log.info('--- PHASE 1: Historical Sync ---');
-    const historicalSync = new HistoricalSync({
-      config,
-      scanner,
-      checkpoint,
-      prisma,
-      onProgress: (scanned, total) => {
-        const pct = total > 0 ? Math.round((scanned / total) * 100) : 0;
-        log.info({ scanned, total, pct: `${pct}%` }, 'Historical sync progress');
+    // The health endpoint the deployed liveness/readiness probes hit.
+    const httpServer = new IndexerHttpServer({
+      port: config.metricsPort,
+      health: (): HealthSnapshot => {
+        const status = realtime?.getStatus();
+        return {
+          ready: historicalComplete,
+          currentBlock: checkpoint.getCurrentBlock(),
+          chainTip: status?.chainTip ?? 0,
+          lag: status?.lag ?? 0,
+          lastProcessedLedger: checkpoint.getLastFinalizedBlock(),
+          consecutiveErrors: status?.consecutiveErrors ?? 0,
+        };
       },
     });
-    shutdownHandlers.push(async () => {
-      historicalSync.stop();
-    });
 
-    const historicalResult = await historicalSync.run();
-    log.info(
-      {
-        ledgersProcessed: historicalResult.blocksProcessed,
-        eventsFound: historicalResult.eventsFound,
-        durationMs: historicalResult.durationMs,
-      },
-      'Historical sync complete',
-    );
+    if (config.metricsEnabled) {
+      await httpServer.start();
+      shutdownHandlers.push(async () => {
+        await httpServer.stop();
+      });
+    } else {
+      log.warn('Metrics/health server disabled by INDEXER_METRICS_ENABLED=false');
+    }
 
-    // Phase 2: Real-time sync
+    // Phase 1: historical catch-up.
+    if (config.historicalEnabled) {
+      log.info('--- PHASE 1: Historical Sync ---');
+      const historicalSync = new HistoricalSync({
+        config,
+        scanner,
+        checkpoint,
+        prisma,
+        onProgress: (scanned, total) => {
+          const pct = total > 0 ? Math.round((scanned / total) * 100) : 0;
+          log.info({ scanned, total, pct: `${String(pct)}%` }, 'Historical sync progress');
+        },
+      });
+      shutdownHandlers.push(async () => {
+        historicalSync.stop();
+      });
+
+      const historicalResult = await historicalSync.run();
+      log.info(historicalResult, 'Historical sync complete');
+      historicalComplete = true;
+    }
+
+    // Phase 2: real-time tail.
     log.info('--- PHASE 2: Real-time Sync ---');
-    const realtimeSync = new RealtimeSync({
+    realtime = new RealtimeSync({
       config,
       scanner,
       checkpoint,
       prisma,
       onBlockProcessed: (ledger, eventCount) => {
-        void (async () => {
-          if (eventCount > 0) {
-            try {
-              const stats = await queue.getStats();
-              log.debug({ ledger, eventCount, queueStats: stats }, 'Ledger processed in real-time');
-            } catch {
-              /* queue stats may be unavailable */
-            }
-          }
-        })();
+        if (eventCount > 0) {
+          log.debug({ ledger, eventCount }, 'Ledger processed in real-time');
+        }
       },
       onError: (error, ledger) => {
         log.error({ error: error.message, ledger }, 'Real-time sync error');
       },
     });
     shutdownHandlers.push(async () => {
-      await realtimeSync.stop();
+      await realtime?.stop();
     });
 
-    await realtimeSync.start();
+    await realtime.start();
 
-    // Health check
-    const healthInterval = setInterval(() => {
-      void (async () => {
-        try {
-          const status = await realtimeSync.getStatus();
-          const queueStats = await queue.getStats();
-          log.info(
-            { syncStatus: status, queueStats, uptime: `${Math.round(process.uptime())}s` },
-            'Indexer health check',
-          );
-        } catch (error: unknown) {
-          log.error({ error }, 'Health check failed');
-        }
-      })();
+    const statusInterval = setInterval(() => {
+      const status = realtime?.getStatus();
+      if (status) {
+        log.info(
+          { ...status, uptime: `${String(Math.round(process.uptime()))}s` },
+          'Indexer status',
+        );
+      }
     }, 60_000);
 
     shutdownHandlers.push(async () => {
-      clearInterval(healthInterval);
+      clearInterval(statusInterval);
     });
 
     log.info('=======================================');

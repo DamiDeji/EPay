@@ -87,17 +87,19 @@ export function Navbar() {
               {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </Button>
           )}
-          <Link href="/login">
-            <Button variant="ghost" size="sm">
-              Sign In
-            </Button>
-          </Link>
-          <Link href="/register">
-            <Button size="sm" className="gap-2">
+          {/* `asChild` renders a single anchor styled as a button. Nesting a
+              <button> inside an <a> is invalid interactive content: the anchor
+              stops being exposed as a link, so it has no usable name for
+              assistive technology. */}
+          <Button asChild variant="ghost" size="sm">
+            <Link href="/login">Sign In</Link>
+          </Button>
+          <Button asChild size="sm" className="gap-2">
+            <Link href="/register">
               <Wallet className="w-4 h-4" />
               Get Started
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
 
         {/* Mobile Toggle */}
@@ -106,6 +108,7 @@ export function Navbar() {
             <Button
               variant="ghost"
               size="icon"
+              aria-label="Toggle theme"
               onClick={() => {
                 setTheme(theme === 'dark' ? 'light' : 'dark');
               }}
@@ -116,6 +119,8 @@ export function Navbar() {
           <Button
             variant="ghost"
             size="icon"
+            aria-label={isMobileOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={isMobileOpen}
             onClick={() => {
               setIsMobileOpen(!isMobileOpen);
             }}
@@ -157,27 +162,27 @@ export function Navbar() {
               ),
             )}
             <hr className="border-slate-200 dark:border-slate-700" />
-            <Link
-              href="/login"
-              onClick={() => {
-                setIsMobileOpen(false);
-              }}
-            >
-              <Button variant="ghost" className="w-full justify-start">
+            <Button asChild variant="ghost" className="w-full justify-start">
+              <Link
+                href="/login"
+                onClick={() => {
+                  setIsMobileOpen(false);
+                }}
+              >
                 Sign In
-              </Button>
-            </Link>
-            <Link
-              href="/register"
-              onClick={() => {
-                setIsMobileOpen(false);
-              }}
-            >
-              <Button className="w-full gap-2">
+              </Link>
+            </Button>
+            <Button asChild className="w-full gap-2">
+              <Link
+                href="/register"
+                onClick={() => {
+                  setIsMobileOpen(false);
+                }}
+              >
                 <Wallet className="w-4 h-4" />
                 Get Started
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </div>
         </div>
       )}

@@ -26,7 +26,7 @@ export function Footer() {
             <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
               Decentralized payment infrastructure on Stellar.
             </p>
-            <p className="text-xs text-slate-400 dark:text-slate-500">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               &copy; {new Date().getFullYear()} EPay. All rights reserved.
             </p>
           </div>
@@ -54,18 +54,20 @@ export function Footer() {
         </div>
 
         <div className="mt-12 pt-8 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-slate-400 dark:text-slate-500">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             Built on{' '}
+            {/* Always underlined: a link distinguished from its surrounding text by
+                colour alone fails WCAG 1.4.1. */}
             <a
               href="https://stellar.org"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[#0098EA] hover:underline"
+              className="text-[#007AC0] dark:text-[#0098EA] underline"
             >
               Stellar
             </a>
           </p>
-          <p className="text-xs text-slate-400 dark:text-slate-500">Apache-2.0 License</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Apache-2.0 License</p>
         </div>
       </div>
     </footer>

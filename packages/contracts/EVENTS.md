@@ -31,14 +31,14 @@ data:   ( escrow_id: u64, merchant: Address, customer: Address, total_amount: i1
 
 ## PaymentRouter
 
-| Event               | Topics              | Data                           | Emitted when                              |
-| ------------------- | ------------------- | ------------------------------ | ----------------------------------------- |
-| `payment_created`   | `payment_created`   | `(payment_id: u64)`            | A new payment is recorded                 |
-| `payment_confirmed` | `payment_confirmed` | `(payment_id: u64)`            | The payment is confirmed with a `tx_hash` |
-| `payment_completed` | `payment_completed` | `(payment_id: u64)`            | Funds have settled to the merchant        |
-| `fee_collected`     | `fee_collected`     | `(payment_id: u64, fee: i128)` | Platform fee taken alongside a completion |
-| `payment_failed`    | `payment_failed`    | `(payment_id: u64)`            | The payment moved to `failed`             |
-| `payment_refunded`  | `payment_refunded`  | `(payment_id: u64)`            | An admin refunded the payment             |
+| Event               | Topics              | Data                                  | Emitted when                              |
+| ------------------- | ------------------- | ------------------------------------- | ----------------------------------------- |
+| `payment_created`   | `payment_created`   | `(payment_id: u64)`                   | A new payment is recorded                 |
+| `payment_confirmed` | `payment_confirmed` | `(payment_id: u64)`                   | The payment is confirmed with a `tx_hash` |
+| `payment_completed` | `payment_completed` | `(payment_id: u64)`                   | Funds have settled to the merchant        |
+| `fee_collected`     | `fee_collected`     | `(payment_id: u64, fee: i128)`        | Platform fee taken alongside a completion |
+| `payment_failed`    | `payment_failed`    | `(payment_id: u64)`                   | The payment moved to `failed`             |
+| `payment_refunded`  | `payment_refunded`  | `(payment_id: u64, refundable: i128)` | An admin refunded the payment             |
 
 ## InvoiceManager
 

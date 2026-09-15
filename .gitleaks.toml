@@ -32,7 +32,10 @@ tags = ["epay", "api-key"]
 [[rules]]
 id = "epay-webhook-signature"
 description = "EPay webhook signing secret"
-regex = '''(?i)webhook[_\-]?secret\s*[:=]\s*["']?[A-Za-z0-9_\-]{16,}'''
+# `secretGroup = 1` reports only the value, so the key name is not what gets
+# compared against the allowlist. The group was previously missing, which made
+# the index meaningless.
+regex = '''(?i)webhook[_\-]?secret\s*[:=]\s*["']?([A-Za-z0-9_\-]{16,})'''
 secretGroup = 1
 tags = ["epay", "webhook"]
 
@@ -45,7 +48,17 @@ tags = ["anthropic", "api-key"]
 [[rules]]
 id = "postgres-uri-with-password"
 description = "PostgreSQL connection URI containing a password"
-regex = '''postgres(ql)?://[^:\s]+:(?!\$\(|\$\{|changeme|change-me|password|epay_dev|epay_test)[^@\s]{6,}@'''
+# gitleaks compiles these patterns with Go's RE2 engine, which has no
+# lookaround — the negative lookahead this rule used to carry made
+# `MustCompile` panic, so the whole scan aborted with exit code 2 before it
+# examined a single file. Placeholder passwords are filtered by the allowlist
+# below instead, and `secretGroup` exposes just the password so that filtering
+# works on the value rather than on the whole URI.
+# Both the user and the password must be literals: `$`/`{`/`}` in either
+# position means the URI is an interpolation (`${POSTGRES_PASSWORD:-postgres}`,
+# `$(POSTGRES_PASSWORD)`) and therefore carries no secret.
+regex = '''postgres(?:ql)?://[A-Za-z0-9_.-]+:([^@\s${}]{6,})@'''
+secretGroup = 1
 tags = ["database", "credentials"]
 
 # ── Allowlist ─────────────────────────────────────────────────────────────────
@@ -62,6 +75,11 @@ paths = [
   '''coverage/''',
   '''\.next/''',
   '''apps/mobile/\.expo/''',
+  # Cargo build output. `.gitignore` keeps this out of the repository, but a
+  # dirty working tree still has it on disk, and rlib metadata contains the
+  # literal `PRIVATE KEY` PEM header from the crypto crates.
+  '''(^|/)target/''',
+  '''(^|/)artifacts/''',
   # Template files hold placeholders by design, and are documented as such.
   '''\.env\.example''',
   '''\.env\.\w+\.example''',
@@ -81,8 +99,25 @@ regexes = [
   '''epay_dev''',
   '''epay_test''',
   '''epay_drill''',
+  # Passwords used by docker-compose and the CI service containers. They are
+  # local-only credentials, and the `paths` allowlist above does not cover
+  # workflow files or compose files.
+  '''^(epay|postgres|postgresql)$''',
   # Test-only Stellar accounts: `G` followed by a repeated character.
   '''G(A{55}|B{55}|A{10}F\d+[A-Z0-9]*)''',
   '''A{40,}''',
   '''mock_signature_[A-Za-z0-9]+''',
+  # Documented local-testing placeholder, e.g. `export EPAY_WEBHOOK_SECRET=whsec_test_2f5a1c`
+  # in docs/webhook-receiver.md. The `_test_` infix is what marks it as fake.
+  '''whsec_test_[A-Za-z0-9]+''',
+  # Truncated example token in packages/sdk/README.md. The literal `...` is part
+  # of the placeholder, so this can only ever match documentation.
+  '''eyJ[A-Za-z0-9_-]*\.\.\.''',
+  # Connection URIs whose "password" is a variable reference, not a literal:
+  #   ${POSTGRES_PASSWORD:-postgres}   docker-compose / CI service containers
+  #   $(POSTGRES_PASSWORD)             Kubernetes env substitution
+  #   <password>                       restore-runbook placeholder
+  '''^\$\{[A-Z0-9_]+:-[^}]*\}$''',
+  '''^\$\([A-Z0-9_]+\)$''',
+  '''^<[a-z-]+>$''',
 ]

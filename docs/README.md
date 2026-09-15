@@ -14,6 +14,20 @@ Integration** if you are integrating a partner system.
 | **[webhook-receiver.md](./webhook-receiver.md)**         | You receive EPay webhooks                              |
 | **[performance.md](./performance.md)**                   | You care about latency, SLOs, or load testing          |
 
+## Indexer and testing
+
+| Doc                        | Contents                                                                        |
+| -------------------------- | ------------------------------------------------------------------------------- |
+| [INDEXER.md](./INDEXER.md) | Event ingestion, the guarantees, its metrics, reconciliation, and the known gap |
+| [TESTING.md](./TESTING.md) | Every test command, current counts, coverage floors, and the honest known gaps  |
+
+## Status reports
+
+| Doc                                                          | Contents                                                     |
+| ------------------------------------------------------------ | ------------------------------------------------------------ |
+| [IMPLEMENTATION-AUDIT.md](./IMPLEMENTATION-AUDIT.md)         | Verified audit of the tree as it was on 2026-09-14           |
+| [FINAL-ENGINEERING-REPORT.md](./FINAL-ENGINEERING-REPORT.md) | What was fixed, the readiness matrix, and what is still open |
+
 ## Operating EPay
 
 | Doc                                                | Contents                                                                 |

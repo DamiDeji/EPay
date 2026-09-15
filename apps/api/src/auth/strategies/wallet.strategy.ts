@@ -1,3 +1,4 @@
+import { isValidStellarPublicKey } from '@epay/shared';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Keypair } from '@stellar/stellar-sdk';
@@ -5,9 +6,6 @@ import type { Request } from 'express';
 import { Strategy } from 'passport-custom';
 
 import { PrismaService } from '../../database/prisma.service';
-
-/** Stellar public key format: G + 55 base32 chars */
-const STELLAR_PUBLIC_KEY_REGEX = /^G[A-Z2-7]{55}$/;
 
 @Injectable()
 export class WalletStrategy extends PassportStrategy(Strategy, 'wallet') {
@@ -25,7 +23,7 @@ export class WalletStrategy extends PassportStrategy(Strategy, 'wallet') {
     }
 
     // Validate Stellar public key format
-    if (!STELLAR_PUBLIC_KEY_REGEX.test(address)) {
+    if (!isValidStellarPublicKey(address)) {
       throw new UnauthorizedException('Invalid Stellar public key format');
     }
 

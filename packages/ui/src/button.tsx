@@ -9,7 +9,9 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: 'bg-[#0098EA] text-white hover:bg-[#0082CC] shadow-sm hover:shadow-md',
+        // #0098EA with white text is 3.14:1 — below the 4.5:1 WCAG AA floor. The
+        // darker shade keeps the same hue and passes (4.62:1).
+        default: 'bg-[#007AC0] text-white hover:bg-[#006FAE] shadow-sm hover:shadow-md',
         primary: 'bg-[#1E3A8A] text-white hover:bg-[#152E6E] shadow-sm hover:shadow-md',
         destructive: 'bg-red-600 text-white hover:bg-red-700',
         outline:
@@ -17,8 +19,9 @@ const buttonVariants = cva(
         secondary:
           'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-slate-100 hover:bg-slate-300 dark:hover:bg-slate-600',
         ghost: 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300',
-        link: 'text-[#0098EA] underline-offset-4 hover:underline',
-        success: 'bg-[#10B981] text-white hover:bg-[#059669] shadow-sm',
+        link: 'text-[#007AC0] underline-offset-4 hover:underline',
+        // White on #10B981 is 2.54:1 — nowhere near the 4.5:1 floor. #047857 is 5.48:1.
+        success: 'bg-[#047857] text-white hover:bg-[#065F46] shadow-sm',
       },
       size: {
         default: 'h-10 px-4 py-2',

@@ -304,5 +304,147 @@ describe('Resource Modules', () => {
       expect(result.totalMerchants).toBe(10);
       expect(client.get).toHaveBeenCalledWith('/analytics/platform');
     });
+
+    it('getPlatformAnalytics should include the window when one is given', async () => {
+      (client.get as any).mockResolvedValue({ totalMerchants: 10 });
+      await client.analytics.getPlatformAnalytics(7);
+      expect(client.get).toHaveBeenCalledWith('/analytics/platform?days=7');
+    });
+
+    it('getMerchantRevenue should GET the revenue breakdown', async () => {
+      (client.get as any).mockResolvedValue({
+        totalRevenue: '1000',
+        totalFees: '5',
+        netRevenue: '995',
+        daily: [],
+      });
+      const result = await client.analytics.getMerchantRevenue('merch_1', 30);
+      expect(result.netRevenue).toBe('995');
+      expect(client.get).toHaveBeenCalledWith('/analytics/merchant/merch_1/revenue?days=30');
+    });
+
+    it('getMerchantRevenue should omit the window when none is given', async () => {
+      (client.get as any).mockResolvedValue({ netRevenue: '0', daily: [] });
+      await client.analytics.getMerchantRevenue('merch_1');
+      expect(client.get).toHaveBeenCalledWith('/analytics/merchant/merch_1/revenue');
+    });
+  });
+
+  /**
+   * The suites above cover the state-changing calls. These cover the read and
+   * list methods (and `update`), which are the other half of the published
+   * surface — an SDK method that is never exercised is a method whose URL and
+   * query encoding can silently rot.
+   */
+  describe('read and list methods', () => {
+    it('refunds.getById should GET /refunds/:id', async () => {
+      (client.get as any).mockResolvedValue({ refundId: 'ref_1' });
+      const result = await client.refunds.getById('ref_1');
+      expect(result.refundId).toBe('ref_1');
+      expect(client.get).toHaveBeenCalledWith('/refunds/ref_1');
+    });
+
+    it('refunds.list should encode its filters', async () => {
+      (client.get as any).mockResolvedValue({ data: [], total: 0 });
+      await client.refunds.list({ merchantId: 'merch_1', paymentId: 'pay_1' });
+      expect(client.get).toHaveBeenCalledWith('/refunds?merchantId=merch_1&paymentId=pay_1');
+    });
+
+    it('invoices.getById should GET /invoices/:id', async () => {
+      (client.get as any).mockResolvedValue({ invoiceNumber: 'INV-1' });
+      const result = await client.invoices.getById('inv_1');
+      expect(result.invoiceNumber).toBe('INV-1');
+      expect(client.get).toHaveBeenCalledWith('/invoices/inv_1');
+    });
+
+    it('invoices.list should GET /invoices with no trailing `?` when unfiltered', async () => {
+      (client.get as any).mockResolvedValue({ data: [], total: 0 });
+      await client.invoices.list();
+      expect(client.get).toHaveBeenCalledWith('/invoices');
+    });
+
+    it('invoices.list should drop filters that are explicitly undefined', async () => {
+      (client.get as any).mockResolvedValue({ data: [], total: 0 });
+      await client.invoices.list({ page: 2, merchantId: undefined });
+      expect(client.get).toHaveBeenCalledWith('/invoices?page=2');
+    });
+
+    it('escrows.getById should GET /escrows/:id', async () => {
+      (client.get as any).mockResolvedValue({ escrowId: 'esc_1' });
+      const result = await client.escrows.getById('esc_1');
+      expect(result.escrowId).toBe('esc_1');
+      expect(client.get).toHaveBeenCalledWith('/escrows/esc_1');
+    });
+
+    it('escrows.list should GET /escrows with filters', async () => {
+      (client.get as any).mockResolvedValue({ data: [], total: 0 });
+      await client.escrows.list({ customerId: 'cust_1' });
+      expect(client.get).toHaveBeenCalledWith('/escrows?customerId=cust_1');
+    });
+
+    it('merchants.getById should GET /merchants/:id', async () => {
+      (client.get as any).mockResolvedValue({ id: 'merch_1' });
+      const result = await client.merchants.getById('merch_1');
+      expect(result.id).toBe('merch_1');
+      expect(client.get).toHaveBeenCalledWith('/merchants/merch_1');
+    });
+
+    it('merchants.list should GET /merchants with no filters', async () => {
+      (client.get as any).mockResolvedValue({ data: [], total: 0 });
+      await client.merchants.list();
+      expect(client.get).toHaveBeenCalledWith('/merchants');
+    });
+
+    it('merchants.update should PUT the partial payload', async () => {
+      (client.put as any).mockResolvedValue({ id: 'merch_1', businessName: 'Renamed' });
+      const result = await client.merchants.update('merch_1', { businessName: 'Renamed' });
+      expect(result.businessName).toBe('Renamed');
+      expect(client.put).toHaveBeenCalledWith('/merchants/merch_1', { businessName: 'Renamed' });
+    });
+
+    it('paymentLinks.listByMerchant should GET the merchant-scoped collection', async () => {
+      (client.get as any).mockResolvedValue([{ code: 'abc' }]);
+      const result = await client.paymentLinks.listByMerchant('merch_1');
+      expect(result).toHaveLength(1);
+      expect(client.get).toHaveBeenCalledWith('/payment-links/merchant/merch_1');
+    });
+
+    it('subscriptions.getById should GET /subscriptions/:id', async () => {
+      (client.get as any).mockResolvedValue({ subscriptionId: 'sub_1' });
+      const result = await client.subscriptions.getById('sub_1');
+      expect(result.subscriptionId).toBe('sub_1');
+      expect(client.get).toHaveBeenCalledWith('/subscriptions/sub_1');
+    });
+
+    it('subscriptions.list should GET /subscriptions with filters', async () => {
+      (client.get as any).mockResolvedValue({ data: [], total: 0 });
+      await client.subscriptions.list({ customerId: 'cust_1' });
+      expect(client.get).toHaveBeenCalledWith('/subscriptions?customerId=cust_1');
+    });
+
+    it('settlements.getById should GET /settlements/:id', async () => {
+      (client.get as any).mockResolvedValue({ settlementId: 'set_1' });
+      const result = await client.settlements.getById('set_1');
+      expect(result.settlementId).toBe('set_1');
+      expect(client.get).toHaveBeenCalledWith('/settlements/set_1');
+    });
+
+    it('settlements.list should GET /settlements with filters', async () => {
+      (client.get as any).mockResolvedValue({ data: [], total: 0 });
+      await client.settlements.list({ merchantId: 'merch_1' });
+      expect(client.get).toHaveBeenCalledWith('/settlements?merchantId=merch_1');
+    });
+
+    it('payments.list should drop null filters as well as undefined ones', async () => {
+      (client.get as any).mockResolvedValue({ data: [], total: 0 });
+      await client.payments.list({ page: 1, pageSize: null as unknown as number });
+      expect(client.get).toHaveBeenCalledWith('/payments?page=1');
+    });
+
+    it('encodes query values rather than pasting them in raw', async () => {
+      (client.get as any).mockResolvedValue({ data: [], total: 0 });
+      await client.payments.list({ merchantId: 'merch 1&admin=true' });
+      expect(client.get).toHaveBeenCalledWith('/payments?merchantId=merch%201%26admin%3Dtrue');
+    });
   });
 });

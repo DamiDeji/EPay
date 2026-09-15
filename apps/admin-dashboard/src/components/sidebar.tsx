@@ -1,5 +1,6 @@
 'use client';
 
+import { ADMIN_SESSION, clearSession } from '@epay/shared';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   BarChart3,
@@ -34,11 +35,11 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const pathname = usePathname();
 
   const handleSignOut = () => {
-    // TODO: Implement sign-out — clear token, redirect to /login
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('epay_admin_token');
-      window.location.href = '/login';
-    }
+    if (typeof window === 'undefined') return;
+    // Removes the refresh token as well: clearing only the access token left a
+    // usable credential behind after sign-out.
+    clearSession(localStorage, ADMIN_SESSION);
+    window.location.href = ADMIN_SESSION.loginPath;
   };
 
   return (

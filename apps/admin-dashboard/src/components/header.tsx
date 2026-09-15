@@ -1,5 +1,6 @@
 'use client';
 
+import { ADMIN_SESSION, clearSession } from '@epay/shared';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, ChevronDown, LogOut, Moon, Search, Settings, Sun, User } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -13,10 +14,10 @@ export function Header() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleSignOut = useCallback(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('epay_admin_token');
-    }
-    router.push('/login');
+    // Clears the refresh token too; leaving it behind keeps the session
+    // refreshable after the user has signed out.
+    clearSession(localStorage, ADMIN_SESSION);
+    router.push(ADMIN_SESSION.loginPath);
   }, [router]);
 
   // Global search jumps to the merchants list, which already filters on `?q=`.

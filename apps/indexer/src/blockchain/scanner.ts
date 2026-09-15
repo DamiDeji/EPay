@@ -1,216 +1,151 @@
-import type { CheckpointManager } from '../checkpoint';
 import type { IndexerConfig } from '../config';
 import { createChildLogger } from '../logger';
 
-import type { ParsedEvent } from './contracts';
-import { getContractIds, parseEvent } from './contracts';
+import type { ContractBinding, ParsedEvent } from './contracts';
+import { EventDecodeError, parseEventRecord, resolveContracts } from './contracts';
+import type { SorobanRpcClient } from './rpc-client';
 
 const log = createChildLogger('scanner');
 
+/** Cap on `getEvents` pages fetched for a single range, to bound a runaway loop. */
+const MAX_PAGES_PER_RANGE = 1000;
+
+export interface DecodeFailure {
+  recordId: string;
+  reason: string;
+}
+
+export interface ScanResult {
+  events: ParsedEvent[];
+  /** Chain tip reported by the last page, so callers need not re-poll. */
+  latestLedger: number;
+  pagesFetched: number;
+  /**
+   * Records that belonged to a watched contract but could not be decoded.
+   * Reported rather than thrown: a single malformed event must not stall a
+   * ledger, but it must also never disappear silently.
+   */
+  decodeFailures: DecodeFailure[];
+}
+
 /**
- * Ledger scanner that polls the Stellar Horizon API for transactions
- * involving our Soroban smart contracts.
+ * Reads EPay's Soroban contract events for a ledger range.
+ *
+ * Events come from Soroban RPC's `getEvents`; Horizon does not expose contract
+ * events at all. The scanner never advances the checkpoint — that is the sync
+ * engine's job, and only after the batch has been projected, so a failure can
+ * never silently skip a ledger.
  */
 export class BlockScanner {
   private readonly config: IndexerConfig;
-  private readonly checkpoint: CheckpointManager;
+  private readonly rpc: SorobanRpcClient;
+  private readonly bindings: ContractBinding[];
   private readonly contractIds: string[];
-  private isRunning = false;
   private stopRequested = false;
 
-  constructor(config: IndexerConfig, checkpoint: CheckpointManager) {
+  constructor(config: IndexerConfig, rpc: SorobanRpcClient) {
     this.config = config;
-    this.checkpoint = checkpoint;
-    this.contractIds = getContractIds();
+    this.rpc = rpc;
+    this.bindings = resolveContracts();
+    this.contractIds = this.bindings
+      .map((binding) => binding.contractId)
+      .filter((id) => id.length > 0);
   }
 
   /**
-   * Scan a range of ledgers for relevant transactions.
+   * Fetch every decoded event in `[fromLedger, toLedger]`.
+   *
+   * @throws {SorobanRpcError} when the RPC is unavailable after retries. The
+   * caller must not advance the checkpoint when this rejects.
    */
-  async scanRange(
-    fromLedger: number,
-    toLedger: number,
-  ): Promise<{ events: ParsedEvent[]; lastLedger: number }> {
+  async scanRange(fromLedger: number, toLedger: number): Promise<ScanResult> {
     const events: ParsedEvent[] = [];
-    const batchSize = this.config.batchSize;
+    const decodeFailures: DecodeFailure[] = [];
 
-    log.info({ fromLedger, toLedger }, 'Starting ledger scan');
+    if (toLedger < fromLedger) {
+      return { events, latestLedger: fromLedger, pagesFetched: 0, decodeFailures };
+    }
 
-    for (let ledger = fromLedger; ledger <= toLedger; ledger += batchSize) {
+    if (this.contractIds.length === 0) {
+      log.warn(
+        'No contract ids configured; subscribe to nothing. Set PAYMENT_ROUTER_CONTRACT_ID and friends.',
+      );
+      const latestLedger = await this.rpc.getLatestLedger();
+      return { events, latestLedger, pagesFetched: 0, decodeFailures };
+    }
+
+    let cursor: string | undefined;
+    let latestLedger = fromLedger;
+    let pagesFetched = 0;
+
+    for (let page = 0; page < MAX_PAGES_PER_RANGE; page++) {
       if (this.stopRequested) break;
 
-      const endLedger = Math.min(ledger + batchSize - 1, toLedger);
+      const result = await this.rpc.getEvents({
+        startLedger: fromLedger,
+        contractIds: this.contractIds,
+        limit: Math.min(this.config.batchSize * 10, 10_000),
+        ...(cursor ? { cursor } : {}),
+      });
 
-      try {
-        const ledgerEvents = await this.fetchLedgerRange(ledger, endLedger);
-        events.push(...ledgerEvents);
-        this.checkpoint.advance(endLedger);
+      pagesFetched++;
+      latestLedger = result.latestLedger || latestLedger;
 
-        log.debug(
-          {
-            scanned: endLedger,
-            totalLedgers: toLedger - fromLedger,
-            eventsFound: ledgerEvents.length,
-          },
-          'Ledger batch scanned',
-        );
-      } catch (error) {
-        log.error({ ledger, endLedger, error }, 'Failed to scan ledger range');
-        throw error;
-      }
-    }
+      for (const record of result.events) {
+        // `getEvents` only filters from the bottom of the range, so the top is
+        // enforced here.
+        if (record.ledger > toLedger) continue;
 
-    return { events, lastLedger: toLedger };
-  }
-
-  /**
-   * Fetch and parse transactions in a ledger range.
-   */
-  private async fetchLedgerRange(fromLedger: number, toLedger: number): Promise<ParsedEvent[]> {
-    const events: ParsedEvent[] = [];
-    const horizonUrl = this.config.horizonUrl;
-
-    for (let ledger = fromLedger; ledger <= toLedger; ledger++) {
-      try {
-        // Fetch transactions for this ledger from Horizon
-        const url = `${horizonUrl}/ledgers/${ledger}/transactions?limit=200&include_failed=false`;
-        const response = await fetch(url);
-
-        if (!response.ok) {
-          if (response.status === 404) continue; // Ledger not available yet
-          throw new Error(`Horizon API error: ${response.status}`);
-        }
-
-        const data = (await response.json()) as {
-          _embedded?: {
-            records?: TxRecord[];
+        try {
+          const parsed = parseEventRecord(record, this.bindings);
+          if (parsed) events.push(parsed);
+        } catch (error) {
+          const failure: DecodeFailure = {
+            recordId: record.id,
+            reason:
+              error instanceof EventDecodeError
+                ? error.message
+                : error instanceof Error
+                  ? error.message
+                  : String(error),
           };
-        };
-
-        const records = data._embedded?.records ?? [];
-
-        for (const tx of records) {
-          // Check if transaction involves our contracts
-          const contractEvents = await this.extractContractEvents(horizonUrl, tx, ledger);
-          events.push(...contractEvents);
+          decodeFailures.push(failure);
+          log.error(failure, 'Failed to decode contract event');
         }
-      } catch (error) {
-        log.error({ ledger, error }, 'Error fetching ledger');
       }
+
+      const lastRecord = result.events.at(-1);
+      if (!result.cursor || !lastRecord || lastRecord.ledger > toLedger) break;
+      cursor = result.cursor;
     }
 
-    return events;
+    log.debug(
+      {
+        fromLedger,
+        toLedger,
+        events: events.length,
+        pagesFetched,
+        decodeFailures: decodeFailures.length,
+      },
+      'Scanned ledger range',
+    );
+
+    return { events, latestLedger, pagesFetched, decodeFailures };
   }
 
   /**
-   * Extract Soroban contract events from a transaction.
-   */
-  private async extractContractEvents(
-    horizonUrl: string,
-    tx: TxRecord,
-    ledger: number,
-  ): Promise<ParsedEvent[]> {
-    const events: ParsedEvent[] = [];
-
-    // Check operations for contract invocations
-    try {
-      const opsUrl = `${horizonUrl}/transactions/${tx.id}/operations?limit=200`;
-      const opsResponse = await fetch(opsUrl);
-
-      if (!opsResponse.ok) return events;
-
-      const opsData = (await opsResponse.json()) as {
-        _embedded?: {
-          records?: OpRecord[];
-        };
-      };
-
-      const operations = opsData._embedded?.records ?? [];
-
-      for (const op of operations) {
-        if (op.type === 'invoke_host_function') {
-          // Check if this operation involves our contracts
-          for (const contractId of this.contractIds) {
-            // Build structured event from operation
-            const event = parseEvent(
-              contractId,
-              tx.id,
-              ledger,
-              Date.parse(tx.created_at) / 1000,
-              tx.source_account,
-              [], // Event topics would come from Soroban diagnostic events
-              {
-                txId: tx.id,
-                sourceAccount: tx.source_account,
-                feeCharged: tx.fee_charged,
-                operationCount: tx.operation_count,
-                memo: tx.memo,
-              },
-            );
-
-            if (event) {
-              events.push(event);
-            }
-          }
-        }
-      }
-    } catch {
-      // Ignore errors fetching operations for individual transactions
-    }
-
-    return events;
-  }
-
-  /**
-   * Get the current chain tip (latest ledger).
+   * Current chain tip.
+   *
+   * @throws {SorobanRpcError} on failure. This deliberately does *not* fall back
+   * to a guessed height: a fabricated tip makes the indexer look caught-up while
+   * it is not, which is worse than reporting the outage.
    */
   async getChainTip(): Promise<number> {
-    try {
-      const url = this.config.horizonUrl;
-      const response = await fetch(url);
-
-      if (!response.ok) {
-        throw new Error(`Failed to get Horizon root: ${response.status}`);
-      }
-
-      const data = (await response.json()) as {
-        history_latest_ledger?: number;
-        core_latest_ledger?: number;
-      };
-
-      return data.core_latest_ledger ?? data.history_latest_ledger ?? 0;
-    } catch (error) {
-      log.error({ error }, 'Failed to get chain tip');
-    }
-
-    return this.checkpoint.getCurrentBlock() + 100;
-  }
-
-  get running(): boolean {
-    return this.isRunning;
+    return this.rpc.getLatestLedger();
   }
 
   stop(): void {
     this.stopRequested = true;
-    this.isRunning = false;
     log.info('Scanner stop requested');
   }
-}
-
-// ── Horizon API Types ───────────────────────────────────────────────────────
-
-interface TxRecord {
-  id: string;
-  source_account: string;
-  fee_charged: number;
-  operation_count: number;
-  created_at: string;
-  memo?: string;
-  memo_type?: string;
-}
-
-interface OpRecord {
-  id: string;
-  type: string;
-  source_account?: string;
 }

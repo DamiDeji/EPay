@@ -25,19 +25,22 @@ what you see, the document is stale and should be fixed with the code.
 
 ## Local CI parity
 
-`scripts/ci-local.sh` (exposed as `pnpm ci`) runs the same stages as
-`.github/workflows/ci.yml`:
+`scripts/ci-local.sh` (exposed as `pnpm ci`) runs the same validation stages as
+`.github/workflows/ci.yml`, plus two CI does not run: Prettier `format-check`
+and a Docker image build. A green local run is therefore strictly stronger than
+a green CI run, never weaker.
 
 1. `install` — `pnpm install --frozen-lockfile`
-2. `format-check` — Prettier
+2. `format-check` — Prettier _(local only)_
 3. `lint` — ESLint (flat config) across every workspace
 4. `typecheck` — `tsc` across every workspace, **including tests, seeds and examples**
 5. `contracts` — `cargo fmt --check`, `cargo clippy -D warnings`,
    `cargo test --workspace`, wasm release build
-6. `test` — Jest/Vitest across every workspace
-7. `security` — Gitleaks, plus an advisory `pnpm audit`
-8. `helm` — `helm lint`, `helm template`, digest-pinning check, manifest drift check
-9. `docker` — build the API image
+6. `test` — `test:coverage` across every workspace, thresholds enforced
+7. `e2e` — Playwright, skipped with a warning when browsers are not installed
+8. `security` — Gitleaks, plus an advisory `pnpm audit`
+9. `helm` — `helm lint`, `helm template`, digest-pinning check, manifest drift check
+10. `docker` — build the API image _(local only)_
 
 Stages whose tool is missing are **reported and the run exits non-zero**, so a
 green local run means the same thing as a green CI run. Pass `--allow-missing`
@@ -46,42 +49,54 @@ Rust or Docker).
 
 ## Test inventory
 
-| Workspace                                                     | Runner       | Tests           | Notes                                             |
-| ------------------------------------------------------------- | ------------ | --------------- | ------------------------------------------------- |
-| `apps/api`                                                    | Jest         | 136 (19 suites) | bootstraps Nest testing modules; Prisma is mocked |
-| `packages/sdk`                                                | Vitest       | 91 (4 files)    | resource-level unit tests                         |
-| `packages/shared`                                             | Vitest       | 17              | webhook signature, wallet validation              |
-| `apps/extension`                                              | Vitest       | 12              | wallet/network detection                          |
-| `apps/mobile`                                                 | Vitest       | 11              | storage, notifications                            |
-| `packages/contracts`                                          | `cargo test` | 272 (16 crates) | Soroban test host                                 |
-| `apps/indexer`                                                | Vitest       | **0**           | gap — see below                                   |
-| `apps/web`, `apps/merchant-dashboard`, `apps/admin-dashboard` | Vitest       | **0**           | gap — see below                                   |
+| Workspace                                                     | Runner       | Tests            | Notes                                                              |
+| ------------------------------------------------------------- | ------------ | ---------------- | ------------------------------------------------------------------ |
+| `apps/api`                                                    | Jest         | 126 (18 suites)  | bootstraps Nest testing modules; Prisma is mocked                  |
+| `apps/indexer`                                                | Vitest       | 114 (10 files)   | XDR decoding, checkpointing, retry/backoff, probes, reconciliation |
+| `packages/sdk`                                                | Vitest       | 111 (4 files)    | resource-level unit tests                                          |
+| `packages/shared`                                             | Vitest       | 78 (4 files)     | webhook signature, sessions, wallet validation, metrics registry   |
+| `apps/extension`                                              | Vitest       | 12               | wallet/network detection                                           |
+| `apps/mobile`                                                 | Vitest       | 11               | storage, notifications                                             |
+| `apps/web`, `apps/merchant-dashboard`, `apps/admin-dashboard` | Vitest       | 17 (3 files)     | session keys and route-guard resolution                            |
+| `packages/contracts`                                          | `cargo test` | 272 (16 crates)  | Soroban test host                                                  |
+| `tests/e2e`                                                   | Playwright   | 9 (× 4 browsers) | runs in CI as the `e2e` job                                        |
 
 ### Known gaps
 
 These are real and are not hidden behind a green build:
 
-- **The indexer has no tests** even though it parses untrusted blockchain
-  events, checkpoints progress, and writes to the database. Highest-value
-  untested surface in the repository.
-- **The three Next.js apps have no tests.** Route guards and role-based access
-  are unproven.
-- `tests/e2e/*.spec.ts` (Playwright) and `tests/k6/*` exist but are not run in
-  CI yet.
+- **`tests/k6` load profiles are not wired into CI.** They need a provisioned
+  API, database and Stellar sandbox; see `tests/k6/README.md`.
+- **No third-party smart-contract audit.** Blocking for mainnet; see
+  `packages/contracts/SECURITY.md`.
+- **API coverage is below target** (~52% lines against the 80% goal, 90% for
+  payment, refund, settlement and auth). The enforced floor only stops a
+  regression.
+- The three Next.js apps have unit tests for session and route-guard behaviour;
+  page rendering is covered by `tests/e2e`, not by component tests.
 
 Do not add `--passWithNoTests` to a package that should have tests; it turns
-"never written" into "passing".
+"never written" into "passing". No package uses it today.
 
 ## Coverage
 
-Coverage is collected for `apps/api` and `packages/sdk`. `apps/api/jest.config.js`
-enforces a floor (`coverageThreshold`) set just below the current level
-(lines/statements ≥ 50%, branches ≥ 60%, functions ≥ 70%). The floor exists to
-stop regressions.
+Coverage is collected and gated for `apps/api`, `apps/indexer`, `packages/sdk`
+and `packages/shared`. Every floor sits just below the level its suite currently
+achieves: it exists to stop a regression, not to celebrate a number.
 
-**Targets (not yet met):** 80% overall, 90% for payment, refund, settlement and
-auth code. Raise the thresholds as coverage improves; never lower them to make a
-build pass.
+| Package           | Lines | Statements | Branches | Functions |
+| ----------------- | ----- | ---------- | -------- | --------- |
+| `apps/api`        | 50    | 50         | 60       | 70        |
+| `apps/indexer`    | 90    | 90         | 80       | 85        |
+| `packages/sdk`    | 85    | 85         | 65       | 90        |
+| `packages/shared` | 90    | 90         | 80       | 95        |
+
+Measured on the current tree: `apps/indexer` 96% lines / 87% branches,
+`apps/api` 52% lines / 65% branches.
+
+**Targets (not yet met):** 80% overall for the API, 90% for payment, refund,
+settlement and auth code. Raise the thresholds as coverage improves; never lower
+them to make a build pass.
 
 ```bash
 pnpm test:coverage                     # all workspaces
@@ -146,7 +161,8 @@ pnpm audit --audit-level=high
 ## Docker and Helm
 
 ```bash
-docker build -f apps/api/Dockerfile -t epay-api:local .
+docker build -f infra/docker/Dockerfile.api -t epay-api:local .
+# also: infra/docker/Dockerfile.indexer, infra/docker/Dockerfile.web
 
 helm lint helm/epay
 helm template epay helm/epay --namespace epay >/dev/null
@@ -161,14 +177,20 @@ Playwright specs live in `tests/e2e` with their own `package.json` and
 `playwright.config.ts`:
 
 ```bash
-cd tests
-pnpm install
-npx playwright test          # requires a running API + web app
-npx playwright test --ui     # interactive
+# From the repository root: Playwright starts and stops the web app itself.
+pnpm --filter @epay/tests e2e
+
+# Interactive, from tests/
+cd tests && npx playwright test --ui
 ```
 
-These are not wired into CI yet — the stack they need (API, indexer, Postgres,
-Redis, Stellar sandbox) is not provisioned by the workflow.
+They **are** wired into CI, as the `e2e` job in `.github/workflows/ci.yml`. The
+config's `webServer` block makes Playwright start and stop `@epay/web` itself,
+and CI sets `reuseExistingServer: false` so a stale server can never be
+mistaken for a passing run. The suite is 9 tests × 4 browser projects
+(chromium, firefox, webkit, mobile-chrome); all 36 pass on the current tree. It
+needs no API or database because the specs cover the landing page, the auth
+pages and the client-side dashboard route guard.
 
 ## Load tests
 

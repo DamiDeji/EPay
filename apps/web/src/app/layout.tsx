@@ -1,17 +1,10 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import { notFound } from 'next/navigation';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 
 import { Providers } from './providers';
 import './globals.css';
-
-const locales = ['en', 'fr', 'es'] as const;
-
-function hasLocale(locale: string): boolean {
-  return locales.includes(locale as 'en' | 'fr' | 'es');
-}
 
 const inter = Inter({
   subsets: ['latin'],
@@ -47,12 +40,11 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // The locale comes from `i18n/request.ts` (no locale-prefixed routing), so
+  // there is no URL segment to validate. This previously called `notFound()`
+  // whenever the locale did not come back as one of the supported values, which
+  // — with no middleware matching these routes — was every request.
   const locale = await getLocale();
-
-  if (!hasLocale(locale)) {
-    notFound();
-  }
-
   const messages = await getMessages();
 
   return (

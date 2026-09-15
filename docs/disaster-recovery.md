@@ -28,15 +28,17 @@ change, only the restore step does.
 
 | Asset                      | Mechanism                                | Frequency           | Retention       |
 | -------------------------- | ---------------------------------------- | ------------------- | --------------- |
-| PostgreSQL (all 21 models) | `pg_dump --format=custom` + SHA-256      | Nightly             | 30 days         |
+| PostgreSQL (all 23 models) | `pg_dump --format=custom` + SHA-256      | Nightly             | 30 days         |
 | Soroban contracts          | Git (WASM rebuildable)                   | Every commit        | —               |
 | Kubernetes manifests       | Git (`k8s/`, `helm/epay/`)               | Every commit        | —               |
 | Secrets                    | External secret manager / Sealed Secrets | Managed outside Git | Provider policy |
 | On-chain state             | Stellar ledger itself                    | Continuous          | Permanent       |
 
 Deliberately **not** backed up: container images (rebuildable from Git), the
-Redis queue (transient — the indexer replays from its checkpoint), and any
-secret material (see the compromise runbook below).
+Redis queue (transient by design — it holds jobs, not state), and any secret
+material (see the compromise runbook below). The indexer needs no backup of its
+own: its checkpoint and its event log both live in Postgres, so it resumes from
+the last committed batch.
 
 ## Failure modes and responses
 

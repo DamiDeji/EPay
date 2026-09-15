@@ -5,6 +5,14 @@
 the engineering standards demonstrated by Stellar-IndigoPay.
 **Companion document:** `docs/IMPLEMENTATION-AUDIT.md` (the Phase-0 findings).
 
+**Status update (2026-09-15).** The findings and fixes in §2–§4 above are the
+2026-09-14 pass and stand as written. A later batch of work — the indexer
+rework and its 114 tests, the `/metrics` endpoint, the shared Prometheus
+registry and session helpers in `@epay/shared`, the dashboard session specs and
+the CI `e2e` job — was verified on 2026-09-15 and is reflected in §5, §8, §18,
+§20 and the new §21. That batch is **uncommitted**: it is in the working tree,
+not in `origin/main`.
+
 EPay's product scope is a Stellar/Soroban payment gateway, not a
 climate/donation platform. Nothing in this pass imported IndigoPay's domain
 features; the reference project was used only as a quality bar.
@@ -95,15 +103,21 @@ no metrics. `webhook_deliveries` rows accumulated and were never sent.
 
 ### 2.4 Tooling and CI
 
-- `pnpm ci` / `pnpm ci:quick` (`scripts/ci-local.sh`): runs the same stages as
-  CI, and **fails** if a stage's tool is missing rather than silently skipping,
-  so green locally means green in CI.
+- `pnpm ci` / `pnpm ci:quick` (`scripts/ci-local.sh`): runs the same validation
+  stages as CI plus a Prettier check and a Docker build, and **fails** if a
+  stage's tool is missing rather than silently skipping, so a green local run is
+  never weaker than a green CI run.
+- Correction (2026-09-15): `pnpm format:check` is enforced by that local script,
+  **not** by `.github/workflows/ci.yml`, so formatting is not yet a CI gate. The
+  same file's `docker` stage builds `apps/api/Dockerfile`, which does not exist —
+  the image lives at `infra/docker/Dockerfile.api`. Both are listed as open in
+  §18.
 - `turbo.json`: `test` now depends on `^build` rather than `build`, which
   previously made `pnpm test` launch `expo export` for the mobile app and never
   terminate.
 - `.prettierignore` added (Helm templates are Go-template YAML and cannot be
-  parsed by Prettier), and the repository was formatted so `pnpm format:check`
-  is a real gate.
+  parsed by Prettier), and the repository was reformatted, so `pnpm format:check`
+  is clean and meaningful — see the correction above about where it runs.
 - Coverage floors now exist (`apps/api/jest.config.js`).
 
 ---
@@ -151,17 +165,19 @@ built the signature with `Buffer.toString('base64')` on a `Uint8Array`, producin
 
 ## 5. Coverage before/after
 
-| Metric                                | Before                          | After                                                 |
-| ------------------------------------- | ------------------------------- | ----------------------------------------------------- |
-| Contract tests actually executed      | 17 (1 crate)                    | **272 (16 crates)**                                   |
-| Contract crates that compile          | 12                              | 16                                                    |
-| API tests executed                    | 0 (suite could not load)        | **136 (19 suites)**                                   |
-| API statements / branches / functions | n/a                             | 54.5% / 66.9% / 72.5%                                 |
-| Coverage thresholds enforced          | none                            | API floor (lines ≥ 50, branches ≥ 60, functions ≥ 70) |
-| Workspaces passing `pnpm lint`        | 0 (config invalid)              | 22/22                                                 |
-| Workspaces passing `pnpm typecheck`   | not measurable (specs excluded) | 37/37                                                 |
+| Metric                                | Before                          | After                                                                   |
+| ------------------------------------- | ------------------------------- | ----------------------------------------------------------------------- |
+| Contract tests actually executed      | 17 (1 crate)                    | **272 (16 crates)**                                                     |
+| Contract crates that compile          | 12                              | 16                                                                      |
+| API tests executed                    | 0 (suite could not load)        | **126 (18 suites)**                                                     |
+| API statements / branches / functions | n/a                             | 52.4% / 65.4% / 71.0%                                                   |
+| Coverage thresholds enforced          | none                            | API, indexer, SDK and shared floors ([`docs/TESTING.md`](./TESTING.md)) |
+| Workspaces passing `pnpm lint`        | 0 (config invalid)              | 22/22 tasks                                                             |
+| Workspaces passing `pnpm typecheck`   | not measurable (specs excluded) | 22/22 tasks, specs included                                             |
 
-The 80%/90% targets are **not met**; see §18.
+Re-measured 2026-09-15: **469 TypeScript tests**, every suite executing (the 272
+Rust tests were last executed on 2026-09-14; no contract source has changed
+since). The 80%/90% coverage targets are **not met** for the API; see §18.
 
 ---
 
@@ -188,8 +204,41 @@ The 80%/90% targets are **not met**; see §18.
 
 ## 8. Indexer improvements
 
-Only `historical.ts` was touched (an error-swallowing `catch` now reports).
-**The indexer remains untested** — this is the largest outstanding gap.
+The 2026-09-14 pass touched only `historical.ts` (an error-swallowing `catch`
+now reports).
+
+**Superseded on 2026-09-15** by a rework of the whole component, verified in the
+working tree:
+
+- Events now come from **Soroban RPC `getEvents`**, not Horizon, which does not
+  expose contract events at all. Decoding is driven by one catalogue
+  (`blockchain/contracts.ts`) that mirrors `packages/contracts/EVENTS.md`; an
+  event the catalogue does not know is still recorded with `known: false`, and a
+  malformed one is counted rather than dropped or thrown away.
+- The five per-event handler modules and the BullMQ queue were **deleted**. A
+  queue let the checkpoint advance ahead of the work, which is the exact shape of
+  the ledger-skipping bug; per-event handlers could not be kept honest against a
+  read model that has no correlation key.
+- Every decoded event is written to `indexer_events`, unique on the on-chain
+  event id, so a retry or re-scan is a no-op; a failed batch is retried in place
+  and the run aborts rather than stepping over it, so the checkpoint cannot skip
+  a ledger; `finalize` refuses to move the checkpoint backwards; a corrupted
+  checkpoint value is reported and treated as "no checkpoint".
+- `getChainTip()` propagates an RPC outage instead of inventing a height.
+- `/metrics`, `/health` and `/ready` are served on `METRICS_PORT` (4100), which is
+  where `monitoring/prometheus/prometheus.yml` already scrapes. Metric names
+  match the existing alert rules and Grafana panels.
+- `reconciliation.ts` exposes the operator check: every ledger below the
+  checkpoint had all of its events recorded, and every recorded event is applied.
+- **114 tests across 10 files**, enforced floors (lines ≥ 90, branches ≥ 80) and
+  96% line coverage. Fixtures are encoded with the Stellar SDK, not hand-written
+  base64, so the decoder is tested against the serialisation a validator
+  produces. See [`docs/INDEXER.md`](./INDEXER.md).
+
+The remaining indexer gap is the **read-model projection**, deliberately not
+implemented and documented with its exact cause in `docs/INDEXER.md`: no column
+ties an on-chain id to an off-chain row, and nothing in the API submits a Soroban
+transaction yet. Unproven rather than guessed at is the honest state here.
 
 ## 9. Database improvements
 
@@ -266,21 +315,24 @@ identity; treat this as an open item.
 
 ## 18. Remaining risks and TODO
 
-| Priority | Item                                                                                                                                                |
-| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| P1       | **Indexer has no tests.** Checkpoint recovery, duplicate suppression, malformed events, backoff, crash/restart are all unproven.                    |
-| P1       | **Coverage is below target** (API 54.5% lines vs. an 80% goal; 90% for payment/refund/settlement/auth).                                             |
-| P1       | `--passWithNoTests` still masks the absence of tests in `indexer`, `web`, `merchant-dashboard`, `admin-dashboard`.                                  |
-| P1       | `tests/e2e` (Playwright) and `tests/k6` are not wired into CI.                                                                                      |
-| P1       | `README.md` / `ROADMAP.md` still describe capabilities this pass showed were absent; reconcile before release.                                      |
-| P2       | API-level idempotency tests proving retries cannot duplicate payments/refunds/settlements.                                                          |
-| P2       | Indexer should expose `/metrics`; the alert rules currently have no data source for lag.                                                            |
-| P2       | Database review: unique constraints, idempotency keys, index coverage, migration workflow.                                                          |
-| P2       | Container scanning (Trivy) and per-image SBOM publication.                                                                                          |
-| P2       | `pnpm audit` is advisory (`continue-on-error`) and should become blocking once triaged.                                                             |
-| P3       | `packages/ui` and `packages/hooks` are unused; adopt or remove.                                                                                     |
-| P3       | Image signing / provenance attestation for releases.                                                                                                |
-| P3       | `pnpm test` cannot run all builds in parallel on a small machine (`expo export` starves the Next.js builds); CI should build mobile in its own job. |
+| Priority | Item                                                                                                                                              | Status                                   |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| P1       | **API coverage is below target** (52.4% lines vs. an 80% goal; 90% for payment/refund/settlement/auth).                                           | Open — floors enforced, no regression    |
+| P1       | **Indexer does not project events onto the read model.** No on-chain id is tied to an off-chain row; the API submits no transaction.              | Open — deliberate; see `docs/INDEXER.md` |
+| P1       | **No third-party smart-contract audit**; `tests/k6` load profiles are not wired into CI.                                                          | Open — audit blocks mainnet              |
+| P2       | API-level idempotency tests proving retries cannot duplicate payments/refunds/settlements.                                                        | Open                                     |
+| P2       | Database review: unique constraints, idempotency keys, index coverage, migration workflow.                                                        | Open                                     |
+| P2       | `pnpm audit` is advisory (`continue-on-error`) and should become blocking once triaged.                                                           | Open                                     |     | P2  | `pnpm format:check` runs in `scripts/ci-local.sh` but not in CI itself. | Open — one CI step closes it |
+| P2       | `scripts/ci-local.sh` builds `apps/api/Dockerfile`, which does not exist (the images are at `infra/docker/`), so its `docker` stage always fails. | Open — one path to correct               |
+| P3       | `packages/ui` and `packages/hooks` are unused; adopt or remove.                                                                                   | Open                                     |
+| P3       | `pnpm test` cannot run every build in parallel on a small machine (`expo export` starves the Next.js builds); CI should build mobile separately.  | Open                                     |
+| P1       | ~~Indexer has no tests.~~ **114 tests across 10 files**, enforced floors, 96% lines.                                                              | **Done 2026-09-15**                      |
+| P1       | ~~`--passWithNoTests` masks missing tests.~~ No test script uses it; each app has real specs.                                                     | **Done 2026-09-15**                      |
+| P1       | ~~`tests/e2e` not wired into CI.~~ `e2e` job added; 36/36 pass across 4 browser projects.                                                         | **Done 2026-09-15**                      |
+| P1       | ~~README/ROADMAP describe capabilities that were absent.~~ Both reconciled against the tree, with count and status corrections.                   | **Done 2026-09-15**                      |
+| P2       | ~~Indexer exposes no `/metrics`.~~ `/metrics`, `/health`, `/ready` on port 4100, matching the scrape config and alert rules.                      | **Done 2026-09-15**                      |
+| P2       | ~~Container scanning (Trivy) and per-image SBOM.~~ Already shipped in `.github/workflows/supply-chain.yml`.                                       | **Done**                                 |
+| P3       | ~~Image signing / provenance for releases.~~ cosign keyless signing on release tags, already in `supply-chain.yml`.                               | **Done**                                 |
 
 **Note on diff size.** Normalising formatting across the repository touched
 ~300 files. Those hunks are whitespace/reflow only; the functional changes are
@@ -354,32 +406,60 @@ Stages **not** executed here, and why:
 | 2   | Soroban contracts    | **PASS**    | 16/16 compile, 272 tests, clippy `-D warnings`, 16 wasm artifacts               | No third-party audit                                          |
 | 3   | Contract security    | **PARTIAL** | Unauthenticated fund movement and refund accounting fixed with regression tests | No formal verification; pause coverage per-contract is uneven |
 | 4   | Contract testing     | **PASS**    | 272 tests across all 16 crates, incl. deterministic property tests              | Fuzz iteration counts tuned for CI runtime                    |
-| 5   | Backend              | **PARTIAL** | 136 tests, typecheck clean, Prisma 7 wired                                      | Idempotency/retry tests missing                               |
+| 5   | Backend              | **PARTIAL** | 126 tests, typecheck clean, Prisma 7 wired                                      | Idempotency/retry tests missing                               |
 | 6   | Database             | **PARTIAL** | Prisma 7 adapter + config; migrations run                                       | No schema/constraint/index review                             |
-| 7   | Indexer              | **FAIL**    | Code exists, `historical.ts` hardened                                           | **Zero tests**; no metrics endpoint                           |
-| 8   | SDK                  | **PASS**    | 91 tests; enum re-export and examples fixed; examples compile                   | —                                                             |
-| 9   | Frontend             | **PARTIAL** | Extension popup typechecks; admin search wired; deprecated APIs migrated        | 0 tests in any of the 4 apps                                  |
-| 10  | CI/CD                | **PASS**    | `pnpm ci` parity; lint/typecheck/test/format all real gates                     | e2e + k6 not wired                                            |
+| 7   | Indexer              | **PASS**    | 114 tests, 96% lines; `/metrics`; replay, checkpoint and no-skip guarantees     | Read-model projection deliberately absent                     |
+| 8   | SDK                  | **PASS**    | 111 tests; enum re-export and examples fixed; examples compile                  | —                                                             |
+| 9   | Frontend             | **PARTIAL** | Session/route-guard tests in all three dashboards; e2e 36/36 in CI              | No component tests; k6 not wired                              |
+| 10  | CI/CD                | **PASS**    | `pnpm ci` parity; lint, typecheck, test and e2e are real gates                  | k6 not wired; `format:check` local only                       |
 | 11  | DevOps               | **PARTIAL** | Helm lint/template/digest/drift all pass; Docker builds                         | No image scan/signing in this pass                            |
-| 12  | Observability        | **PARTIAL** | Metrics + alerts exist; webhook metrics/alert added                             | Indexer exposes no metrics; no dashboard verification         |
+| 12  | Observability        | **PASS**    | API and indexer both expose `/metrics`; webhook metrics + alert added           | Grafana panels not verified against live data                 |
 | 13  | Disaster recovery    | **PARTIAL** | Docs + scripts + workflow exist                                                 | Drill not executed here (needs Postgres)                      |
-| 14  | Documentation        | **PASS**    | Audit, testing and this report added; all claims above are command-backed       | README/ROADMAP still overstate what exists                    |
-| 15  | Production readiness | **PARTIAL** | Builds, lints, typechecks and tests all green; funds-at-risk defects fixed      | Indexer untested; coverage below target; no testnet evidence  |
+| 14  | Documentation        | **PASS**    | Audit, testing, indexer and this report; claims reconciled and command-backed   | —                                                             |
+| 15  | Production readiness | **PARTIAL** | Builds, lints, typechecks, 469 TS + 272 Rust tests, e2e 36/36 green             | API coverage below target; no testnet evidence; no audit      |
 
 ---
 
 ## GrantFox Readiness Summary
 
-| Verdict     | Count | Areas                                                                                                          |
-| ----------- | ----- | -------------------------------------------------------------------------------------------------------------- |
-| **PASS**    | 7     | Architecture, Soroban contracts, contract testing, SDK, CI/CD, documentation, (partial) security posture       |
-| **PARTIAL** | 8     | Contract security, backend, database, frontend, DevOps, observability, disaster recovery, production readiness |
-| **FAIL**    | 1     | Indexer testing                                                                                                |
+| Verdict     | Count | Areas                                                                                                |
+| ----------- | ----- | ---------------------------------------------------------------------------------------------------- |
+| **PASS**    | 8     | Architecture, Soroban contracts, contract testing, indexer, SDK, CI/CD, observability, documentation |
+| **PARTIAL** | 7     | Contract security, backend, database, frontend, DevOps, disaster recovery, production readiness      |
+| **FAIL**    | 0     | —                                                                                                    |
 
-**Bottom line.** EPay now builds, lints, typechecks and tests from a clean
-checkout, and the funds-at-risk contract defects that were live in the tree have
-been fixed with regression tests. It is not yet "production-ready" in the sense
-the brief requires: the indexer — the component that decides what actually
-happened on chain — has no tests, coverage is materially below the stated
-target, and no testnet evidence exists. Those three items are the honest blockers
-and are listed first in §18.
+**Bottom line (updated 2026-09-15).** EPay builds, lints, typechecks and tests
+from a clean checkout, and the funds-at-risk contract defects that were live in
+the tree are fixed with regression tests. The indexer — the component that
+decides what actually happened on chain — is now covered by 114 tests, exposes
+the metrics the alert rules reference, and refuses to skip a ledger. What remains
+is stated plainly: API coverage is ~52% against an 80% goal, the indexer records
+events but does not project them onto the read model because no correlation key
+exists yet (see `docs/INDEXER.md`), no third-party contract audit has been
+performed, and there is no testnet evidence. Those are the honest blockers, and
+they lead §18.
+
+---
+
+## 21. Verification run — 2026-09-15
+
+Commands executed on the working tree described in the status update at the top,
+with their observed output:
+
+| Command                                         | Result                                                           |
+| ----------------------------------------------- | ---------------------------------------------------------------- |
+| `pnpm format:check`                             | All matched files use Prettier code style                        |
+| `pnpm lint`                                     | 22/22 tasks, 0 errors (2 warnings in SDK specs)                  |
+| `pnpm typecheck`                                | 22/22 tasks                                                      |
+| `pnpm test:coverage`                            | 17/17 tasks — 469 TypeScript tests, every threshold met          |
+| `pnpm --filter @epay/tests e2e`                 | 36/36 passed, across chromium, firefox, webkit and mobile-chrome |
+| `grep -rhoE '^\s*#\[test\]' packages/contracts` | 272 test functions (no Rust source changed in this batch)        |
+
+Not executed here, and why:
+
+| Stage                    | Reason                                                                                     |
+| ------------------------ | ------------------------------------------------------------------------------------------ |
+| `cargo test --workspace` | No contract source changed — the only `packages/contracts` edit is `EVENTS.md`.            |
+| `security` (gitleaks)    | `gitleaks` is not installed in this environment.                                           |
+| Docker builds / k6 loads | Need a container runtime and a provisioned API, database and Stellar sandbox respectively. |
+| Testnet deploy           | Needs a funded keypair, which must not be committed.                                       |

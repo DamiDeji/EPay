@@ -32,6 +32,7 @@ ALL_STAGES=(
   typecheck
   contracts
   test
+  e2e
   security
   helm
   docker
@@ -151,7 +152,9 @@ stage_contracts() {
 }
 
 stage_test() {
-  TURBO_CONCURRENCY="${TURBO_CONCURRENCY:-2}" pnpm test
+  # `test:coverage`, not `test`: the CI job runs the coverage-gated variant, and a
+  # green local run has to mean the same thing as a green CI run.
+  TURBO_CONCURRENCY="${TURBO_CONCURRENCY:-2}" pnpm test:coverage
 }
 
 stage_security() {
@@ -177,6 +180,12 @@ stage_helm() {
   git diff --exit-code k8s/manifests.yaml
 }
 
+stage_e2e() {
+  # The web app imports `@epay/ui` and `@epay/shared` from their built `dist/`,
+  # so the workspace must be built before Playwright starts the dev server.
+  pnpm build && pnpm --filter @epay/tests e2e
+}
+
 stage_docker() {
   require docker docker || return 1
   docker build -f apps/api/Dockerfile -t epay-api:ci .
@@ -193,6 +202,15 @@ for s in "${STAGES[@]}"; do
     typecheck) stage typecheck && run_stage typecheck stage_typecheck ;;
     contracts) stage "soroban contracts" && run_stage contracts stage_contracts ;;
     test) stage test && run_stage test stage_test ;;
+    e2e)
+      # Browsers are a one-time `playwright install` rather than a project
+      # dependency; report the gap instead of silently passing without them.
+      if [[ -d "$HOME/.cache/ms-playwright" ]]; then
+        stage "e2e (playwright)" && run_stage e2e stage_e2e
+      else
+        record_skip e2e "playwright browsers not installed — run: pnpm --filter @epay/tests exec playwright install --with-deps"
+      fi
+      ;;
     security) stage "security scan" && run_stage security stage_security ;;
     helm) stage "helm / kubernetes" && run_stage helm stage_helm ;;
     docker) stage "docker build" && run_stage docker stage_docker ;;

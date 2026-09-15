@@ -1,7 +1,8 @@
 'use client';
 
+import { ADMIN_SESSION, resolveAuthRedirect } from '@epay/shared';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { Header } from '@/components/header';
 import { Sidebar } from '@/components/sidebar';
@@ -11,14 +12,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
 
-  // Basic auth guard — check for a token on mount.
-  // In production, replace with a proper AuthProvider / middleware.
+  /**
+   * Send signed-out visitors to the login page.
+   *
+   * This previously read `epay_admin_token` and then ignored it, so the admin
+   * shell rendered for anyone. The decision itself lives in `@epay/shared` so it
+   * is unit-tested; this effect only applies it.
+   *
+   * `authChecked` stays false while redirecting, so the admin shell is never
+   * painted for a session that is about to be rejected.
+   */
   useEffect(() => {
-    // TODO: Replace with real token check (e.g., from cookies, localStorage, or context)
-    const token = typeof window !== 'undefined' ? localStorage.getItem('epay_admin_token') : null;
-    if (!token) {
-      // For demo purposes, always consider authenticated.
-      // In production: router.replace('/login');
+    const redirect = resolveAuthRedirect(localStorage, ADMIN_SESSION, window.location.pathname);
+    if (redirect) {
+      router.replace(redirect);
+      return;
     }
     setAuthChecked(true);
   }, [router]);

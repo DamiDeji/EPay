@@ -699,3 +699,52 @@ model IdempotencyKey {
   @@index([expiresAt])
   @@map("idempotency_keys")
 }
+
+// ── Indexer ─────────────────────────────────────────────────────────────────
+
+/// Durable key/value state owned by `apps/indexer`.
+///
+/// Today this holds `last_indexed_block`: the highest ledger whose events have
+/// been fully projected. The indexer reads it on startup (crash recovery) and
+/// rewrites it only after a batch has been applied, so a restart can never skip
+/// a ledger it has not processed.
+model IndexerState {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@map("indexer_state")
+}
+
+/// Append-only log of every decoded on-chain event, written before its
+/// projection into the read model.
+///
+/// This is what makes the indexer idempotent and replayable:
+///
+/// - `eventId` is unique, so reprocessing the same on-chain event (a retried
+///   job, a duplicated poll, a restart that re-scans a batch) is a no-op.
+/// - `appliedAt` is only set once the projection succeeded, so a crash midway
+///   through a batch leaves rows that a replay picks up.
+/// - It is the reconciliation source of truth against Soroban: the set of
+///   `appliedAt IS NULL` rows is exactly the work still owed.
+model IndexerEvent {
+  id             String    @id @default(cuid())
+  eventId        String    @unique
+  contractName   String
+  eventName      String
+  contractId     String
+  txHash         String
+  ledgerSequence Int
+  occurredAt     DateTime
+  payload        Json      @default("{}")
+  recordedAt     DateTime  @default(now())
+  appliedAt      DateTime?
+  applyAttempts  Int       @default(0)
+  applyError     String?
+
+  @@index([ledgerSequence])
+  @@index([txHash])
+  @@index([contractName, eventName])
+  @@index([appliedAt])
+  @@map("indexer_events")
+}

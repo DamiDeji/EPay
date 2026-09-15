@@ -5,7 +5,14 @@ passes CI. `In Progress` means there is an open pull request with a verified
 working tree — not a promise, not a design sketch. `Planned` means scoped but not
 started. Nothing is listed as `Shipped` unless it is in `main`.
 
-Last reviewed: 2026-09-14.
+Last reviewed: 2026-09-15.
+
+**Working tree status.** Part of what is described below exists only as
+_uncommitted_ changes on a local `main`, not on `origin/main`: the indexer
+rework and its tests, the `/metrics` endpoint, the shared Prometheus registry and
+session helpers in `@epay/shared`, the dashboard session specs, and the
+Playwright `e2e` job. Nothing in that batch is listed as `Shipped`, because
+`Shipped` means merged to `main` and passing CI.
 
 ---
 
@@ -24,7 +31,7 @@ Last reviewed: 2026-09-14.
   - **72-hour timelock** on `propose_upgrade` → `execute_upgrade`.
   - `EmergencyPause` with `require_not_paused()` for downstream gating.
   - Recorded in [ADR 0004](./docs/adr/0004-upgrade-pattern.md).
-- **Test coverage.** 267 Rust `#[test]` functions across all 16 suites, including
+- **Test coverage.** 272 Rust `#[test]` functions across all 16 suites, including
   **10,000-iteration property/fuzz suites** for the four funds-at-risk contracts
   (`TreasuryVault`, `EscrowManager`, `RefundManager`, `SettlementManager`),
   asserting conservation-of-funds and state-machine invariants.
@@ -36,7 +43,7 @@ Last reviewed: 2026-09-14.
 
 ### Backend
 
-- NestJS + Fastify API with 15 domain modules plus an observability module; JWT,
+- NestJS + Fastify API with 17 feature modules; JWT,
   API key, and wallet-signature auth; global throttling; Swagger at `/api/docs`;
   helmet with a Content-Security-Policy.
 - **Observability.** `GET /metrics` in Prometheus exposition format
@@ -50,8 +57,9 @@ Last reviewed: 2026-09-14.
   [`docs/webhook-receiver.md`](./docs/webhook-receiver.md).
 - **Audit log.** `AuditLog` records actor, action, resource, IP, and user agent
   for admin actions across all three dashboards.
-- Indexer: Horizon scanning, event handlers, historical + real-time sync with
-  checkpoint recovery, BullMQ queue, Pino structured logging.
+- Indexer: an untested Horizon-based scanner with one handler per event type and
+  a BullMQ queue between decoding and checkpointing. Superseded — see _In
+  Progress_ and [`docs/INDEXER.md`](./docs/INDEXER.md).
 
 ### Frontends & SDK
 
@@ -59,8 +67,8 @@ Last reviewed: 2026-09-14.
   React 19), deployed to Vercel. See
   [ADR 0006](./docs/adr/0006-dashboard-decomposition.md) for why three apps.
 - TypeScript SDK: `EPayClient`, `WalletClient`, 9 resource modules, Stellar
-  helpers, 91 tests.
-- Prisma schema with 21 models and a seed script. See
+  helpers, 111 tests.
+- Prisma schema with 23 models and a seed script. See
   [ADR 0002](./docs/adr/0002-custody-model.md) for the read-model design.
 
 ### Operations
@@ -84,20 +92,33 @@ Last reviewed: 2026-09-14.
   Commits ([`.releaserc.json`](./.releaserc.json)) and tagging triggers image
   signing.
 - **Testing breadth.** Playwright e2e with `@axe-core/playwright` accessibility
-  assertions, k6 load tests with SLOs in
-  [`docs/performance.md`](./docs/performance.md), and an OWASP ZAP baseline DAST
-  workflow.
+  assertions, run in CI as the `e2e` job (9 tests × 4 browser projects, all
+  passing); k6 load tests with SLOs in
+  [`docs/performance.md`](./docs/performance.md), not yet wired into CI; and an
+  OWASP ZAP baseline DAST workflow.
 
 ### Documentation
 
 - [`docs/`](./docs/README.md) index with getting started, architecture and
   rationale, integration guide, webhook receiver contract, performance SLOs,
-  disaster recovery, external secrets, and six ADRs.
+  disaster recovery, external secrets, indexer internals, testing, the audit and
+  the engineering report, and six ADRs.
 
 ---
 
 ## 🚧 In Progress
 
+- **Indexer hardening, shared helpers, and test depth** — verified in the working
+  tree, **not merged**. Soroban RPC `getEvents` ingestion with XDR decoding
+  driven by one contract/event catalogue; idempotent persistence keyed on the
+  on-chain event id; batch retry-in-place with a checkpoint that cannot skip a
+  ledger; bounded exponential backoff on the real-time tail; `/metrics`,
+  `/health` and `/ready` on `METRICS_PORT` (4100); 114 tests with enforced
+  coverage floors. The same batch deletes the per-event handlers and the BullMQ
+  queue (the queue could let the checkpoint advance ahead of the work), moves the
+  Prometheus registry and the dashboard session/route-guard helpers into
+  `@epay/shared`, adds session specs to the three dashboards, and wires
+  `tests/e2e` into CI as a real gate. See [`docs/INDEXER.md`](./docs/INDEXER.md).
 - **Mobile app (`apps/mobile`)** — Expo SDK 57 / React Native 0.86,
   `expo-router`, QR payment scanning, biometric authorization, secure token
   storage, push receipts, offline-tolerant caching. Typechecks, passes 11 unit
@@ -116,8 +137,9 @@ Scoped, not started. Ordered by dependency, not by desire.
 
 The three blockers listed here (ESLint 10 requiring a flat config, Prisma 7
 requiring a driver adapter, and Jest not transforming `@stellar/stellar-sdk`'s
-ESM-only dependencies) are **fixed**. Lint, typecheck, formatting and tests are
-now real gates across the workspace, and `pnpm ci` reproduces CI locally.
+ESM-only dependencies) are **fixed**. Lint, typecheck and tests are real gates
+across the workspace, and `pnpm ci` reproduces CI locally. Formatting is checked
+by that local script but not yet by a CI job — see _Known issues_.
 
 One claim in this section was also wrong and has been corrected: `pnpm typecheck`
 was **not** green. `apps/api/tsconfig.json` excluded `*.spec.ts` and `test/`, so
@@ -126,23 +148,38 @@ the API's type errors were invisible. With specs in the program, `tsc` reported
 delegate getters), plus stale fixtures using a `currency` field the DTO does not
 define. All are fixed.
 
-Remaining CI work is tracked in
+Since then the `e2e` job was added to CI and `--passWithNoTests` was removed from
+every package — no test script uses it today. Remaining CI work is tracked in
 [`docs/FINAL-ENGINEERING-REPORT.md`](./docs/FINAL-ENGINEERING-REPORT.md#18-remaining-risks-and-todo):
-wiring `tests/e2e` and `tests/k6` into CI, and removing `--passWithNoTests` from
-packages that should have tests.
+wiring `tests/k6` into CI, making `pnpm audit` blocking, and running
+`pnpm format:check` in CI rather than only in the local script.
 
-### Indexer test coverage — **blocking**
+### Indexer test coverage — ✅ done in the working tree
 
-`apps/indexer` has **no tests** for any of its 15 modules. It is the component
-that decides what happened on chain (event parsing, checkpointing, duplicate
-suppression, crash recovery, backoff), and `vitest run --passWithNoTests`
-currently reports it green. This is the largest outstanding gap in the project.
+`apps/indexer` now has **114 tests across 10 files** with enforced coverage
+floors (`vitest.config.ts`: lines ≥ 90, branches ≥ 80). They cover XDR decoding
+against fixtures built with the Stellar SDK, unknown and malformed events
+(counted, not dropped), paging, RPC retry/backoff and rate limits, checkpoint
+recovery from corrupted values, checkpoint rewind refusal, batch retry-in-place,
+ledger-skip prevention, idempotent replay, `/metrics` exposition, the probes, and
+reconciliation. See [`docs/INDEXER.md`](./docs/INDEXER.md#testing).
 
-### Coverage thresholds — **blocking**
+### Coverage thresholds — **partially met**
 
-`apps/api` sits at ~54% lines / ~67% branches / ~72% functions. Floors are
-enforced so coverage cannot regress, but the stated targets (80% overall, 90%
-for payment, refund, settlement and auth) are not met.
+Floors are enforced in four packages — `apps/api`, `apps/indexer`,
+`packages/sdk` and `packages/shared` — so coverage cannot regress. The stated
+targets are still not met: `apps/api` sits at ~52% lines / ~65% branches / ~71%
+functions against an 80% overall goal and 90% for payment, refund, settlement and
+auth code.
+
+### Indexer read-model projections — **blocking**
+
+The indexer decodes and stores every event exactly once, but it does not project
+them onto `payments`, `escrow`, `refunds` or `subscriptions`: no column ties an
+on-chain id to an off-chain row, and nothing in the API submits a Soroban
+transaction in the first place. [`docs/INDEXER.md`](./docs/INDEXER.md#not-yet-implemented-read-model-projections)
+states the exact gap and what closing it requires. It is a product-integration
+gap, not a data-integrity defect in what exists today.
 
 ### Contract audit
 
@@ -192,15 +229,20 @@ lives.
 
 ## Known issues
 
-| Issue                                                                                | Impact                                                                               | Status                                                                                                   |
-| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
-| `pnpm lint` cannot run at all (ESLint 10 needs flat config; repo has `.eslintrc.js`) | Lint is not a CI gate; code-style regressions are unreviewed                         | **Open** — migration scoped in _Planned_                                                                 |
-| API Jest suite fails to load (Prisma 7 driver adapter; stellar-sdk not transformed)  | 116 test cases cannot execute; no API regression net                                 | **Open** — scoped in _Planned_                                                                           |
-| No third-party smart-contract audit                                                  | Funds-at-risk contracts are unaudited                                                | **Open** — **blocks mainnet**                                                                            |
-| Dockerfiles use mutable base tags (`node:26-alpine`) and unpinned pnpm               | Images are not reproducible                                                          | **Open** — the Helm chart enforces digests at deploy time, but the images are not digest-pinned at build |
-| Webhook delivery has no scheduler wired to `processDue()`                            | Deliveries are signed and stored; a periodic tick still needs to call the dispatcher | **Open** — the code and schema exist; the cron/worker entry point is the missing piece                   |
-| ZAP baseline scan is informational (`fail_action: false`)                            | DAST regressions are reported, not blocked                                           | **Open** — promote to blocking after the baseline is triaged                                             |
-| `main` previously could not build at all (`@epay/hooks`, Prisma 7, `vite@5`)         | Every CI job failed                                                                  | **Fixed**                                                                                                |
+| Issue                                                                                   | Impact                                                                | Status                                                                                                       |
+| --------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| No third-party smart-contract audit                                                     | Funds-at-risk contracts are unaudited                                 | **Open** — **blocks mainnet**                                                                                |
+| Indexer does not project events onto the read model                                     | On-chain state is not mirrored into `payments` / `escrow` / `refunds` | **Open** — deliberate; see [`docs/INDEXER.md`](./docs/INDEXER.md#not-yet-implemented-read-model-projections) |
+| API coverage is ~52% lines against an 80% goal                                          | Payment, refund, settlement and auth paths are thinly covered         | **Open** — floors enforced, so it cannot regress silently                                                    |
+| `tests/k6` load profiles are not wired into CI                                          | Performance regressions are not gated                                 | **Open** — scripts and SLOs exist in [`docs/performance.md`](./docs/performance.md)                          |
+| `pnpm audit` is advisory (`continue-on-error: true`)                                    | New high or critical advisories do not fail the build                 | **Open** — promote once the current set is triaged                                                           |
+| `pnpm format:check` runs locally but not in CI                                          | Formatting can regress on a pull request                              | **Open** — one step in `.github/workflows/ci.yml` closes it                                                  |
+| Dockerfiles use mutable base tags (`node:26-alpine`) and `pnpm@latest`                  | Images are not reproducible                                           | **Open** — the Helm chart enforces digests at deploy time, but images are not digest-pinned at build         |
+| ZAP baseline scan is informational (`fail_action: false`)                               | DAST regressions are reported, not blocked                            | **Open** — promote to blocking after the baseline is triaged                                                 |
+| `pnpm lint` could not run at all (ESLint 10 needs flat config; repo had `.eslintrc.js`) | Lint was not a CI gate; style regressions went unreviewed             | **Fixed** — flat config; 22/22 tasks, 0 errors                                                               |
+| API Jest suite failed to load (Prisma 7 driver adapter; stellar-sdk not transformed)    | 126 test cases could not execute                                      | **Fixed** — 18 suites, 126 tests pass                                                                        |
+| Webhook delivery had no scheduler wired to `processDue()`                               | Signed deliveries accumulated and were never sent                     | **Fixed** — `WebhookDispatchScheduler`, atomic claim, metrics, alert                                         |
+| `main` previously could not build at all (`@epay/hooks`, Prisma 7, `vite@5`)            | Every CI job failed                                                   | **Fixed**                                                                                                    |
 
 ---
 

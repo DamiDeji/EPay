@@ -2,17 +2,17 @@
   "name": "@epay/tests",
   "version": "0.1.0",
   "private": true,
+  "description": "End-to-end (Playwright) and load (k6) tests for EPay",
   "scripts": {
-    "e2e": "playwright test",
-    "e2e:ui": "playwright test --ui",
-    "e2e:debug": "playwright test --debug",
+    "e2e": "playwright test --config e2e/playwright.config.ts",
+    "e2e:ui": "playwright test --config e2e/playwright.config.ts --ui",
+    "e2e:debug": "playwright test --config e2e/playwright.config.ts --debug",
     "load": "k6 run k6/load-tests.js",
     "load:stress": "k6 run --vus 100 --duration 3m k6/load-tests.js",
     "load:spike": "k6 run --vus 50 --duration 10s k6/load-tests.js"
   },
   "devDependencies": {
     "@playwright/test": "^1.40.0",
-    "@axe-core/playwright": "^2.0.0",
-    "k6": "^0.50.0"
+    "@axe-core/playwright": "^4.13.0"
   }
 }

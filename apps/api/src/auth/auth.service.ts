@@ -1,5 +1,6 @@
 import * as crypto from 'crypto';
 
+import { isValidStellarPublicKey } from '@epay/shared';
 import type { AuthTokens, User } from '@epay/types';
 import { Injectable, UnauthorizedException, ConflictException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -9,9 +10,6 @@ import { PrismaService } from '../database/prisma.service';
 
 import type { LoginDto } from './dto/login.dto';
 import type { RegisterDto } from './dto/register.dto';
-
-/** Stellar public key format: G + 55 base32 chars (56 total) */
-const STELLAR_PUBLIC_KEY_REGEX = /^G[A-Z2-7]{55}$/;
 
 /** Number of random salt bytes for password hashing */
 const PASSWORD_SALT_BYTES = 16;
@@ -117,7 +115,7 @@ export class AuthService {
     message?: string,
   ): Promise<{ user: User; tokens: AuthTokens }> {
     // Validate Stellar public key format
-    if (!STELLAR_PUBLIC_KEY_REGEX.test(stellarPublicKey)) {
+    if (!isValidStellarPublicKey(stellarPublicKey)) {
       throw new UnauthorizedException('Invalid Stellar public key');
     }
 

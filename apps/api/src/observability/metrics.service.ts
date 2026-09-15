@@ -1,6 +1,5 @@
+import { Counter, Gauge, Histogram, MetricsRegistry, type MetricLabels } from '@epay/shared';
 import { Injectable } from '@nestjs/common';
-
-import { Counter, Gauge, Histogram, MetricsRegistry, type MetricLabels } from './metrics.registry';
 
 /**
  * The API's metric surface.

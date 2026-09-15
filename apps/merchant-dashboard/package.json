@@ -9,13 +9,14 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src/",
-    "test": "vitest run --passWithNoTests",
-    "test:coverage": "vitest run --coverage --passWithNoTests",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "clean": "rm -rf .next"
   },
   "dependencies": {
     "@epay/hooks": "workspace:*",
     "@epay/sdk": "workspace:*",
+    "@epay/shared": "workspace:*",
     "@epay/types": "workspace:*",
     "@epay/ui": "workspace:*",
     "@hookform/resolvers": "^5.9.1",

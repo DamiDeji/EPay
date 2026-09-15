@@ -54,15 +54,15 @@ Other blockchains may offer smart contracts, but none combine Stellar's settleme
 ```
 epay/
 ├── apps/
-│   ├── api/                  # NestJS REST API (15 modules)
+│   ├── api/                  # NestJS REST API (17 modules)
 │   ├── web/                  # Customer-facing landing page + dashboard
 │   ├── merchant-dashboard/   # Merchant analytics & management
 │   ├── admin-dashboard/      # Platform administration panel
-│   └── indexer/              # Stellar Horizon + Soroban event indexer
+│   └── indexer/              # Soroban RPC contract-event indexer
 ├── packages/
 │   ├── contracts/            # 16 Soroban (Rust) smart contracts
 │   ├── sdk/                  # TypeScript SDK (Stellar SDK + Soroban SDK)
-│   ├── database/             # Prisma ORM (21 models)
+│   ├── database/             # Prisma ORM (23 models)
 │   ├── types/                # Shared TypeScript type definitions
 │   ├── ui/                   # Shared React UI components (shadcn/ui style)
 │   ├── hooks/                # React hooks (useApi, useAuth, useWallet, etc.)
@@ -98,19 +98,34 @@ points, access control, and invariants: [`packages/contracts/README.md`](./packa
 
 ### Backend API (NestJS)
 
-- **15 modules**: Database, Health, Auth, Merchant, Payment, Invoice, Escrow, Refund, Subscription, Settlement, Treasury, Notification, Webhook, Analytics, Audit
+- **17 modules**: Database, Health, Auth, Merchant, Payment, Invoice, Escrow, Refund, Subscription, Settlement, Treasury, Notification, Webhook, Analytics, Audit, AI, Observability
 - **Auth**: JWT, API key, Stellar wallet authentication with role-based guards
 - **Swagger** documentation on all endpoints
 - **70 source files** — zero type errors
 
 ### Blockchain Indexer
 
-- Ledger-by-ledger Stellar Horizon scanning with configurable batch size
-- Event handlers for 5 Soroban contract types (Payment, Escrow, Refund, Subscription, Treasury)
-- Historical sync engine with consecutive failure abort (5 max)
-- Real-time sync engine with exponential backoff
-- BullMQ queue + worker with 5x concurrency and rate limiting
-- Checkpoint-based crash recovery via Prisma
+- **Soroban RPC event ingestion** (`getEvents`), which is where contract events
+  actually live — Horizon does not expose them
+- XDR decoding of every event for all 16 contracts, driven by one catalogue in
+  `apps/indexer/src/blockchain/contracts.ts` that mirrors `EVENTS.md`
+- **Idempotent, replayable persistence**: every decoded event is written to
+  `indexer_events`, unique on the on-chain event id, so a retry or a re-scanned
+  range cannot double-apply
+- Historical catch-up that **retries a failed batch in place and aborts rather
+  than stepping over it**, so the checkpoint can never skip a ledger
+- Real-time tail with bounded exponential backoff on RPC failures
+- Durable checkpointing in `indexer_state`, with corrupted-value recovery and a
+  guard that refuses to move the checkpoint backwards
+- `/metrics`, `/health` and `/ready` on `METRICS_PORT` (4100), matching the
+  deployed probes and Prometheus scrape config
+- 114 tests covering decoding, pagination, malformed events, retries/backoff,
+  checkpoint recovery, idempotency and reconciliation
+
+**Not yet wired to the read model.** The indexer decodes and stores events, but
+it does not project them onto `payments`/`escrow`/`invoices`: no column ties an
+on-chain id to an off-chain row, and nothing in the API submits a Soroban
+transaction yet. See [`docs/INDEXER.md`](./docs/INDEXER.md) for the exact gap.
 
 ### Frontend Apps (3 dashboards)
 
@@ -136,7 +151,7 @@ points, access control, and invariants: [`packages/contracts/README.md`](./packa
 
 ### Database (Prisma + PostgreSQL)
 
-- **21 models**: User, Merchant, Wallet, Trustline, Payment, Invoice, InvoiceItem, Escrow, Milestone, Refund, Subscription, Settlement, TreasuryTransaction, Notification, WebhookDelivery, ApiKey, AuditLog, PaymentLink, SubscriptionPayment, AnalyticsSnapshot, IdempotencyKey
+- **23 models**: User, Merchant, Wallet, Trustline, Payment, Invoice, InvoiceItem, Escrow, Milestone, Refund, Subscription, Settlement, TreasuryTransaction, Notification, WebhookDelivery, ApiKey, AuditLog, PaymentLink, SubscriptionPayment, AnalyticsSnapshot, IdempotencyKey, IndexerState, IndexerEvent
 - Normalized schema with proper relations, enums, and indexes
 - Seed script with Stellar testnet sample data
 
@@ -235,7 +250,7 @@ pnpm build
 | `@epay/web`                | Customer landing page + dashboard            | App     |
 | `@epay/merchant-dashboard` | Merchant analytics & management              | App     |
 | `@epay/admin-dashboard`    | Platform administration                      | App     |
-| `@epay/indexer`            | Stellar Horizon event indexer                | App     |
+| `@epay/indexer`            | Soroban contract-event indexer               | App     |
 | `@epay/sdk`                | TypeScript SDK for EPay API                  | Library |
 | `@epay/database`           | Prisma ORM client & schema                   | Library |
 | `@epay/types`              | Shared TypeScript type definitions           | Library |
@@ -254,7 +269,7 @@ pnpm build
 | **Backend**         | NestJS, Fastify, TypeScript, Prisma, PostgreSQL, Redis, BullMQ |
 | **Frontend**        | Next.js 15, React 19, Tailwind CSS, Framer Motion, Recharts    |
 | **SDK**             | TypeScript, Stellar SDK, isomorphic fetch                      |
-| **Indexer**         | TypeScript, BullMQ, Pino, Stellar Horizon API                  |
+| **Indexer**         | TypeScript, Soroban RPC, Prometheus, Pino                      |
 | **Wallets**         | Freighter, xBull, Albedo, Rabet, Lobstr                        |
 | **Testing**         | Jest, Vitest, Cargo test                                       |
 | **DevOps**          | Turborepo, pnpm workspaces, GitHub Actions, Dependabot         |
@@ -263,25 +278,29 @@ pnpm build
 
 ## 🧪 Testing
 
-**272 Rust tests, 136 API tests, 91 SDK tests, 17 shared tests, 23 app tests, 7 Playwright e2e tests.** Counts are the ones actually observed on the current tree; run `pnpm test` and `pnpm contracts:test` to reproduce them.
+**272 Rust tests and 469 TypeScript tests** (API 126, indexer 114, SDK 111, shared 78, extension 12, mobile 11, three dashboards 17). Counts are the ones actually observed on the current tree; run `pnpm test` and `pnpm contracts:test` to reproduce them.
 
-| Package                                             | Framework  | Count                                                                                                                                              | Status                                                        |
-| --------------------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| `@epay/contracts`                                   | Cargo test | 272 tests across all 16 contracts — includes deterministic property/fuzz suites for TreasuryVault, EscrowManager, RefundManager, SettlementManager | ✅ Passing under `cargo test --workspace` in CI               |
-| `@epay/api`                                         | Jest       | 19 suites, 136 tests                                                                                                                               | ✅ Passing; coverage floors enforced                          |
-| `@epay/sdk`                                         | Vitest     | 4 suites, 91 tests                                                                                                                                 | ✅ Passing                                                    |
-| `@epay/shared`                                      | Vitest     | 1 suite, 17 tests                                                                                                                                  | ✅ Passing — webhook HMAC signing, verification, retry policy |
-| `@epay/extension`                                   | Vitest     | 1 suite, 12 tests                                                                                                                                  | ✅ Passing                                                    |
-| `@epay/mobile`                                      | Vitest     | 1 suite, 11 tests                                                                                                                                  | ✅ Passing                                                    |
-| `@epay/indexer`                                     | Vitest     | **0 tests**                                                                                                                                        | ❌ **Gap** — see below                                        |
-| `apps/web`, `merchant-dashboard`, `admin-dashboard` | Vitest     | **0 tests**                                                                                                                                        | ❌ **Gap** — see below                                        |
-| `tests/e2e`                                         | Playwright | 7 tests × 4 browser projects                                                                                                                       | Requires running apps + API; not yet wired into CI            |
-| `tests/k6`                                          | k6         | Load profile                                                                                                                                       | SLOs in [`docs/performance.md`](./docs/performance.md)        |
+| Package                                             | Framework  | Count                                                                                                                                              | Status                                                                                   |
+| --------------------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `@epay/contracts`                                   | Cargo test | 272 tests across all 16 contracts — includes deterministic property/fuzz suites for TreasuryVault, EscrowManager, RefundManager, SettlementManager | ✅ Passing under `cargo test --workspace` in CI                                          |
+| `@epay/api`                                         | Jest       | 18 suites, 126 tests                                                                                                                               | ✅ Passing; coverage floors enforced                                                     |
+| `@epay/sdk`                                         | Vitest     | 4 suites, 111 tests                                                                                                                                | ✅ Passing                                                                               |
+| `@epay/shared`                                      | Vitest     | 4 suites, 78 tests                                                                                                                                 | ✅ Passing — webhook HMAC signing, session/route-guard logic, shared Prometheus registry |
+| `@epay/extension`                                   | Vitest     | 1 suite, 12 tests                                                                                                                                  | ✅ Passing                                                                               |
+| `@epay/mobile`                                      | Vitest     | 1 suite, 11 tests                                                                                                                                  | ✅ Passing                                                                               |
+| `@epay/indexer`                                     | Vitest     | 10 suites, 114 tests                                                                                                                               | ✅ Passing; coverage floors enforced (lines ≥ 90%)                                       |
+| `apps/web`, `merchant-dashboard`, `admin-dashboard` | Vitest     | 3 suites, 17 tests                                                                                                                                 | ✅ Passing — session wiring and route-guard behaviour                                    |
+| `tests/e2e`                                         | Playwright | 9 tests × 4 browser projects = 36 runs                                                                                                             | ✅ 36/36 passing; wired into CI as the `e2e` job                                         |
+| `tests/k6`                                          | k6         | Load profile                                                                                                                                       | SLOs in [`docs/performance.md`](./docs/performance.md)                                   |
 
-**Known testing gaps (not hidden behind `--passWithNoTests`).** The indexer has
-no tests despite parsing untrusted on-chain events and owning checkpoint/recovery
-logic, and the three Next.js apps have none either. API coverage is ~54% lines
-against an 80% goal. Both are tracked in
+**No package uses `--passWithNoTests`.** A test script that passes when no tests
+exist reports "never written" as "passing", so every workspace is required to
+have real specs.
+
+**Known gaps.** API coverage is ~52% lines / ~65% branches against the stated 80%
+goal (90% for payment, refund, settlement and auth code); the enforced floors only
+stop it regressing. `tests/k6` load profiles are still not wired into CI, and no
+third-party smart-contract audit has been performed. Tracked in
 [`docs/FINAL-ENGINEERING-REPORT.md`](./docs/FINAL-ENGINEERING-REPORT.md#18-remaining-risks-and-todo).
 
 ```bash
