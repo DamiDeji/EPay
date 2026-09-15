@@ -103,15 +103,21 @@ no metrics. `webhook_deliveries` rows accumulated and were never sent.
 
 ### 2.4 Tooling and CI
 
-- `pnpm ci` / `pnpm ci:quick` (`scripts/ci-local.sh`): runs the same validation
-  stages as CI plus a Prettier check and a Docker build, and **fails** if a
-  stage's tool is missing rather than silently skipping, so a green local run is
-  never weaker than a green CI run.
-- Correction (2026-09-15): `pnpm format:check` is enforced by that local script,
-  **not** by `.github/workflows/ci.yml`, so formatting is not yet a CI gate. The
-  same file's `docker` stage builds `apps/api/Dockerfile`, which does not exist —
-  the image lives at `infra/docker/Dockerfile.api`. Both are listed as open in
-  §18.
+- `pnpm ci:local` / `pnpm ci:local:quick` (`scripts/ci-local.sh`): runs the same
+  validation stages as CI plus a Docker build, and **fails** if a stage's tool is
+  missing rather than silently skipping, so a green local run is never weaker than
+  a green CI run.
+- Correction (2026-09-15): three things about that command were wrong.
+  `pnpm format:check` was enforced only by the local script, not by
+  `.github/workflows/ci.yml`; the script's `docker` stage built
+  `apps/api/Dockerfile`, a path that has never existed (the images live at
+  `infra/docker/`); and the script was named `ci`, which pnpm shadows with its own
+  built-in `ci` command, so **`pnpm ci` never ran it** — the documented entry
+  point either errored or performed an install, and the documented
+  `pnpm ci -- --quick` form passed a literal `--` that the script rejects. All
+  three are fixed: CI has a `format` job, the stage builds
+  `infra/docker/Dockerfile.api`, and the scripts are `ci:local` /
+  `ci:local:quick`. See §18.
 - `turbo.json`: `test` now depends on `^build` rather than `build`, which
   previously made `pnpm test` launch `expo export` for the mobile app and never
   terminate.
@@ -268,7 +274,7 @@ The Prisma 7 wiring was the blocking defect and is fixed. Schema-level review
 
 ## 12. CI/CD improvements
 
-- `pnpm ci` local-parity command (all nine stages).
+- `pnpm ci:local` local-parity command (every stage the machine supports).
 - `turbo test` no longer requires a full mobile export.
 - `pnpm format:check` is now runnable and clean.
 - Coverage floors enforced for the API.
@@ -315,24 +321,25 @@ identity; treat this as an open item.
 
 ## 18. Remaining risks and TODO
 
-| Priority | Item                                                                                                                                              | Status                                   |
-| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
-| P1       | **API coverage is below target** (52.4% lines vs. an 80% goal; 90% for payment/refund/settlement/auth).                                           | Open — floors enforced, no regression    |
-| P1       | **Indexer does not project events onto the read model.** No on-chain id is tied to an off-chain row; the API submits no transaction.              | Open — deliberate; see `docs/INDEXER.md` |
-| P1       | **No third-party smart-contract audit**; `tests/k6` load profiles are not wired into CI.                                                          | Open — audit blocks mainnet              |
-| P2       | API-level idempotency tests proving retries cannot duplicate payments/refunds/settlements.                                                        | Open                                     |
-| P2       | Database review: unique constraints, idempotency keys, index coverage, migration workflow.                                                        | Open                                     |
-| P2       | `pnpm audit` is advisory (`continue-on-error`) and should become blocking once triaged.                                                           | Open                                     |     | P2  | `pnpm format:check` runs in `scripts/ci-local.sh` but not in CI itself. | Open — one CI step closes it |
-| P2       | `scripts/ci-local.sh` builds `apps/api/Dockerfile`, which does not exist (the images are at `infra/docker/`), so its `docker` stage always fails. | Open — one path to correct               |
-| P3       | `packages/ui` and `packages/hooks` are unused; adopt or remove.                                                                                   | Open                                     |
-| P3       | `pnpm test` cannot run every build in parallel on a small machine (`expo export` starves the Next.js builds); CI should build mobile separately.  | Open                                     |
-| P1       | ~~Indexer has no tests.~~ **114 tests across 10 files**, enforced floors, 96% lines.                                                              | **Done 2026-09-15**                      |
-| P1       | ~~`--passWithNoTests` masks missing tests.~~ No test script uses it; each app has real specs.                                                     | **Done 2026-09-15**                      |
-| P1       | ~~`tests/e2e` not wired into CI.~~ `e2e` job added; 36/36 pass across 4 browser projects.                                                         | **Done 2026-09-15**                      |
-| P1       | ~~README/ROADMAP describe capabilities that were absent.~~ Both reconciled against the tree, with count and status corrections.                   | **Done 2026-09-15**                      |
-| P2       | ~~Indexer exposes no `/metrics`.~~ `/metrics`, `/health`, `/ready` on port 4100, matching the scrape config and alert rules.                      | **Done 2026-09-15**                      |
-| P2       | ~~Container scanning (Trivy) and per-image SBOM.~~ Already shipped in `.github/workflows/supply-chain.yml`.                                       | **Done**                                 |
-| P3       | ~~Image signing / provenance for releases.~~ cosign keyless signing on release tags, already in `supply-chain.yml`.                               | **Done**                                 |
+| Priority | Item                                                                                                                                                                                   | Status                                   |
+| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| P1       | **API coverage is below target** (52.4% lines vs. an 80% goal; 90% for payment/refund/settlement/auth).                                                                                | Open — floors enforced, no regression    |
+| P1       | **Indexer does not project events onto the read model.** No on-chain id is tied to an off-chain row; the API submits no transaction.                                                   | Open — deliberate; see `docs/INDEXER.md` |
+| P1       | **No third-party smart-contract audit**; `tests/k6` load profiles are not wired into CI.                                                                                               | Open — audit blocks mainnet              |
+| P2       | API-level idempotency tests proving retries cannot duplicate payments/refunds/settlements.                                                                                             | Open                                     |
+| P2       | Database review: unique constraints, idempotency keys, index coverage, migration workflow.                                                                                             | Open                                     |
+| P2       | `pnpm audit` is advisory (`continue-on-error`) and should become blocking once triaged.                                                                                                | Open                                     |     | P2  | ~~`pnpm format:check` runs in `scripts/ci-local.sh` but not in CI itself.~~ A `format` job now runs it on every push and PR. | **Done 2026-09-15** |
+| P2       | ~~The local-CI script could not be run as documented: pnpm reserves `ci` for its own built-in command, and the docs passed a literal `--`.~~ Renamed to `ci:local` / `ci:local:quick`. | **Done 2026-09-15**                      |
+| P2       | ~~`scripts/ci-local.sh` builds `apps/api/Dockerfile`, which does not exist.~~ The stage now builds `infra/docker/Dockerfile.api`.                                                      | **Done 2026-09-15**                      |
+| P3       | `packages/ui` and `packages/hooks` are unused; adopt or remove.                                                                                                                        | Open                                     |
+| P3       | `pnpm test` cannot run every build in parallel on a small machine (`expo export` starves the Next.js builds); CI should build mobile separately.                                       | Open                                     |
+| P1       | ~~Indexer has no tests.~~ **114 tests across 10 files**, enforced floors, 96% lines.                                                                                                   | **Done 2026-09-15**                      |
+| P1       | ~~`--passWithNoTests` masks missing tests.~~ No test script uses it; each app has real specs.                                                                                          | **Done 2026-09-15**                      |
+| P1       | ~~`tests/e2e` not wired into CI.~~ `e2e` job added; 36/36 pass across 4 browser projects.                                                                                              | **Done 2026-09-15**                      |
+| P1       | ~~README/ROADMAP describe capabilities that were absent.~~ Both reconciled against the tree, with count and status corrections.                                                        | **Done 2026-09-15**                      |
+| P2       | ~~Indexer exposes no `/metrics`.~~ `/metrics`, `/health`, `/ready` on port 4100, matching the scrape config and alert rules.                                                           | **Done 2026-09-15**                      |
+| P2       | ~~Container scanning (Trivy) and per-image SBOM.~~ Already shipped in `.github/workflows/supply-chain.yml`.                                                                            | **Done**                                 |
+| P3       | ~~Image signing / provenance for releases.~~ cosign keyless signing on release tags, already in `supply-chain.yml`.                                                                    | **Done**                                 |
 
 **Note on diff size.** Normalising formatting across the repository touched
 ~300 files. Those hunks are whitespace/reflow only; the functional changes are
@@ -370,8 +377,8 @@ cargo build --workspace --target wasm32-unknown-unknown --release
                                     # 16 .wasm artifacts
 
 # Local CI parity
-pnpm ci --quick                     # 5/5 stages passed
-pnpm ci -- --only helm --allow-missing
+pnpm ci:local:quick                 # 5/5 stages passed
+pnpm ci:local --only helm --allow-missing
                                     # helm lint/template/digest/drift OK
 ```
 
@@ -411,7 +418,7 @@ Stages **not** executed here, and why:
 | 7   | Indexer              | **PASS**    | 114 tests, 96% lines; `/metrics`; replay, checkpoint and no-skip guarantees     | Read-model projection deliberately absent                     |
 | 8   | SDK                  | **PASS**    | 111 tests; enum re-export and examples fixed; examples compile                  | —                                                             |
 | 9   | Frontend             | **PARTIAL** | Session/route-guard tests in all three dashboards; e2e 36/36 in CI              | No component tests; k6 not wired                              |
-| 10  | CI/CD                | **PASS**    | `pnpm ci` parity; lint, typecheck, test and e2e are real gates                  | k6 not wired; `format:check` local only                       |
+| 10  | CI/CD                | **PASS**    | `pnpm ci:local` parity; lint, format, typecheck, test and e2e are real gates    | k6 load profiles not wired                                    |
 | 11  | DevOps               | **PARTIAL** | Helm lint/template/digest/drift all pass; Docker builds                         | No image scan/signing in this pass                            |
 | 12  | Observability        | **PASS**    | API and indexer both expose `/metrics`; webhook metrics + alert added           | Grafana panels not verified against live data                 |
 | 13  | Disaster recovery    | **PARTIAL** | Docs + scripts + workflow exist                                                 | Drill not executed here (needs Postgres)                      |

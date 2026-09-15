@@ -30,6 +30,26 @@ jobs:
         env:
           TURBO_CONCURRENCY: 4
 
+  format:
+    name: Format Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - name: Enable corepack
+        run: corepack enable
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      # Prettier needs no build, so this job is deliberately separate and cheap.
+      # `scripts/ci-local.sh` runs the same check as its `format-check` stage;
+      # .prettierignore excludes what Prettier cannot parse (Helm templates,
+      # lockfiles, generated manifests).
+      - run: pnpm format:check
+
   typecheck:
     name: Type Check
     runs-on: ubuntu-latest

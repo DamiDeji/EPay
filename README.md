@@ -305,7 +305,7 @@ third-party smart-contract audit has been performed. Tracked in
 
 ```bash
 # Run everything CI runs, locally
-pnpm ci
+pnpm ci:local
 
 # Run all tests
 pnpm test

@@ -2,10 +2,16 @@
 # Local CI parity — run the same validation stages CI runs, on your machine.
 #
 # Usage:
-#   pnpm ci                 # every stage that the local environment supports
-#   pnpm ci -- --quick      # skip the slow stages (contracts, builds, docker)
-#   pnpm ci -- --only lint,typecheck,test
-#   pnpm ci -- --list       # print the stage names and exit
+#   pnpm ci:local                 # every stage the local environment supports
+#   pnpm ci:local:quick           # skip the slow stages (contracts, builds, docker)
+#   pnpm ci:local --only lint,typecheck,test
+#   pnpm ci:local --list          # print the stage names and exit
+#
+# Do not rename these scripts to `ci`: `pnpm ci` is pnpm's own built-in
+# (`clean-install`, and unimplemented as of pnpm 10), so it shadows the script
+# and the documented command never reaches this file. Pass flags directly
+# (`pnpm ci:local --quick`); a literal `--` is forwarded as an argument and is
+# rejected below.
 #
 # Stages that need a tool that is not installed are *reported*, not silently
 # skipped: a green local run should mean the same thing as a green CI run, so
@@ -188,7 +194,11 @@ stage_e2e() {
 
 stage_docker() {
   require docker docker || return 1
-  docker build -f apps/api/Dockerfile -t epay-api:ci .
+  # The images live under `infra/docker/`; there has never been an
+  # `apps/api/Dockerfile`, so this stage used to fail on a path that does not
+  # exist. Keep this in step with `.github/workflows/supply-chain.yml`, which
+  # builds the same three images.
+  docker build -f infra/docker/Dockerfile.api -t epay-api:ci .
 }
 
 # ── Execute ──────────────────────────────────────────────────────────────────

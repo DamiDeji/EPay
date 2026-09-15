@@ -6,32 +6,33 @@ what you see, the document is stale and should be fixed with the code.
 
 ## Quick reference
 
-| What                                                  | Command                                 |
-| ----------------------------------------------------- | --------------------------------------- |
-| Everything CI runs (local parity)                     | `pnpm ci`                               |
-| Fast subset (install, format, lint, typecheck, tests) | `pnpm ci:quick`                         |
-| Only specific stages                                  | `pnpm ci -- --only lint,test,contracts` |
-| List stage names                                      | `pnpm ci -- --list`                     |
-| TypeScript lint                                       | `pnpm lint`                             |
-| TypeScript typecheck                                  | `pnpm typecheck`                        |
-| Formatting check                                      | `pnpm format:check`                     |
-| Formatting fix                                        | `pnpm format`                           |
-| All fast unit tests                                   | `pnpm test`                             |
-| With coverage                                         | `pnpm test:coverage`                    |
-| API tests only                                        | `pnpm --filter @epay/api test`          |
-| SDK tests only                                        | `pnpm --filter @epay/sdk test`          |
-| Contract tests only                                   | `pnpm contracts:test`                   |
-| Contract static analysis                              | see [Contracts](#contracts)             |
+| What                                                  | Command                                    |
+| ----------------------------------------------------- | ------------------------------------------ |
+| Everything CI runs (local parity)                     | `pnpm ci:local`                            |
+| Fast subset (install, format, lint, typecheck, tests) | `pnpm ci:local:quick`                      |
+| Only specific stages                                  | `pnpm ci:local --only lint,test,contracts` |
+| List stage names                                      | `pnpm ci:local --list`                     |
+| TypeScript lint                                       | `pnpm lint`                                |
+| TypeScript typecheck                                  | `pnpm typecheck`                           |
+| Formatting check                                      | `pnpm format:check`                        |
+| Formatting fix                                        | `pnpm format`                              |
+| All fast unit tests                                   | `pnpm test`                                |
+| With coverage                                         | `pnpm test:coverage`                       |
+| API tests only                                        | `pnpm --filter @epay/api test`             |
+| SDK tests only                                        | `pnpm --filter @epay/sdk test`             |
+| Contract tests only                                   | `pnpm contracts:test`                      |
+| Contract static analysis                              | see [Contracts](#contracts)                |
 
 ## Local CI parity
 
-`scripts/ci-local.sh` (exposed as `pnpm ci`) runs the same validation stages as
-`.github/workflows/ci.yml`, plus two CI does not run: Prettier `format-check`
-and a Docker image build. A green local run is therefore strictly stronger than
-a green CI run, never weaker.
+`scripts/ci-local.sh` (exposed as `pnpm ci:local`, and `pnpm ci:local:quick` for the
+fast subset) runs the same validation stages as
+`.github/workflows/ci.yml`, plus one CI does not run: a Docker image build. A
+green local run is therefore strictly stronger than a green CI run, never
+weaker.
 
 1. `install` — `pnpm install --frozen-lockfile`
-2. `format-check` — Prettier _(local only)_
+2. `format-check` — Prettier (`format` job in CI)
 3. `lint` — ESLint (flat config) across every workspace
 4. `typecheck` — `tsc` across every workspace, **including tests, seeds and examples**
 5. `contracts` — `cargo fmt --check`, `cargo clippy -D warnings`,
@@ -46,6 +47,11 @@ Stages whose tool is missing are **reported and the run exits non-zero**, so a
 green local run means the same thing as a green CI run. Pass `--allow-missing`
 when you deliberately intend to run a subset (for example, on a machine without
 Rust or Docker).
+
+The scripts are deliberately _not_ named `ci`: `pnpm ci` is pnpm's own built-in
+(`clean-install`, unimplemented as of pnpm 10) and shadows a `ci` script, so the
+documented command could never have run it. Pass flags directly — `pnpm ci:local
+--quick` — because pnpm forwards a literal `--` as an argument.
 
 ## Test inventory
 

@@ -242,6 +242,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   runtime continues to use `exports`. `apps/api` now typechecks with **zero**
   errors.
 
+- `scripts/ci-local.sh`'s `docker` stage built `apps/api/Dockerfile`, a path that
+  has never existed in this repository. It now builds
+  `infra/docker/Dockerfile.api`, matching the three images that
+  `.github/workflows/supply-chain.yml` builds. The stage could not have passed
+  before.
+- `pnpm format:check` was enforced only by the local CI script. Added a `format`
+  job to `.github/workflows/ci.yml`, so a formatting regression now fails the
+  build instead of being caught only on a machine that runs `pnpm ci:local`.
+- **The local-CI entry point was unreachable.** The script was exposed as `ci`,
+  but `pnpm ci` is pnpm's own built-in (`clean-install`, unimplemented in pnpm
+  10), so the documented command either errored or performed an install instead
+  of running the stages, and the documented `pnpm ci -- --quick` form passed a
+  literal `--` that the script rejects. The scripts are now `ci:local` and
+  `ci:local:quick`, and the docs pass flags directly.
+
 ## [0.1.0] — 2026-08-05
 
 ### Added

@@ -328,8 +328,10 @@ Verified: 272 tests pass; `cargo clippy --all-targets -- -D warnings` clean;
   `pnpm test` no longer launches `expo export` and hang.
 - Added `.prettierignore` (Helm templates are not valid YAML and cannot be
   formatted by Prettier; `helm lint` validates them instead).
-- Added `scripts/ci-local.sh` and the `pnpm ci` / `pnpm ci:quick` scripts, which
-  run the same stages CI runs and report any stage that could not be executed.
+- Added `scripts/ci-local.sh` and — after the naming was corrected on
+  2026-09-15, because pnpm reserves `ci` for its own built-in command — the
+  `pnpm ci:local` / `pnpm ci:local:quick` scripts, which run the same stages CI
+  runs and report any stage that could not be executed.
 - Ran `prettier --write` across the repository so `pnpm format:check` is a real
   gate.
 

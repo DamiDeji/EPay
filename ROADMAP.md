@@ -138,8 +138,7 @@ Scoped, not started. Ordered by dependency, not by desire.
 The three blockers listed here (ESLint 10 requiring a flat config, Prisma 7
 requiring a driver adapter, and Jest not transforming `@stellar/stellar-sdk`'s
 ESM-only dependencies) are **fixed**. Lint, typecheck and tests are real gates
-across the workspace, and `pnpm ci` reproduces CI locally. Formatting is checked
-by that local script but not yet by a CI job — see _Known issues_.
+across the workspace, and `pnpm ci:local` reproduces CI locally.
 
 One claim in this section was also wrong and has been corrected: `pnpm typecheck`
 was **not** green. `apps/api/tsconfig.json` excluded `*.spec.ts` and `test/`, so
@@ -148,11 +147,11 @@ the API's type errors were invisible. With specs in the program, `tsc` reported
 delegate getters), plus stale fixtures using a `currency` field the DTO does not
 define. All are fixed.
 
-Since then the `e2e` job was added to CI and `--passWithNoTests` was removed from
-every package — no test script uses it today. Remaining CI work is tracked in
+Since then the `e2e` and `format` jobs were added to CI and
+`--passWithNoTests` was removed from every package — no test script uses it
+today. Remaining CI work is tracked in
 [`docs/FINAL-ENGINEERING-REPORT.md`](./docs/FINAL-ENGINEERING-REPORT.md#18-remaining-risks-and-todo):
-wiring `tests/k6` into CI, making `pnpm audit` blocking, and running
-`pnpm format:check` in CI rather than only in the local script.
+wiring `tests/k6` into CI and making `pnpm audit` blocking.
 
 ### Indexer test coverage — ✅ done in the working tree
 
@@ -236,12 +235,13 @@ lives.
 | API coverage is ~52% lines against an 80% goal                                          | Payment, refund, settlement and auth paths are thinly covered         | **Open** — floors enforced, so it cannot regress silently                                                    |
 | `tests/k6` load profiles are not wired into CI                                          | Performance regressions are not gated                                 | **Open** — scripts and SLOs exist in [`docs/performance.md`](./docs/performance.md)                          |
 | `pnpm audit` is advisory (`continue-on-error: true`)                                    | New high or critical advisories do not fail the build                 | **Open** — promote once the current set is triaged                                                           |
-| `pnpm format:check` runs locally but not in CI                                          | Formatting can regress on a pull request                              | **Open** — one step in `.github/workflows/ci.yml` closes it                                                  |
 | Dockerfiles use mutable base tags (`node:26-alpine`) and `pnpm@latest`                  | Images are not reproducible                                           | **Open** — the Helm chart enforces digests at deploy time, but images are not digest-pinned at build         |
 | ZAP baseline scan is informational (`fail_action: false`)                               | DAST regressions are reported, not blocked                            | **Open** — promote to blocking after the baseline is triaged                                                 |
 | `pnpm lint` could not run at all (ESLint 10 needs flat config; repo had `.eslintrc.js`) | Lint was not a CI gate; style regressions went unreviewed             | **Fixed** — flat config; 22/22 tasks, 0 errors                                                               |
 | API Jest suite failed to load (Prisma 7 driver adapter; stellar-sdk not transformed)    | 126 test cases could not execute                                      | **Fixed** — 18 suites, 126 tests pass                                                                        |
 | Webhook delivery had no scheduler wired to `processDue()`                               | Signed deliveries accumulated and were never sent                     | **Fixed** — `WebhookDispatchScheduler`, atomic claim, metrics, alert                                         |
+| `pnpm format:check` ran locally but not in CI                                           | Formatting could regress on a pull request                            | **Fixed** — `format` job added to `.github/workflows/ci.yml`                                                 |
+| `scripts/ci-local.sh` built a Dockerfile path that does not exist                       | The `docker` stage could never pass                                   | **Fixed** — builds `infra/docker/Dockerfile.api`                                                             |
 | `main` previously could not build at all (`@epay/hooks`, Prisma 7, `vite@5`)            | Every CI job failed                                                   | **Fixed**                                                                                                    |
 
 ---
