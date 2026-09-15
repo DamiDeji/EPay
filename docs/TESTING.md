@@ -177,6 +177,12 @@ helm template epay helm/epay --namespace epay >/dev/null
 ./scripts/render-k8s-manifests.sh && git diff --exit-code k8s/manifests.yaml
 ```
 
+Always regenerate with that script rather than a bare `helm template >
+k8s/manifests.yaml`: it normalises the one whitespace difference between Helm 3
+(what CI pins) and Helm 4 (a blank line before each document separator), so the
+drift check passes whichever major is installed. `k8s/manifests.yaml` is
+generated — never hand-edit it.
+
 ## End-to-end tests
 
 Playwright specs live in `tests/e2e` with their own `package.json` and

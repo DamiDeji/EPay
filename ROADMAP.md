@@ -87,10 +87,13 @@ Playwright `e2e` job. Nothing in that batch is listed as `Shipped`, because
   [manual restore runbook](./docs/restore-runbook.md).
 - **Supply chain.** CycloneDX SBOM per push, Trivy filesystem + image scans,
   cosign keyless signing on release tags, blocking Gitleaks with a curated
-  [`.gitleaks.toml`](./.gitleaks.toml).
+  [`.gitleaks.toml`](./.gitleaks.toml). The scanner steps were pinned to an
+  action tag that does not exist until 2026-09-15, so they had never actually
+  scanned an image — see _Known issues_.
 - **Release automation.** semantic-release derives versions from Conventional
   Commits ([`.releaserc.json`](./.releaserc.json)) and tagging triggers image
-  signing.
+  signing. It had never run, because the workflow's `pnpm dlx` environment did
+  not contain the commit preset; fixed 2026-09-15. No release has been cut yet.
 - **Testing breadth.** Playwright e2e with `@axe-core/playwright` accessibility
   assertions, run in CI as the `e2e` job (9 tests × 4 browser projects, all
   passing); k6 load tests with SLOs in
@@ -228,21 +231,27 @@ lives.
 
 ## Known issues
 
-| Issue                                                                                   | Impact                                                                | Status                                                                                                       |
-| --------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| No third-party smart-contract audit                                                     | Funds-at-risk contracts are unaudited                                 | **Open** — **blocks mainnet**                                                                                |
-| Indexer does not project events onto the read model                                     | On-chain state is not mirrored into `payments` / `escrow` / `refunds` | **Open** — deliberate; see [`docs/INDEXER.md`](./docs/INDEXER.md#not-yet-implemented-read-model-projections) |
-| API coverage is ~52% lines against an 80% goal                                          | Payment, refund, settlement and auth paths are thinly covered         | **Open** — floors enforced, so it cannot regress silently                                                    |
-| `tests/k6` load profiles are not wired into CI                                          | Performance regressions are not gated                                 | **Open** — scripts and SLOs exist in [`docs/performance.md`](./docs/performance.md)                          |
-| `pnpm audit` is advisory (`continue-on-error: true`)                                    | New high or critical advisories do not fail the build                 | **Open** — promote once the current set is triaged                                                           |
-| Dockerfiles use mutable base tags (`node:26-alpine`) and `pnpm@latest`                  | Images are not reproducible                                           | **Open** — the Helm chart enforces digests at deploy time, but images are not digest-pinned at build         |
-| ZAP baseline scan is informational (`fail_action: false`)                               | DAST regressions are reported, not blocked                            | **Open** — promote to blocking after the baseline is triaged                                                 |
-| `pnpm lint` could not run at all (ESLint 10 needs flat config; repo had `.eslintrc.js`) | Lint was not a CI gate; style regressions went unreviewed             | **Fixed** — flat config; 22/22 tasks, 0 errors                                                               |
-| API Jest suite failed to load (Prisma 7 driver adapter; stellar-sdk not transformed)    | 126 test cases could not execute                                      | **Fixed** — 18 suites, 126 tests pass                                                                        |
-| Webhook delivery had no scheduler wired to `processDue()`                               | Signed deliveries accumulated and were never sent                     | **Fixed** — `WebhookDispatchScheduler`, atomic claim, metrics, alert                                         |
-| `pnpm format:check` ran locally but not in CI                                           | Formatting could regress on a pull request                            | **Fixed** — `format` job added to `.github/workflows/ci.yml`                                                 |
-| `scripts/ci-local.sh` built a Dockerfile path that does not exist                       | The `docker` stage could never pass                                   | **Fixed** — builds `infra/docker/Dockerfile.api`                                                             |
-| `main` previously could not build at all (`@epay/hooks`, Prisma 7, `vite@5`)            | Every CI job failed                                                   | **Fixed**                                                                                                    |
+| Issue                                                                                   | Impact                                                                  | Status                                                                                                       |
+| --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| No third-party smart-contract audit                                                     | Funds-at-risk contracts are unaudited                                   | **Open** — **blocks mainnet**                                                                                |
+| Indexer does not project events onto the read model                                     | On-chain state is not mirrored into `payments` / `escrow` / `refunds`   | **Open** — deliberate; see [`docs/INDEXER.md`](./docs/INDEXER.md#not-yet-implemented-read-model-projections) |
+| API coverage is ~52% lines against an 80% goal                                          | Payment, refund, settlement and auth paths are thinly covered           | **Open** — floors enforced, so it cannot regress silently                                                    |
+| `tests/k6` load profiles are not wired into CI                                          | Performance regressions are not gated                                   | **Open** — scripts and SLOs exist in [`docs/performance.md`](./docs/performance.md)                          |
+| `pnpm audit` is advisory (`continue-on-error: true`)                                    | New high or critical advisories do not fail the build                   | **Open** — promote once the current set is triaged                                                           |
+| Dockerfiles use mutable base tags (`node:26-alpine`) and `pnpm@latest`                  | Images are not reproducible                                             | **Open** — the Helm chart enforces digests at deploy time, but images are not digest-pinned at build         |
+| ZAP baseline scan is informational (`fail_action: false`)                               | DAST regressions are reported, not blocked                              | **Open** — promote to blocking after the baseline is triaged                                                 |
+| The nightly database backup has never succeeded                                         | **There is no backup of production data**; AWS backup secrets are unset | **Open** — needs `AWS_REGION`, `BACKUP_AWS_ROLE_ARN`, `PRODUCTION_DATABASE_URL`, `BACKUP_BUCKET`             |
+| No image has ever been scanned or signed                                                | Trivy ran on a nonexistent action tag; cosign only runs on release tags | **Open** — both unblocked 2026-09-15; unproven until the next pipeline run                                   |
+| `pnpm lint` could not run at all (ESLint 10 needs flat config; repo had `.eslintrc.js`) | Lint was not a CI gate; style regressions went unreviewed               | **Fixed** — flat config; 22/22 tasks, 0 errors                                                               |
+| API Jest suite failed to load (Prisma 7 driver adapter; stellar-sdk not transformed)    | 126 test cases could not execute                                        | **Fixed** — 18 suites, 126 tests pass                                                                        |
+| Webhook delivery had no scheduler wired to `processDue()`                               | Signed deliveries accumulated and were never sent                       | **Fixed** — `WebhookDispatchScheduler`, atomic claim, metrics, alert                                         |
+| `pnpm format:check` ran locally but not in CI                                           | Formatting could regress on a pull request                              | **Fixed** — `format` job added to `.github/workflows/ci.yml`                                                 |
+| `scripts/ci-local.sh` built a Dockerfile path that does not exist                       | The `docker` stage could never pass                                     | **Fixed** — builds `infra/docker/Dockerfile.api`                                                             |
+| Helm drift check failed in CI (committed manifests came from Helm 4; CI pins 3.16.3)    | `k8s/manifests.yaml` could not be verified against the chart            | **Fixed** — the render script normalises the separator whitespace difference                                 |
+| `@epay/database#typecheck` failed intermittently in CI                                  | A required check was flaky on a clean checkout                          | **Fixed** — the seed imports its own source instead of the package name                                      |
+| Trivy steps pinned `trivy-action@0.29.0`, a tag that does not exist                     | The supply-chain scan failed before scanning anything                   | **Fixed** — pinned to `v0.36.0`                                                                              |
+| The Release workflow never produced a tag or a GitHub Release                           | No versioned releases, no signed images                                 | **Fixed** — the commit preset is installed into the semantic-release dlx environment                         |
+| `main` previously could not build at all (`@epay/hooks`, Prisma 7, `vite@5`)            | Every CI job failed                                                     | **Fixed**                                                                                                    |
 
 ---
 

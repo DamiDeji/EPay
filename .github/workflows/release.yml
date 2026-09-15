@@ -53,7 +53,18 @@ jobs:
 
       # `dlx` avoids adding semantic-release (and its ~300 transitive packages)
       # to the workspace lockfile, where it would show up in every SBOM.
+      #
+      # The preset package has to be installed into the same temporary
+      # environment: `.releaserc.json` asks for the `conventionalcommits` preset,
+      # which is not a dependency of semantic-release itself, so a bare
+      # `pnpm dlx semantic-release` died with "Cannot find module
+      # 'conventional-changelog-conventionalcommits'" and no version, tag or
+      # release was ever produced.
       - name: Run semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: pnpm dlx semantic-release@24
+        run: |
+          pnpm dlx \
+            --package semantic-release@24 \
+            --package conventional-changelog-conventionalcommits@10 \
+            semantic-release

@@ -1,4 +1,12 @@
-import { prisma } from '@epay/database';
+// Import the package's own source, not its name.
+//
+// Importing `@epay/database` resolved to `dist/index.d.ts`, which only exists
+// after a build, while turbo's `typecheck` depends on *dependencies'* builds
+// only. `@epay/database#build` therefore ran concurrently with
+// `@epay/database#typecheck` and the check failed intermittently on a clean
+// checkout (TS2307: cannot find module '@epay/database'). The seed is part of
+// this package, so it has no business going through the published entry point.
+import { prisma } from '../src/index';
 
 async function main(): Promise<void> {
   console.log('Seeding database for Stellar network...');

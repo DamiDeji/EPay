@@ -173,6 +173,13 @@ and no package uses `--passWithNoTests`. The exact counts are in
 
 ## 9. CI weaknesses (pre-fix)
 
+Four further failures were found by reading the workflow runs on 2026-09-15, all
+of which meant a gate was red or silently not running: the Helm drift check
+compared output from two different Helm majors; `@epay/database#typecheck` raced
+its own build and failed intermittently; the Trivy steps pinned a nonexistent
+action tag; and semantic-release could not load its commit preset, so no release
+was ever tagged. All four are fixed in the same commit as this note.
+
 - `cargo clippy -- -D warnings` and `cargo test` were both run against a
   workspace that could not compile, i.e. the contract job could never have been
   green.
@@ -185,9 +192,17 @@ and no package uses `--passWithNoTests`. The exact counts are in
 
 ## 10. Deployment weaknesses
 
-- Helm and raw manifests were consistent, and CI already gated drift.
+- Helm and raw manifests were consistent **locally only**: the drift check passed
+  with Helm 4, which is what generated the committed file, while CI pins Helm
+  3.16.3 and its output differs (a blank line before each document separator). The
+  job was failing for that reason. Corrected 2026-09-15 — the render script now
+  normalises that whitespace, so either Helm major produces the committed file.
 - Production values correctly refuse to render without pinned digests.
-- No image signing/provenance (SBOM generation exists in `supply-chain.yml`).
+- Image scanning and signing were configured but had **never executed**: the
+  Trivy steps referenced `aquasecurity/trivy-action@0.29.0` (no such tag) so the
+  job failed before scanning, and cosign only runs on release tags while the
+  Release workflow could not get past loading its commit preset, so no tag ever
+  existed. Both fixed 2026-09-15.
 
 ## 11. Observability gaps
 
@@ -342,17 +357,17 @@ Verified: 272 tests pass; `cargo clippy --all-targets -- -D warnings` clean;
 Priority-ordered, with the gap stated precisely. The status column records what
 had happened by 2026-09-15.
 
-| Priority | Item                                                                                                                         | Status (2026-09-15)                                                                  |
-| -------- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| P1       | Write indexer tests: checkpoint recovery, duplicate-event suppression, malformed events, exponential backoff, crash/restart. | **Done** — 114 tests, floors enforced, 96% lines                                     |
-| P1       | Add coverage thresholds (API 80% lines, 90% for payment/refund/settlement/auth) and enable `--coverage` in CI.               | **Partial** — floors in 4 packages; the 80%/90% targets are not met (API ~52% lines) |
-| P1       | Remove `--passWithNoTests` from the packages that have no tests, or write the tests; the flag currently hides the gap.       | **Done** — no test script uses it                                                    |
-| P1       | Wire `tests/e2e` into CI against a containerised stack.                                                                      | **Done** — `e2e` job; 36/36 pass, no containerised stack needed                      |
-| P2       | Add API-level idempotency tests proving retries cannot duplicate payments/refunds/settlements.                               | Open                                                                                 |
-| P2       | Indexer should expose `/metrics` so the existing alert rules have data.                                                      | **Done** — `/metrics`, `/health`, `/ready` on 4100                                   |
-| P2       | Container scanning (Trivy) and SBOM publication per image in CI.                                                             | **Already present** — `supply-chain.yml`                                             |
-| P2       | Add tests for the three dashboards (auth guard, role-based routes).                                                          | **Done** — session/route-guard specs in all three                                    |
-| P2       | Make `pnpm audit` blocking once the current advisory set is triaged.                                                         | Open — still `continue-on-error` in `ci.yml`                                         |
-| P3       | Remove or adopt the unused `packages/ui` and `packages/hooks` code.                                                          | Open                                                                                 |
-| P3       | Add image signing / provenance attestation to the release workflow.                                                          | **Already present** — cosign keyless on tags in `supply-chain.yml`                   |
-| P3       | Document every environment variable in one place and validate with `packages/config`.                                        | Open                                                                                 |
+| Priority | Item                                                                                                                         | Status (2026-09-15)                                                                                                                                                                                            |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P1       | Write indexer tests: checkpoint recovery, duplicate-event suppression, malformed events, exponential backoff, crash/restart. | **Done** — 114 tests, floors enforced, 96% lines                                                                                                                                                               |
+| P1       | Add coverage thresholds (API 80% lines, 90% for payment/refund/settlement/auth) and enable `--coverage` in CI.               | **Partial** — floors in 4 packages; the 80%/90% targets are not met (API ~52% lines)                                                                                                                           |
+| P1       | Remove `--passWithNoTests` from the packages that have no tests, or write the tests; the flag currently hides the gap.       | **Done** — no test script uses it                                                                                                                                                                              |
+| P1       | Wire `tests/e2e` into CI against a containerised stack.                                                                      | **Done** — `e2e` job; 36/36 pass, no containerised stack needed                                                                                                                                                |
+| P2       | Add API-level idempotency tests proving retries cannot duplicate payments/refunds/settlements.                               | Open                                                                                                                                                                                                           |
+| P2       | Indexer should expose `/metrics` so the existing alert rules have data.                                                      | **Done** — `/metrics`, `/health`, `/ready` on 4100                                                                                                                                                             |
+| P2       | Container scanning (Trivy) and SBOM publication per image in CI.                                                             | **Fixed 2026-09-15** — the steps existed but pinned a nonexistent action tag and failed before scanning; now on `v0.36.0`                                                                                      |
+| P2       | Add tests for the three dashboards (auth guard, role-based routes).                                                          | **Done** — session/route-guard specs in all three                                                                                                                                                              |
+| P2       | Make `pnpm audit` blocking once the current advisory set is triaged.                                                         | Open — still `continue-on-error` in `ci.yml`                                                                                                                                                                   |
+| P3       | Remove or adopt the unused `packages/ui` and `packages/hooks` code.                                                          | Open                                                                                                                                                                                                           |
+| P3       | Add image signing / provenance attestation to the release workflow.                                                          | **Fixed 2026-09-15** — cosign keyless was configured, but it only runs on release tags, and none had ever been created because the Release workflow could not load its commit preset. See the final report §18 |
+| P3       | Document every environment variable in one place and validate with `packages/config`.                                        | Open                                                                                                                                                                                                           |
