@@ -19,7 +19,7 @@
     "@epay/database": "workspace:*",
     "@epay/shared": "workspace:*",
     "@epay/types": "workspace:*",
-    "@stellar/stellar-sdk": "^17.0.0",
+    "@stellar/stellar-sdk": "^17.0.1",
     "pino": "^10.3.1",
     "pino-pretty": "^13.1.3"
   },
