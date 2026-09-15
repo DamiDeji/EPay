@@ -26,8 +26,8 @@
   "devDependencies": {
     "tsx": "^4.23.12",
     "typescript": "^7.0.2",
-    "vite": "^7.0.0",
-    "vitest": "^4.1.11",
-    "@vitest/coverage-v8": "^4.1.11"
+    "vite": "^8.3.0",
+    "vitest": "^5.0.0",
+    "@vitest/coverage-v8": "^5.0.0"
   }
 }
