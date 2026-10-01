@@ -50,7 +50,7 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Run ZAP baseline
-        uses: zaproxy/action-baseline@v0.14.0
+        uses: zaproxy/action-baseline@v0.15.0
         with:
           target: ${{ github.event.inputs.target || 'https://epay-web-teal.vercel.app' }}
           # Report alerts but do not fail yet — see the header comment.
